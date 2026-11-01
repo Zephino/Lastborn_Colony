@@ -2,6 +2,20 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.22
+Date: 11/01/2026
+Time: 1:39 PM
+
+### Changes
+- **The Launch Rail is now a spin launcher** (sprite concept in `scripts/ui/sprites.gd`, still not used in the game). A big sealed vacuum drum spins a cargo pod on an arm, then throws it up a launch tube toward orbit, with no fuel needed.
+  - Drawn as the drum with a bolted rim, and a dark window showing the spinning arm, the white pod and glowing cyan motion trails.
+  - A launch tube with an orange stripe leaves the rim and climbs toward the sky on supports, with a light at its mouth.
+  - A small control dome stands at the front corner. Tunnels, airlocks and ports join the drum like any other building.
+- The building still works the same (it sells alloy for marks) and keeps its name for now. "SpinLaunch" is a real company's name, so the building won't use it; a name like "Spin Launcher" or "Sling Launcher" is for the owner to choose.
+
+### Reason
+The owner suggested a spin-launch idea for the Launch Rail.
+
 ## Version 00.01.21
 Date: 11/01/2026
 Time: 1:34 PM

@@ -45,7 +45,7 @@ const INTERIOR := {
 	"forge": Color(0.30, 0.16, 0.10), "lab": Color(0.20, 0.16, 0.32), "vent": Color(0.22, 0.08, 0.04),
 }
 ## Dome size (radius, as a fraction of a tile) for each building.
-const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.22, "vent": 0.34, "forge": 0.34}
+const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.40, "vent": 0.34, "forge": 0.34}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 
@@ -172,6 +172,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	if type == "shaft":
 		_top_hole(ci, c, s, rad, links, state)
 		return
+	if type == "rail":
+		_top_spin(ci, c, s, links, state)
+		return
 	# Fittings outside the dome, drawn first so the dome sits on top.
 	match type:
 		"mirror":
@@ -184,23 +187,6 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			for side in [-1.0, 1.0]:
 				ci.draw_circle(c + Vector2(side * s * 0.34, -s * 0.30), s * 0.12, m)
 				ci.draw_circle(c + Vector2(side * s * 0.34, -s * 0.30), s * 0.07, _fade(Color(0.85, 0.95, 1.0), state))
-		"rail":
-			# The launch track across the back of the tile: a bed, twin rails,
-			# glowing accelerator coils, and a cargo pod waiting at the start.
-			var y := c.y - s * 0.33
-			ci.draw_rect(Rect2(Vector2(r.position.x, y - s * 0.09), Vector2(s, s * 0.18)), md)
-			ci.draw_line(Vector2(r.position.x, y - s * 0.045), Vector2(r.end.x, y - s * 0.045), a, 2.0)
-			ci.draw_line(Vector2(r.position.x, y + s * 0.045), Vector2(r.end.x, y + s * 0.045), a, 2.0)
-			for k in 5:
-				var x := r.position.x + s * (0.30 + k * 0.15)
-				ci.draw_rect(Rect2(Vector2(x - s * 0.025, y - s * 0.13), Vector2(s * 0.05, s * 0.26)), m)
-				ci.draw_rect(Rect2(Vector2(x - s * 0.012, y - s * 0.12), Vector2(s * 0.024, s * 0.24)), _fade(CYAN, state))
-			var pod := Rect2(Vector2(r.position.x + s * 0.05, y - s * 0.06), Vector2(s * 0.18, s * 0.12))
-			ci.draw_rect(pod, _fade(WHITE, state))
-			ci.draw_rect(Rect2(pod.position + Vector2(pod.size.x - s * 0.04, 0), Vector2(s * 0.04, pod.size.y)), a)
-			# A feed tube from the control dome up to the track.
-			ci.draw_line(c, Vector2(c.x, y + s * 0.09), md, s * 0.06)
-			_glow(ci, Vector2(r.end.x - s * 0.03, y), s * 0.035, _fade(CYAN, state), state)
 		"vent":
 			# Radiator fins on both sides carry the heat away.
 			for side in [-1.0, 1.0]:
@@ -607,6 +593,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	if type == "shaft":
 		_iso_hole(ci, c, tw, r, links, state)
 		return
+	if type == "rail":
+		_iso_spin(ci, c, tw, links, state)
+		return
 	# Tunnels toward the back go behind the dome; toward the front, in front of it.
 	for d in links:
 		if d.x < 0 or d.y < 0:
@@ -625,8 +614,6 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 				_iso_sphere(ci, _iso(c, tw, 0.34, v - 0.04, 0.32), tw * 0.08, _fade(Color(0.85, 0.95, 1.0), state))
 		"drill":
 			_cyl(ci, c, tw, -0.30, 0.30, 0.13, 0.26, _fade(Color(0.25, 0.45, 0.75), state), a.darkened(0.2))
-		"rail":
-			_iso_launch_track(ci, c, tw, state)
 		"vent":
 			# Radiator fin banks behind the dome, and steam from relief valves.
 			for u in [-0.36, 0.30]:
@@ -906,46 +893,90 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true)
 
 
-## The Launch Rail's track at an angle: it runs along the back of the tile and
-## climbs toward the sky, on pylons, through glowing accelerator coils, with a
-## cargo pod waiting at the bottom. The small control dome sits in front of it.
-static func _iso_launch_track(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary) -> void:
+## The Launch Rail as a spin launcher, seen from above: a big sealed vacuum
+## drum with a spinning arm inside (motion trails glowing), a launch tube
+## leaving its rim, and a small control dome at the front corner.
+static func _top_spin(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
 	var md := _fade(METAL_DARK, state)
 	var m := _fade(METAL, state)
 	var gold := _fade(GOLD, state)
 	var cyan := _fade(CYAN, state)
-	var v := -0.30
-	var u0 := -0.48
-	var u1 := 0.50
-	var z0 := 0.05
-	var z1 := 0.42
-	var height := func(u: float) -> float: return lerpf(z0, z1, (u - u0) / (u1 - u0))
-	# Pylons from the ground up to the track.
-	for u in [-0.15, 0.15, 0.42]:
-		var zt: float = height.call(u)
-		ci.draw_line(_iso(c, tw, u, v - 0.05), _iso(c, tw, u, v - 0.05, zt), md.lightened(0.15), tw * 0.016)
-		ci.draw_line(_iso(c, tw, u, v + 0.05), _iso(c, tw, u, v + 0.05, zt), md.lightened(0.15), tw * 0.016)
-	# The track bed and its two rails.
-	var bed := PackedVector2Array([_iso(c, tw, u0, v - 0.07, z0), _iso(c, tw, u1, v - 0.07, z1), _iso(c, tw, u1, v + 0.07, z1), _iso(c, tw, u0, v + 0.07, z0)])
-	ci.draw_colored_polygon(bed, md)
-	ci.draw_line(_iso(c, tw, u0, v - 0.045, z0 + 0.01), _iso(c, tw, u1, v - 0.045, z1 + 0.01), gold, 2.0)
-	ci.draw_line(_iso(c, tw, u0, v + 0.045, z0 + 0.01), _iso(c, tw, u1, v + 0.045, z1 + 0.01), gold, 2.0)
-	# Accelerator coils: glowing rings around the track.
-	var across := Vector2(-0.5, 0.25) * tw
-	for u in [-0.25, -0.02, 0.21, 0.44]:
-		var ctr := _iso(c, tw, u, v, float(height.call(u)) + 0.05)
-		var ring := PackedVector2Array()
-		for i in 25:
-			var th := i * TAU / 24.0
-			ring.append(ctr + (across * cos(th) + Vector2(0, -tw) * sin(th)) * 0.075)
-		ci.draw_polyline(ring, m, 4.0)
-		ci.draw_polyline(ring, cyan, 2.0)
-	# The cargo pod at the bottom of the track.
-	var pod := _iso(c, tw, -0.38, v, z0 + 0.05)
-	ci.draw_colored_polygon(_ellipse(pod, tw * 0.07, tw * 0.035), _fade(WHITE, state))
-	ci.draw_polyline(_ellipse(pod, tw * 0.07, tw * 0.035), md, 1.5)
-	ci.draw_circle(pod + Vector2(tw * 0.05, -tw * 0.01), tw * 0.012, gold)
-	_glow(ci, _iso(c, tw, u1, v, z1 + 0.05), tw * 0.03, cyan, state)
+	var rad := s * 0.40
+	var drum := c + Vector2(0, -s * 0.02)
+	for d in links:
+		_top_link(ci, c, s, d, rad, state)
+	# The launch tube, leaving the drum's rim and running off the tile's edge.
+	var exit := drum + Vector2(rad * 0.15, -rad * 0.98)
+	_top_tube(ci, exit, Vector2(c.x + s * 0.5, exit.y), s, state)
+	ci.draw_circle(c + Vector2(s * 0.47, exit.y - c.y), s * 0.03, gold)
+	# The drum: shadow, bolted rim, dark window, spinning arm and trails.
+	ci.draw_circle(drum + Vector2(rad * 0.08, rad * 0.10), rad * 1.02, Color(0, 0, 0, 0.28 * m.a))
+	ci.draw_circle(drum, rad, md)
+	ci.draw_circle(drum, rad * 0.88, m.darkened(0.15))
+	for i in 20:
+		ci.draw_circle(drum + Vector2.from_angle(i * TAU / 20.0) * rad * 0.94, maxf(1.2, s * 0.01), md.darkened(0.3))
+	ci.draw_circle(drum, rad * 0.78, Color(0.04, 0.05, 0.08, m.a))
+	for k in 3:
+		ci.draw_arc(drum, rad * (0.70 - k * 0.12), 0.4 + k * 0.5, 2.2 + k * 0.5, 16, Color(cyan.r, cyan.g, cyan.b, (0.7 - k * 0.15) * cyan.a), 2.0)
+	ci.draw_line(drum + Vector2(-rad * 0.66, rad * 0.20), drum + Vector2(rad * 0.66, -rad * 0.20), m.lightened(0.2), maxf(2.0, s * 0.03))
+	ci.draw_circle(drum + Vector2(rad * 0.66, -rad * 0.20), s * 0.035, _fade(WHITE, state))
+	ci.draw_circle(drum + Vector2(-rad * 0.66, rad * 0.20), s * 0.03, m)
+	ci.draw_circle(drum, s * 0.05, md)
+	_glow(ci, drum, s * 0.025, gold, state)
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+	# The control dome at the front-left corner.
+	_top_dome(ci, c + Vector2(-s * 0.36, s * 0.36), s * 0.11, gold, Color(0.26, 0.28, 0.32), state)
+
+
+## The spin launcher at an angle: a wide, low vacuum drum with a window on top
+## showing the spinning arm, a launch tube climbing from its rim toward the sky,
+## and a small control dome in front.
+static func _iso_spin(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var gold := _fade(GOLD, state)
+	var cyan := _fade(CYAN, state)
+	var r := 0.40
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, r, state)
+	# The launch tube, behind the drum, climbing toward the sky.
+	var t0 := _iso(c, tw, 0.05, -0.36, 0.14)
+	var t1 := _iso(c, tw, 0.50, -0.36, 0.62)
+	for u in [0.22, 0.42]:
+		var zt := lerpf(0.14, 0.62, (u - 0.05) / 0.45)
+		ci.draw_line(_iso(c, tw, u, -0.36), _iso(c, tw, u, -0.36, zt), md.lightened(0.15), tw * 0.016)
+	ci.draw_line(t0, t1, md, tw * 0.07)
+	ci.draw_line(t0, t1, m, tw * 0.05)
+	ci.draw_line(t0, t1, _fade(ORANGE, state), 2.0)
+	ci.draw_colored_polygon(_ellipse(t1, tw * 0.035, tw * 0.03), md)
+	_glow(ci, t1, tw * 0.02, gold, state)
+	# The drum.
+	_cyl(ci, c, tw, 0, 0, r, 0.16, md, m.darkened(0.15))
+	var top := _iso(c, tw, 0, 0, 0.16)
+	var rx := r * tw * 0.72
+	for i in 20:
+		var ang := i * TAU / 20.0
+		ci.draw_circle(top + Vector2(cos(ang) * rx * 0.93, sin(ang) * rx * 0.465), maxf(1.2, tw * 0.007), md.darkened(0.3))
+	ci.draw_colored_polygon(_ellipse(top, rx * 0.80, rx * 0.40), Color(0.04, 0.05, 0.08, m.a))
+	for k in 3:
+		var arc := _ellipse(top, rx * (0.72 - k * 0.12), rx * (0.36 - k * 0.06), 30 + k * 30, 140 + k * 30, 14)
+		ci.draw_polyline(arc, Color(cyan.r, cyan.g, cyan.b, (0.75 - k * 0.15) * cyan.a), 2.0)
+	var arm_a := top + Vector2(-rx * 0.66, rx * 0.10)
+	var arm_b := top + Vector2(rx * 0.66, -rx * 0.10)
+	ci.draw_line(arm_a, arm_b, m.lightened(0.2), tw * 0.018)
+	_iso_sphere(ci, arm_b, tw * 0.03, _fade(WHITE, state))
+	ci.draw_circle(arm_a, tw * 0.022, m)
+	_glow(ci, top, tw * 0.02, gold, state)
+	# The control dome in front.
+	_iso_dome(ci, _iso(c, tw, -0.30, 0.34), tw, 0.12, 0.10, gold, Color(0.26, 0.28, 0.32), state)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, r, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links):
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.08), tw, state, true)
 
 
 static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> void:
