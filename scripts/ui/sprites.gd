@@ -1081,6 +1081,10 @@ static func _top_gatehouse(ci: CanvasItem, c: Vector2, s: float, rad: float, d: 
 	ci.draw_colored_polygon(inner, _fade(METAL, state))
 	ci.draw_line(corners[1], corners[2], _fade(ORANGE, state), 2.0)
 	ci.draw_circle(p, s * 0.04, _fade(GLASS, state).lightened(0.3))
+	# The door on the pad side, with a lit step in front of it.
+	var door := p - dir * half_along
+	ci.draw_line(door - side * s * 0.035, door + side * s * 0.035, Color(0.08, 0.07, 0.06, _fade(METAL, state).a), maxf(3.0, s * 0.035))
+	ci.draw_line(door - dir * s * 0.02 - side * s * 0.03, door - dir * s * 0.02 + side * s * 0.03, _fade(AMBER, state), 2.0)
 
 
 ## The same airlock building at an angle: a block standing on the pad's rim,
@@ -1110,6 +1114,20 @@ static func _iso_gatehouse(ci: CanvasItem, c: Vector2, tw: float, r: float, d: V
 	# An orange band round the foot of the visible walls.
 	ci.draw_line(_iso(c, tw, u1, v0, 0.07), _iso(c, tw, u1, v1, 0.07), _fade(ORANGE, state), 2.0)
 	ci.draw_line(_iso(c, tw, u0, v1, 0.07), _iso(c, tw, u1, v1, 0.07), _fade(ORANGE, state), 2.0)
+	# The door on the pad side (seen on the two back buildings, whose pad side faces us),
+	# with a light over it.
+	if d.x < 0 or d.y < 0:
+		var door: PackedVector2Array
+		var lamp: Vector2
+		if d.x < 0:
+			door = PackedVector2Array([_iso(c, tw, u1, -0.035, 0.05), _iso(c, tw, u1, 0.035, 0.05), _iso(c, tw, u1, 0.035, 0.145), _iso(c, tw, u1, -0.035, 0.145)])
+			lamp = _iso(c, tw, u1, 0.0, 0.16)
+		else:
+			door = PackedVector2Array([_iso(c, tw, -0.035, v1, 0.05), _iso(c, tw, 0.035, v1, 0.05), _iso(c, tw, 0.035, v1, 0.145), _iso(c, tw, -0.035, v1, 0.145)])
+			lamp = _iso(c, tw, 0.0, v1, 0.16)
+		ci.draw_colored_polygon(door, Color(0.08, 0.07, 0.06, m.a))
+		ci.draw_polyline(PackedVector2Array([door[0], door[3], door[2], door[1]]), m.darkened(0.3), 1.5)
+		_glow(ci, lamp, tw * 0.01, _fade(AMBER, state), state)
 
 
 ## The Shaft at an angle: a round hole in the ground. You see the far inside

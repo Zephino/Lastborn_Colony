@@ -2,6 +2,18 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.36
+Date: 11/01/2026
+Time: 6:30 PM
+
+### Changes
+- **Landing Hull:** each airlock building now also has a door on its pad side, so people can walk from the pad into it (sprite concept).
+  - **Top-down:** every one shows a dark doorway with a lit amber step.
+  - **Angled:** the two back buildings show their door, with a small amber lamp over it. The front two face away, so their doors are hidden.
+
+### Reason
+The owner said the airlock buildings should look like they have a door on the other side.
+
 ## Version 00.01.35
 Date: 11/01/2026
 Time: 6:20 PM
