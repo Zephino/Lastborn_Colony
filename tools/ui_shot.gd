@@ -17,6 +17,25 @@ func _run() -> void:
 	main.close_modal()
 	main.state["stock"]["parts"] = 30.0
 	main.state["stock"]["alloy"] = 120.0
+	# A small colony around the hull, so the map has something on it.
+	const NewGame = preload("res://scripts/sim/new_game.gd")
+	const Actions = preload("res://scripts/sim/actions.gd")
+	const GameData = preload("res://scripts/sim/game_data.gd")
+	var st: Dictionary = main.state
+	for type in ["main", "bunk", "mirror", "vat", "main", "splitter", "commons", "forge", "workshop", "cutter", "drill", "vent", "lab", "main", "warden", "cache", "clinic"]:
+		var placed := false
+		for radius in range(1, 6):
+			if placed:
+				break
+			for y in int(st["height"]):
+				for x in int(st["width"]):
+					if placed:
+						break
+					if Actions.structure_at(st, x, y).is_empty() and Actions.touches_colony(st, x, y) and Actions.terrain_at(st, x, y) in GameData.building(type)["terrain"]:
+						var hull: Dictionary = st["structures"]["1"]
+						if absi(x - int(hull["x"])) + absi(y - int(hull["y"])) <= radius:
+							NewGame.add_structure(st, type, x, y, type != "lab")
+							placed = true
 	main.refresh()
 	for _i in 4:
 		await process_frame

@@ -447,7 +447,7 @@ func show_game() -> void:
 
 	map_view.set_state(state)
 	if narrow_game:
-		map_view.tile_size = 34.0
+		map_view.tile_size = 110.0
 	map_view.center_on(_hull_cell())
 	_update_level_buttons()
 	refresh()

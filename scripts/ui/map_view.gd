@@ -1,7 +1,12 @@
-## Draws the colony map with simple shapes (no image assets) and turns mouse
-## input into tile clicks. Click or tap: select or build. Drag (any button or
-## one finger): pan, and a drag never selects or builds. Wheel, two-finger
-## pinch, or zoom_by(): zoom. Arrow keys / WASD pan (handled by main.gd).
+## Draws the colony map at an angle (isometric), with the building sprites
+## from scripts/ui/sprites.gd, and turns mouse and touch input into tile
+## clicks. Click or tap: select or build. Drag (any button or one finger): pan,
+## and a drag never selects or builds. Wheel, two-finger pinch, or zoom_by():
+## zoom. Arrow keys / WASD pan (handled by main.gd).
+##
+## Tiles are diamonds: tile (x, y) has its centre at
+##   origin + ((x - y) * tile_size / 2, (x + y) * tile_size / 4)
+## where tile_size is the diamond's width in pixels.
 extends Control
 
 signal tile_clicked(cell: Vector2i)
@@ -9,26 +14,15 @@ signal tile_hovered(cell: Vector2i)
 
 const GameData = preload("res://scripts/sim/game_data.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
+const Sprites = preload("res://scripts/ui/sprites.gd")
 
-const TERRAIN_COLORS := {
-	"regolith": Color(0.36, 0.33, 0.30),
-	"ice": Color(0.66, 0.78, 0.86),
-	"vent": Color(0.30, 0.24, 0.23),
-	"seam": Color(0.33, 0.31, 0.29),
-	"ridge": Color(0.17, 0.17, 0.19),
-	# The Deep.
-	"rock": Color(0.24, 0.21, 0.20),
-	"cavern": Color(0.36, 0.31, 0.27),
-	"vein": Color(0.24, 0.21, 0.20),
-	"aquifer": Color(0.20, 0.30, 0.40),
-	"deepvent": Color(0.30, 0.18, 0.15),
-	"bedrock": Color(0.09, 0.08, 0.09),
-	"deepice": Color(0.80, 0.88, 0.96),
-	"scorch": Color(0.55, 0.30, 0.16),
-}
+const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+const MIN_TILE := 36.0
+const MAX_TILE := 220.0
 
 var state: Dictionary = {}
-var tile_size := 28.0
+## Width of one diamond tile, in pixels.
+var tile_size := 120.0
 var pan := Vector2.ZERO
 var selected := Vector2i(-1, -1)
 var hover := Vector2i(-1, -1)
@@ -58,15 +52,34 @@ func set_state(s: Dictionary) -> void:
 	queue_redraw()
 
 
+## Screen offset of a (fractional) tile position from the map's origin.
+func _proj(cell: Vector2) -> Vector2:
+	return Vector2((cell.x - cell.y) * tile_size * 0.5, (cell.x + cell.y) * tile_size * 0.25)
+
+
+## Fractional tile position under a screen point (the inverse of _proj).
+func _unproj(pos: Vector2) -> Vector2:
+	var p := pos - _origin()
+	var a := p.x / (tile_size * 0.5)
+	var b := p.y / (tile_size * 0.25)
+	return Vector2((a + b) * 0.5, (b - a) * 0.5)
+
+
+## Where tile (0, 0)'s centre is on screen. The map's middle sits in the middle
+## of the view, moved by pan.
 func _origin() -> Vector2:
-	var w := float(state.get("width", 0)) * tile_size
-	var h := float(state.get("height", 0)) * tile_size
-	return (size - Vector2(w, h)) * 0.5 + pan
+	var mid := Vector2(float(state.get("width", 1)) - 1.0, float(state.get("height", 1)) - 1.0) * 0.5
+	return size * 0.5 + pan - _proj(mid)
+
+
+## Centre of tile c on screen.
+func cell_center(c: Vector2i) -> Vector2:
+	return _origin() + _proj(Vector2(c))
 
 
 func cell_at(pos: Vector2) -> Vector2i:
-	var p := (pos - _origin()) / tile_size
-	var c := Vector2i(int(floor(p.x)), int(floor(p.y)))
+	var f := _unproj(pos)
+	var c := Vector2i(int(floor(f.x + 0.5)), int(floor(f.y + 0.5)))
 	if state.is_empty() or not Actions.inside(state, c.x, c.y):
 		return Vector2i(-1, -1)
 	return c
@@ -168,17 +181,17 @@ func pan_by(delta: Vector2) -> void:
 
 ## Moves the view so this tile is in the middle.
 func center_on(cell: Vector2i) -> void:
-	var w := float(state.get("width", 0)) * tile_size
-	var h := float(state.get("height", 0)) * tile_size
-	pan = Vector2(w, h) * 0.5 - (Vector2(cell) + Vector2(0.5, 0.5)) * tile_size
+	var mid := Vector2(float(state.get("width", 1)) - 1.0, float(state.get("height", 1)) - 1.0) * 0.5
+	pan = _proj(mid) - _proj(Vector2(cell))
 	queue_redraw()
 
 
+## Zooms so the tile point under `at` stays under it.
 func _zoom(factor: float, at: Vector2) -> void:
-	var before := (at - _origin()) / tile_size
-	tile_size = clampf(tile_size * factor, 14.0, 64.0)
-	var after := (at - _origin()) / tile_size
-	pan += (after - before) * tile_size
+	var before := _unproj(at)
+	tile_size = clampf(tile_size * factor, MIN_TILE, MAX_TILE)
+	var after := _unproj(at)
+	pan += _proj(after) - _proj(before)
 	queue_redraw()
 
 
@@ -186,227 +199,92 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.05, 0.06, 0.08))
 	if state.is_empty():
 		return
-	var o := _origin()
 	var w := int(state["width"])
 	var h := int(state["height"])
-	var ts := tile_size
-	for y in h:
-		for x in w:
-			var t: String = Actions.terrain_at(state, x, y, level)
-			var r := Rect2(o + Vector2(x, y) * ts, Vector2(ts, ts))
-			draw_rect(r, _terrain_color(t, x))
-			_draw_terrain_detail(t, r, x, y)
-	# Climate shading on the surface: cool blue on the night side, warm on the day side.
-	for x in (w if level == 0 else 0):
-		var l := GameData.light_at(x, state["planet"])
-		var tint := Color(0.2, 0.35, 0.8, 0.22 * clampf(1.0 - l, 0.0, 1.0)) if l < 1.0 else Color(1.0, 0.6, 0.2, 0.18 * clampf(l - 1.0, 0.0, 1.0))
-		draw_rect(Rect2(o + Vector2(x * ts, 0), Vector2(ts, h * ts)), tint)
-	# Grid.
-	var grid := Color(0, 0, 0, 0.18)
-	for x in w + 1:
-		draw_line(o + Vector2(x * ts, 0), o + Vector2(x * ts, h * ts), grid)
-	for y in h + 1:
-		draw_line(o + Vector2(0, y * ts), o + Vector2(w * ts, y * ts), grid)
-	# Conduits first so buildings draw over them.
-	for id in state["structures"]:
-		var s: Dictionary = state["structures"][id]
-		if s["type"] == "main" and int(s.get("z", 0)) == level:
-			_draw_main(s, o)
-	for id in state["structures"]:
-		var s: Dictionary = state["structures"][id]
-		if s["type"] != "main" and int(s.get("z", 0)) == level:
-			_draw_structure(s, o)
-	# Hover and selection.
+	var tw := tile_size
+	var view := Rect2(Vector2(-tw * 2.0, -tw * 2.0), size + Vector2(tw * 4.0, tw * 4.0))
+	# Ground, back to front, with the climate tint on the surface.
+	for sum in w + h - 1:
+		for x in range(maxi(0, sum - h + 1), mini(w, sum + 1)):
+			var y := sum - x
+			var c := cell_center(Vector2i(x, y))
+			if not view.has_point(c):
+				continue
+			Sprites.terrain_iso(self, Actions.terrain_at(state, x, y, level), c, tw)
+			if level == 0:
+				var l := GameData.light_at(x, state["planet"])
+				var tint := Color(0.2, 0.35, 0.8, 0.22 * clampf(1.0 - l, 0.0, 1.0)) if l < 1.0 else Color(1.0, 0.6, 0.2, 0.18 * clampf(l - 1.0, 0.0, 1.0))
+				draw_colored_polygon(_diamond(c, 1.0), tint)
+	# Where the next building would go, and the selected tile, under the buildings.
 	if hover.x >= 0:
-		var hr := Rect2(o + Vector2(hover) * ts, Vector2(ts, ts))
+		var hc := cell_center(hover)
 		if build_type != "":
 			var ok: bool = Actions.check_place(state, build_type, hover.x, hover.y, level)["ok"]
-			draw_rect(hr, Color(0.3, 1.0, 0.5, 0.35) if ok else Color(1.0, 0.3, 0.3, 0.35))
-		draw_rect(hr, Color(1, 1, 1, 0.7), false, 1.5)
+			draw_colored_polygon(_diamond(hc, 1.0), Color(0.3, 1.0, 0.5, 0.40) if ok else Color(1.0, 0.3, 0.3, 0.40))
+		draw_polyline(_diamond_loop(hc, 1.0), Color(1, 1, 1, 0.75), 1.5)
 	if selected.x >= 0:
-		draw_rect(Rect2(o + Vector2(selected) * ts, Vector2(ts, ts)).grow(1), Color(1.0, 0.85, 0.3), false, 2.5)
+		draw_polyline(_diamond_loop(cell_center(selected), 1.0), Color(1.0, 0.85, 0.3), 2.5)
+	# Buildings and tunnels, back to front so nearer ones cover farther ones.
+	for sum in w + h - 1:
+		for x in range(maxi(0, sum - h + 1), mini(w, sum + 1)):
+			var y := sum - x
+			var s := Actions.structure_at(state, x, y, level)
+			if s.is_empty():
+				continue
+			var c := cell_center(Vector2i(x, y))
+			if not view.has_point(c):
+				continue
+			_draw_structure(s, c)
+	# The selected tile's outline again, faintly, so it shows through tall buildings.
+	if selected.x >= 0:
+		draw_polyline(_diamond_loop(cell_center(selected), 1.0), Color(1.0, 0.85, 0.3, 0.45), 1.5)
 
 
-func _terrain_color(t: String, x: int) -> Color:
-	var c: Color = TERRAIN_COLORS.get(t, Color.MAGENTA)
-	if t == "regolith" or t == "seam" or t == "vent":
-		var warm := clampf((GameData.light_at(x, state["planet"]) - 0.3) / 1.3, 0.0, 1.0)
-		c = c.lerp(Color(0.48, 0.36, 0.26), warm * 0.5)
-	return c
+func _diamond(c: Vector2, k: float) -> PackedVector2Array:
+	var hx := tile_size * 0.5 * k
+	var hy := tile_size * 0.25 * k
+	return PackedVector2Array([c + Vector2(0, -hy), c + Vector2(hx, 0), c + Vector2(0, hy), c + Vector2(-hx, 0)])
 
 
-func _draw_terrain_detail(t: String, r: Rect2, x: int, y: int) -> void:
-	var c := r.get_center()
-	var ts := tile_size
-	match t:
-		"ice":
-			draw_line(r.position + Vector2(ts * 0.2, ts * 0.7), r.position + Vector2(ts * 0.6, ts * 0.3), Color(1, 1, 1, 0.35), 1.0)
-		"vent":
-			draw_circle(c, ts * 0.22, Color(0.95, 0.45, 0.15, 0.85))
-			draw_circle(c, ts * 0.11, Color(1.0, 0.85, 0.4))
-		"seam":
-			var seam_col := Color(0.25, 0.62, 0.60)
-			draw_line(r.position + Vector2(ts * 0.15, ts * 0.3), r.position + Vector2(ts * 0.85, ts * 0.55), seam_col, 2.0)
-			draw_line(r.position + Vector2(ts * 0.2, ts * 0.75), r.position + Vector2(ts * 0.7, ts * 0.6), seam_col, 2.0)
-		"ridge":
-			var pts := PackedVector2Array([r.position + Vector2(ts * 0.1, ts * 0.85), c + Vector2(0, -ts * 0.35), r.position + Vector2(ts * 0.9, ts * 0.85)])
-			draw_colored_polygon(pts, Color(0.28, 0.28, 0.31))
-		"vein":
-			var vein_col := Color(0.35, 0.80, 0.75)
-			draw_line(r.position + Vector2(ts * 0.1, ts * 0.4), r.position + Vector2(ts * 0.9, ts * 0.6), vein_col, 3.0)
-			draw_line(r.position + Vector2(ts * 0.3, ts * 0.85), r.position + Vector2(ts * 0.75, ts * 0.2), vein_col, 2.0)
-		"aquifer":
-			draw_circle(c, ts * 0.2, Color(0.45, 0.70, 0.95, 0.8))
-		"deepvent":
-			draw_circle(c, ts * 0.26, Color(1.0, 0.40, 0.10, 0.9))
-			draw_circle(c, ts * 0.13, Color(1.0, 0.90, 0.50))
-		"bedrock":
-			draw_line(r.position + Vector2(ts * 0.1, ts * 0.9), r.position + Vector2(ts * 0.9, ts * 0.1), Color(0, 0, 0, 0.5), 1.0)
-		"rock":
-			var rh := (x * 19349663) ^ (y * 83492791)
-			if rh % 3 == 0:
-				draw_circle(r.position + Vector2(ts * 0.6, ts * 0.4), ts * 0.08, Color(0, 0, 0, 0.3))
-		"regolith":
-			# Deterministic speckle so the ground has texture.
-			var hsh := (x * 73856093) ^ (y * 19349663)
-			if hsh % 5 == 0:
-				draw_circle(r.position + Vector2(ts * 0.3, ts * 0.6), ts * 0.06, Color(0, 0, 0, 0.25))
+func _diamond_loop(c: Vector2, k: float) -> PackedVector2Array:
+	var d := _diamond(c, k)
+	d.append(d[0])
+	return d
 
 
-func _draw_main(s: Dictionary, o: Vector2) -> void:
-	var ts := tile_size
-	var c := o + (Vector2(int(s["x"]), int(s["y"])) + Vector2(0.5, 0.5)) * ts
-	var col := Color(0.95, 0.55, 0.25) if s["built"] else Color(0.95, 0.55, 0.25, 0.4)
-	draw_circle(c, ts * 0.12, col)
-	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+## Which sides of a structure join a neighbour on the same level (for tunnels
+## and doors). A shaft also joins straight down, which isn't shown as a side.
+func _links(s: Dictionary) -> Array:
+	var out: Array = []
+	for d in DIRS:
 		var n: Vector2i = Vector2i(int(s["x"]), int(s["y"])) + d
 		if Actions.inside(state, n.x, n.y) and not Actions.structure_at(state, n.x, n.y, level).is_empty():
-			draw_line(c, c + Vector2(d) * ts * 0.5, col, maxf(2.0, ts * 0.14))
+			out.append(d)
+	return out
 
 
-func _draw_structure(s: Dictionary, o: Vector2) -> void:
-	var ts := tile_size
-	var r := Rect2(o + Vector2(int(s["x"]), int(s["y"])) * ts, Vector2(ts, ts)).grow(-ts * 0.08)
-	var c := r.get_center()
-	var a := 1.0 if s["built"] else 0.45
-	var dim := 1.0 if (s["active"] or not s["built"]) else 0.55
-	var base := Color(0.62 * dim, 0.66 * dim, 0.70 * dim, a)
-	match s["type"]:
-		"shaft", "shaft_base":
-			draw_rect(r, Color(0.20 * dim, 0.20 * dim, 0.24 * dim, a))
-			draw_rect(r.grow(-ts * 0.18), Color(0.04, 0.04, 0.06, a))
-			for i in 3:
-				var yy := r.position.y + r.size.y * (0.3 + 0.2 * i)
-				draw_line(Vector2(r.position.x + ts * 0.3, yy), Vector2(r.end.x - ts * 0.3, yy), Color(0.95, 0.62, 0.30, a), 2.0)
-		"hull":
-			draw_rect(r.grow(ts * 0.04), Color(0.55, 0.58, 0.62, a))
-			draw_circle(c, ts * 0.32, Color(0.80, 0.82, 0.86, a))
-			draw_circle(c, ts * 0.14, Color(1.0, 0.8, 0.4, a))
-		"mirror":
-			var pts := PackedVector2Array([r.position + Vector2(ts * 0.15, ts * 0.75), r.position + Vector2(ts * 0.45, ts * 0.15), r.position + Vector2(ts * 0.85, ts * 0.25), r.position + Vector2(ts * 0.55, ts * 0.85)])
-			draw_colored_polygon(pts, Color(0.75 * dim, 0.85 * dim, 0.95 * dim, a))
-			draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.3, 0.35, 0.45, a), 1.0)
-		"vent":
-			draw_rect(r.grow(-ts * 0.1), Color(0.35 * dim, 0.30 * dim, 0.28 * dim, a))
-			draw_rect(Rect2(c - Vector2(ts * 0.1, ts * 0.38), Vector2(ts * 0.2, ts * 0.4)), Color(0.5 * dim, 0.45 * dim, 0.4 * dim, a))
-			draw_circle(c + Vector2(0, -ts * 0.38), ts * 0.1, Color(1.0, 0.55, 0.2, a * dim))
-		"drill":
-			draw_rect(r.grow(-ts * 0.15), Color(0.4 * dim, 0.55 * dim, 0.7 * dim, a))
-			draw_line(c + Vector2(-ts * 0.3, ts * 0.3), c + Vector2(0, -ts * 0.38), base, 2.0)
-			draw_line(c + Vector2(ts * 0.3, ts * 0.3), c + Vector2(0, -ts * 0.38), base, 2.0)
-		"splitter":
-			draw_circle(c + Vector2(-ts * 0.16, 0), ts * 0.2, Color(0.55 * dim, 0.85 * dim, 0.95 * dim, a))
-			draw_circle(c + Vector2(ts * 0.18, 0), ts * 0.16, Color(0.85 * dim, 0.95 * dim, 1.0 * dim, a))
-		"vat":
-			draw_rect(r.grow(-ts * 0.08), Color(0.18 * dim, 0.45 * dim, 0.30 * dim, a))
-			for i in 3:
-				draw_line(r.position + Vector2(ts * (0.25 + 0.2 * i), ts * 0.8), r.position + Vector2(ts * (0.3 + 0.2 * i), ts * 0.25), Color(0.4 * dim, 0.85 * dim, 0.5 * dim, a), 2.0)
-		"bunk":
-			draw_rect(r, Color(0.55 * dim, 0.5 * dim, 0.45 * dim, a))
-			for i in 3:
-				draw_rect(Rect2(r.position + Vector2(ts * (0.12 + 0.26 * i), ts * 0.35), Vector2(ts * 0.14, ts * 0.14)), Color(1.0, 0.85, 0.5, a * dim))
-		"cutter":
-			draw_circle(c, ts * 0.32, Color(0.45 * dim, 0.6 * dim, 0.58 * dim, a))
-			for i in 6:
-				var ang := TAU * i / 6.0
-				draw_line(c, c + Vector2(cos(ang), sin(ang)) * ts * 0.4, Color(0.25, 0.3, 0.3, a), 2.0)
-		"forge":
-			draw_rect(r, Color(0.45 * dim, 0.25 * dim, 0.2 * dim, a))
-			draw_rect(r.grow(-ts * 0.25), Color(1.0, 0.45 * dim + 0.1, 0.15, a))
-		"rail":
-			draw_rect(Rect2(r.position + Vector2(0, ts * 0.3), Vector2(r.size.x, ts * 0.25)), Color(0.7 * dim, 0.7 * dim, 0.75 * dim, a))
-			draw_line(r.position + Vector2(0, ts * 0.42), r.position + Vector2(r.size.x, ts * 0.12), Color(0.95, 0.8, 0.35, a * dim), 2.0)
-		"commons":
-			draw_arc(c + Vector2(0, ts * 0.2), ts * 0.36, PI, TAU, 16, Color(0.85 * dim, 0.7 * dim, 0.45 * dim, a), ts * 0.12)
-		"clinic":
-			draw_rect(r.grow(-ts * 0.06), Color(0.88 * dim, 0.9 * dim, 0.92 * dim, a))
-			draw_rect(Rect2(c - Vector2(ts * 0.06, ts * 0.25), Vector2(ts * 0.12, ts * 0.5)), Color(0.2, 0.65, 0.6, a))
-			draw_rect(Rect2(c - Vector2(ts * 0.25, ts * 0.06), Vector2(ts * 0.5, ts * 0.12)), Color(0.2, 0.65, 0.6, a))
-		"cache":
-			draw_rect(r.grow(-ts * 0.12), Color(0.5 * dim, 0.45 * dim, 0.35 * dim, a))
-			draw_line(r.position + Vector2(ts * 0.1, ts * 0.45), r.position + Vector2(r.size.x - ts * 0.02, ts * 0.45), Color(0.3, 0.27, 0.2, a), 2.0)
-		"fusion":
-			draw_rect(r, Color(0.30 * dim, 0.32 * dim, 0.38 * dim, a))
-			draw_circle(c, ts * 0.30, Color(0.20, 0.22, 0.28, a))
-			draw_arc(c, ts * 0.24, 0, TAU, 20, Color(0.55, 0.85, 1.0, a * dim), 2.0)
-			draw_circle(c, ts * 0.12, Color(0.75, 0.95, 1.0, a * dim))
-		"catcher":
-			draw_rect(r.grow(-ts * 0.05), Color(0.25 * dim, 0.28 * dim, 0.34 * dim, a))
-			for i in 4:
-				var xx := r.position.x + ts * (0.18 + 0.2 * i)
-				draw_line(Vector2(xx, r.position.y + ts * 0.12), Vector2(xx, r.end.y - ts * 0.12), Color(0.75, 0.80, 0.90, a * dim), 2.0)
-			draw_circle(c, ts * 0.08, Color(1.0, 0.85, 0.40, a * dim))
-		"reclaimer":
-			draw_rect(r.grow(-ts * 0.1), Color(0.35 * dim, 0.42 * dim, 0.30 * dim, a))
-			draw_arc(c, ts * 0.22, 0.3, TAU - 0.6, 16, Color(0.6, 0.95, 0.5, a * dim), 3.0)
-		"fab":
-			draw_rect(r, Color(0.42 * dim, 0.42 * dim, 0.46 * dim, a))
-			for i in 3:
-				draw_rect(Rect2(r.position + Vector2(ts * (0.12 + 0.27 * i), ts * 0.55), Vector2(ts * 0.18, ts * 0.18)), Color(0.85, 0.9, 0.95, a * dim))
-			draw_line(r.position + Vector2(ts * 0.1, ts * 0.35), r.position + Vector2(r.size.x - ts * 0.1, ts * 0.35), Color(1.0, 0.72, 0.15, a * dim), 3.0)
-		"dronebay":
-			draw_rect(r.grow(-ts * 0.06), Color(0.30 * dim, 0.30 * dim, 0.34 * dim, a))
-			# A little six-wheeled rover.
-			for k in 3:
-				for side in [-1.0, 1.0]:
-					draw_rect(Rect2(c + Vector2(-ts * 0.24 + k * ts * 0.2 - ts * 0.06, side * ts * 0.17 - ts * 0.04), Vector2(ts * 0.12, ts * 0.08)), Color(0.08, 0.08, 0.09, a))
-			draw_rect(Rect2(c - Vector2(ts * 0.3, ts * 0.13), Vector2(ts * 0.6, ts * 0.26)), Color(1.0 * dim, 0.72 * dim, 0.15 * dim, a))
-			draw_rect(Rect2(c + Vector2(ts * 0.14, -ts * 0.09), Vector2(ts * 0.1, ts * 0.18)), Color(0.35, 0.65, 0.75, a))
-		"mast":
-			draw_line(c + Vector2(0, ts * 0.4), c - Vector2(0, ts * 0.4), Color(0.8, 0.82, 0.88, a), 3.0)
-			for k in 3:
-				draw_arc(c - Vector2(0, ts * 0.32), ts * (0.12 + 0.1 * k), PI * 1.15, PI * 1.85, 8, Color(0.5, 0.9, 1.0, a * dim * (1.0 - 0.25 * k)), 1.5)
-		"rescue":
-			draw_rect(r.grow(-ts * 0.06), Color(0.85 * dim, 0.35 * dim, 0.25 * dim, a))
-			draw_rect(Rect2(c - Vector2(ts * 0.06, ts * 0.24), Vector2(ts * 0.12, ts * 0.48)), Color(1, 1, 1, a))
-			draw_rect(Rect2(c - Vector2(ts * 0.24, ts * 0.06), Vector2(ts * 0.48, ts * 0.12)), Color(1, 1, 1, a))
-		"academy":
-			draw_rect(r.grow(-ts * 0.06), Color(0.40 * dim, 0.36 * dim, 0.55 * dim, a))
-			draw_colored_polygon(PackedVector2Array([c + Vector2(-ts * 0.3, -ts * 0.05), c + Vector2(0, -ts * 0.22), c + Vector2(ts * 0.3, -ts * 0.05), c + Vector2(0, ts * 0.1)]), Color(0.15, 0.15, 0.2, a))
-			draw_line(c + Vector2(ts * 0.22, -ts * 0.06), c + Vector2(ts * 0.22, ts * 0.2), Color(1.0, 0.8, 0.4, a * dim), 2.0)
-		"hazlab":
-			draw_rect(r, Color(0.25 * dim, 0.25 * dim, 0.28 * dim, a))
-			draw_rect(r, Color(1.0, 0.72, 0.15, a * dim), false, 3.0)
-			draw_circle(c, ts * 0.18, Color(0.75, 1.0, 0.35, a * dim))
-		"garden":
-			draw_rect(r.grow(-ts * 0.04), Color(0.20 * dim, 0.45 * dim, 0.25 * dim, a))
-			draw_circle(c + Vector2(ts * 0.12, ts * 0.12), ts * 0.14, Color(0.35, 0.65, 0.95, a * dim))
-			for p in [Vector2(-0.2, -0.18), Vector2(0.18, -0.2), Vector2(-0.22, 0.2)]:
-				draw_circle(c + p * ts, ts * 0.12, Color(0.40 * dim, 0.80 * dim, 0.40 * dim, a))
-		"lounge":
-			draw_rect(r.grow(-ts * 0.06), Color(0.30 * dim, 0.18 * dim, 0.35 * dim, a))
-			for k in 3:
-				draw_circle(r.position + Vector2(ts * (0.25 + 0.25 * k), ts * 0.5), ts * 0.08, [Color(1.0, 0.4, 0.8), Color(0.4, 0.9, 1.0), Color(1.0, 0.85, 0.3)][k] * Color(1, 1, 1, a * dim))
-		_:
-			draw_rect(r, base)
-	# Status markers.
+func _draw_structure(s: Dictionary, c: Vector2) -> void:
+	var tw := tile_size
+	var def := GameData.building(s["type"])
+	var conduit: bool = def.get("conduit", false)
+	var look := {
+		"built": bool(s["built"]),
+		"active": bool(s["active"]) or conduit or not s["built"],
+		"links": _links(s),
+	}
+	Sprites.draw_iso(self, s["type"], c, tw, look)
+	# Status markers above the tile.
+	var mark := c - Vector2(0, tw * 0.42)
 	if not s["built"]:
-		var def := GameData.building(s["type"])
-		var frac := float(s["progress"]) / maxf(1.0, GameData.num(def, "turns"))
-		draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x, 4)), Color(0, 0, 0, 0.6))
-		draw_rect(Rect2(r.position + Vector2(0, r.size.y - 4), Vector2(r.size.x * frac, 4)), Color(0.4, 0.9, 1.0))
+		var frac := float(s["progress"]) / maxf(1.0, float(s.get("build_turns", GameData.num(def, "turns"))))
+		var bar := Rect2(c + Vector2(-tw * 0.22, tw * 0.10), Vector2(tw * 0.44, maxf(3.0, tw * 0.04)))
+		draw_rect(bar, Color(0, 0, 0, 0.65))
+		draw_rect(Rect2(bar.position, Vector2(bar.size.x * frac, bar.size.y)), Color(0.4, 0.9, 1.0))
 	elif int(s["damaged"]) > 0:
-		draw_line(r.position, r.end, Color(1.0, 0.85, 0.2), 2.0)
-		draw_line(Vector2(r.position.x, r.end.y), Vector2(r.end.x, r.position.y), Color(1.0, 0.85, 0.2), 2.0)
-	elif not s["active"] and not GameData.building(s["type"]).get("conduit", false):
-		draw_circle(r.position + Vector2(r.size.x - 4, 4), 3.5, Color(1.0, 0.3, 0.3))
+		var k := tw * 0.07
+		draw_circle(mark, k * 1.5, Color(0, 0, 0, 0.6))
+		draw_line(mark - Vector2(k, k), mark + Vector2(k, k), Color(1.0, 0.85, 0.2), 2.5)
+		draw_line(mark + Vector2(-k, k), mark + Vector2(k, -k), Color(1.0, 0.85, 0.2), 2.5)
+	elif not s["active"] and not conduit:
+		draw_circle(mark, maxf(4.0, tw * 0.05), Color(0, 0, 0, 0.6))
+		draw_circle(mark, maxf(3.0, tw * 0.035), Color(1.0, 0.3, 0.3))

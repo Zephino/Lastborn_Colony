@@ -2,6 +2,25 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.37
+Date: 11/01/2026
+Time: 6:55 PM
+
+### Changes
+- **The game map is now angled (isometric) and uses the new sprites.** `scripts/ui/map_view.gd` was rewritten:
+  - Tiles are diamonds. Ground and buildings are drawn back to front, so nearer buildings cover farther ones.
+  - Every building, tunnel and ground tile uses the drawings from `scripts/ui/sprites.gd` and `sprites_more.gd`. Tunnels join neighbouring buildings automatically, and doors and airlocks show where they meet.
+  - Buildings under construction are faded and have a progress bar. Broken ones show a yellow cross above them, and idle ones a red dot.
+  - The night-side and day-side tint, the green or red placement preview, hover and the selected tile all work on the diamonds.
+  - Clicking, tapping, dragging, wheel and pinch zoom, the zoom buttons, the arrow keys and the Surface/Deep switch all work as before.
+  - The map starts zoomed in further (tiles 120 pixels wide on computers, 110 on phones), and zooms between 36 and 220.
+- The old flat map icons are gone.
+- New tests: every tap near the middle or corners of every tile, at three zoom and pan settings, finds the right tile, and centring on a tile puts it in the middle. 441 checks pass.
+- `tools/ui_shot.gd` now places a small colony before taking its screenshots.
+
+### Reason
+The owner chose the angled view for the game.
+
 ## Version 00.01.36
 Date: 11/01/2026
 Time: 6:30 PM

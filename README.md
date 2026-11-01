@@ -61,6 +61,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ### In the colony
 
+- **The map is shown at an angle.** Buildings are sealed domes, rounded halls and towers joined by tunnels, with airlocks at their doors.
 - **Build** by choosing a building on the left and clicking a tile. A new building must touch the colony. Lay **Heat Mains** (1 alloy each) to reach further out.
 - **Terrain matters.** Ice Drills go on ice, Vent Taps on vents (orange), and Seam Cutters on ore seams (teal streaks). Ridges, deep ice and scorched ground can't be built on.
 - **The climate band is the core trade-off.** Mirror Fields make more power the further east they are. Buildings need more heat the further west they are. Ice and vents are mostly in the west, so the best sites pull you in both directions. Selecting a tile shows its light and heat factor.
@@ -129,7 +130,8 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/ui/fleet_menu.gd` | The Drones & orbit dialog. |
 | `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |
 | `scripts/ui/main.gd` | All screens, built in code. |
-| `scripts/ui/map_view.gd` | Map drawing and mouse input. |
+| `scripts/ui/map_view.gd` | The angled (isometric) map: draws terrain and buildings back to front with the sprites, and turns clicks and taps into tiles. |
+| `scripts/ui/sprites.gd`, `scripts/ui/sprites_more.gd` | Every building, tunnel, drone, satellite and ground tile, drawn in code (top-down and angled). |
 | `scripts/net/` | Online features: leaderboard, Google sign-in, cloud save (`online.gd`), the Worker's address (`online_config.gd`). |
 | `scripts/ui/app_actions.gd` | Fullscreen, Install app and Update app. |
 | `leaderboard-api/` | The Cloudflare Worker behind the online features (not part of the game build). |

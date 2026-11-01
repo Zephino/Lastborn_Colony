@@ -27,6 +27,7 @@ static func run(check: Callable) -> void:
 	_waste_and_training(check)
 	_civic(check)
 	_saves(check)
+	_map_taps(check)
 
 
 ## A fresh colony with plenty of everything, and no random events.
@@ -242,3 +243,28 @@ static func _saves(check: Callable) -> void:
 	if typeof(upgraded) == TYPE_DICTIONARY:
 		Turn.end_turn(upgraded)
 		check.call(int(upgraded["turn"]) == int(s["turn"]) + 1, "and plays on")
+
+
+## The angled map: tapping the middle of any tile, or near its corners, finds
+## that tile, at any zoom and pan.
+static func _map_taps(check: Callable) -> void:
+	const MapView = preload("res://scripts/ui/map_view.gd")
+	var view: Control = MapView.new()
+	view.set_state(NewGame.create(5, "Margin"))
+	view.size = Vector2(900, 600)
+	var ok := true
+	for setup in [[120.0, Vector2.ZERO], [50.0, Vector2(130, -40)], [200.0, Vector2(-300, 220)]]:
+		view.tile_size = setup[0]
+		view.pan = setup[1]
+		for y in int(view.state["height"]):
+			for x in int(view.state["width"]):
+				var c: Vector2 = view.cell_center(Vector2i(x, y))
+				var tw: float = view.tile_size
+				for off in [Vector2.ZERO, Vector2(tw * 0.4, 0), Vector2(-tw * 0.4, 0), Vector2(0, tw * 0.2), Vector2(0, -tw * 0.2)]:
+					if view.cell_at(c + off) != Vector2i(x, y):
+						ok = false
+	check.call(ok, "the angled map finds the right tile for every tap, at any zoom and pan")
+	view.tile_size = 120.0
+	view.center_on(Vector2i(3, 4))
+	check.call(view.cell_at(view.size * 0.5) == Vector2i(3, 4), "centring the map on a tile puts it in the middle")
+	view.free()
