@@ -93,10 +93,29 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 static func _back_gear(ci: CanvasItem, pack: Vector2, u: float, job: String, facing: float) -> void:
 	match job:
 		"worker":
-			# A pickaxe slung across the back: the handle, and the head above the shoulder.
-			var top := pack + Vector2(-facing * u * 1.6, -u * 4.4)
-			ci.draw_line(pack + Vector2(facing * u * 1.0, u * 1.8), top, Color(0.55, 0.38, 0.22), u * 0.55)
-			ci.draw_colored_polygon(PackedVector2Array([top + Vector2(-u * 1.6, u * 0.5), top + Vector2(0, -u * 0.5), top + Vector2(u * 1.6, u * 0.2), top + Vector2(0, u * 0.3)]), Color(0.62, 0.64, 0.68))
+			# A pickaxe slung across the back: a wooden handle, and a curved steel
+			# head across its top that tapers to a point at each end.
+			var low := pack + Vector2(facing * u * 1.1, u * 1.6)
+			var top := pack + Vector2(-facing * u * 1.2, -u * 4.2)
+			var along := (top - low).normalized()
+			var across := along.orthogonal()
+			ci.draw_line(low, top + along * u * 0.3, Color(0.55, 0.38, 0.22), u * 0.5)
+			ci.draw_line(low, top + along * u * 0.3, Color(0.68, 0.50, 0.30), u * 0.18)
+			var head := top + along * u * 0.2
+			var upper := PackedVector2Array()
+			var lower := PackedVector2Array()
+			for i in 9:
+				var t := float(i) / 8.0 * 2.0 - 1.0
+				var centre := head + across * t * u * 2.3 - along * t * t * u * 0.8
+				var w := u * 0.45 * (1.0 - absf(t) * 0.92)
+				upper.append(centre + along * w)
+				lower.append(centre - along * w)
+			lower.reverse()
+			var blade := upper.duplicate()
+			blade.append_array(lower)
+			ci.draw_colored_polygon(blade, Color(0.66, 0.68, 0.72))
+			ci.draw_polyline(upper, Color(0.88, 0.90, 0.94), maxf(1.0, u * 0.15))
+			ci.draw_rect(Rect2(head - Vector2(u * 0.35, u * 0.35), Vector2(u * 0.7, u * 0.7)), Color(0.32, 0.33, 0.36))
 		"scientist":
 			# A tall antenna with a glowing tip, and a small dish.
 			var mast_top := pack + Vector2(-facing * u * 0.4, -u * 6.2)

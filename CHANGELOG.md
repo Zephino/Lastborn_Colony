@@ -2,6 +2,19 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.49
+Date: 11/01/2026
+Time: 10:35 PM
+
+### Changes
+- **The worker's pickaxe was redrawn** (`scripts/ui/people.gd`):
+  - a wooden handle with a lighter grain line;
+  - a curved steel head across its top that tapers to a point at each end, with a highlight along its upper edge;
+  - a dark socket where the head meets the handle.
+
+### Reason
+The owner said the pickaxe looked weird.
+
 ## Version 00.01.48
 Date: 11/01/2026
 Time: 10:25 PM
