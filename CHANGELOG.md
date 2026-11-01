@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.21
+Date: 11/01/2026
+Time: 1:34 PM
+
+### Changes
+Sprite concepts in `scripts/ui/sprites.gd` (still not used in the game):
+- **Survey Lab, more scientific:** a glowing hologram of an atom (three orbits, a core and electrons) inside the dome, a telescope looking out of the observatory slit, a satellite dish on a stand, a short sensor mast with a red light, and three glowing specimen tubes (green, cyan, violet).
+- **Vent Tap and Forge now look different:**
+  - **Vent Tap:** no chimney. A glowing magma pool shows through the glass, radiator fin banks stand on both sides, a big red valve wheel is on the front, and white steam escapes from a relief valve.
+  - **Forge:** twin smokestacks with dark smoke, a conveyor belt bringing ore in, a crucible glowing through the glass, a furnace door throwing sparks, and a stack of finished alloy bars.
+- **Launch Rail, new design:** a launch track climbs toward the sky on pylons, with twin gold rails and four glowing accelerator coils. A white cargo pod waits at the bottom, and a small control dome sits in front with a feed tube up to the track.
+
+### Reason
+The owner asked for a more scientific Survey Lab, a better Launch Rail, and for the Vent Tap and Forge to look different, because they were nearly the same.
+
 ## Version 00.01.20
 Date: 11/01/2026
 Time: 8:56 AM

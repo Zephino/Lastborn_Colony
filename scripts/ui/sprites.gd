@@ -42,10 +42,10 @@ const ACCENT := {
 const INTERIOR := {
 	"hull": Color(0.30, 0.26, 0.22), "vat": Color(0.08, 0.34, 0.22), "commons": Color(0.14, 0.40, 0.22),
 	"clinic": Color(0.80, 0.86, 0.90), "drill": Color(0.14, 0.26, 0.44), "splitter": Color(0.20, 0.32, 0.42),
-	"forge": Color(0.30, 0.16, 0.10), "lab": Color(0.20, 0.16, 0.32),
+	"forge": Color(0.30, 0.16, 0.10), "lab": Color(0.20, 0.16, 0.32), "vent": Color(0.22, 0.08, 0.04),
 }
 ## Dome size (radius, as a fraction of a tile) for each building.
-const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.40}
+const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.22, "vent": 0.34, "forge": 0.34}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 
@@ -185,11 +185,63 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 				ci.draw_circle(c + Vector2(side * s * 0.34, -s * 0.30), s * 0.12, m)
 				ci.draw_circle(c + Vector2(side * s * 0.34, -s * 0.30), s * 0.07, _fade(Color(0.85, 0.95, 1.0), state))
 		"rail":
-			ci.draw_rect(Rect2(c + Vector2(0, -s * 0.10), Vector2(s * 0.5, s * 0.20)), md)
-			ci.draw_line(c + Vector2(0, -s * 0.06), c + Vector2(s * 0.5, -s * 0.06), a, 2.0)
-			ci.draw_line(c + Vector2(0, s * 0.06), c + Vector2(s * 0.5, s * 0.06), a, 2.0)
+			# The launch track across the back of the tile: a bed, twin rails,
+			# glowing accelerator coils, and a cargo pod waiting at the start.
+			var y := c.y - s * 0.33
+			ci.draw_rect(Rect2(Vector2(r.position.x, y - s * 0.09), Vector2(s, s * 0.18)), md)
+			ci.draw_line(Vector2(r.position.x, y - s * 0.045), Vector2(r.end.x, y - s * 0.045), a, 2.0)
+			ci.draw_line(Vector2(r.position.x, y + s * 0.045), Vector2(r.end.x, y + s * 0.045), a, 2.0)
+			for k in 5:
+				var x := r.position.x + s * (0.30 + k * 0.15)
+				ci.draw_rect(Rect2(Vector2(x - s * 0.025, y - s * 0.13), Vector2(s * 0.05, s * 0.26)), m)
+				ci.draw_rect(Rect2(Vector2(x - s * 0.012, y - s * 0.12), Vector2(s * 0.024, s * 0.24)), _fade(CYAN, state))
+			var pod := Rect2(Vector2(r.position.x + s * 0.05, y - s * 0.06), Vector2(s * 0.18, s * 0.12))
+			ci.draw_rect(pod, _fade(WHITE, state))
+			ci.draw_rect(Rect2(pod.position + Vector2(pod.size.x - s * 0.04, 0), Vector2(s * 0.04, pod.size.y)), a)
+			# A feed tube from the control dome up to the track.
+			ci.draw_line(c, Vector2(c.x, y + s * 0.09), md, s * 0.06)
+			_glow(ci, Vector2(r.end.x - s * 0.03, y), s * 0.035, _fade(CYAN, state), state)
+		"vent":
+			# Radiator fins on both sides carry the heat away.
+			for side in [-1.0, 1.0]:
+				var fin := Rect2(c + Vector2(side * s * 0.36 - s * 0.07, -s * 0.30), Vector2(s * 0.14, s * 0.60))
+				ci.draw_rect(fin, md)
+				for k in 7:
+					var fy := fin.position.y + s * 0.04 + k * s * 0.08
+					ci.draw_line(Vector2(fin.position.x + 2, fy), Vector2(fin.end.x - 2, fy), _fade(Color(0.95, 0.72, 0.35), state), 1.5)
+			# Relief valves letting off white steam.
+			if _lit(state):
+				for k in 3:
+					ci.draw_circle(c + Vector2(-s * 0.22 + k * s * 0.05, -s * 0.40 - k * s * 0.03), s * (0.04 + k * 0.015), Color(0.95, 0.95, 1.0, 0.35 - k * 0.08))
+		"forge":
+			# A conveyor belt bringing ore in from the left, with ore on it.
+			var belt := Rect2(Vector2(r.position.x, c.y - s * 0.07), Vector2(s * 0.30, s * 0.14))
+			ci.draw_rect(belt, md)
+			for k in 4:
+				ci.draw_line(Vector2(belt.position.x + k * s * 0.08, belt.position.y), Vector2(belt.position.x + k * s * 0.08, belt.end.y), m, 1.0)
+			for k in 2:
+				ci.draw_circle(Vector2(belt.position.x + s * (0.06 + k * 0.12), c.y), s * 0.035, _fade(Color(0.45, 0.42, 0.40), state))
+			# Finished alloy bars stacked at the front-right.
+			for k in 3:
+				var bar := Rect2(c + Vector2(s * 0.20 + (k % 2) * s * 0.07, s * 0.30 - (k / 2) * s * 0.06), Vector2(s * 0.12, s * 0.05))
+				ci.draw_rect(bar, _fade(Color(0.80, 0.84, 0.90), state))
+				ci.draw_rect(bar, md, false, 1.0)
 		"drill":
 			ci.draw_circle(c + Vector2(s * 0.30, s * 0.30), s * 0.13, _fade(Color(0.25, 0.45, 0.75), state))
+		"lab":
+			# A satellite dish at the back-right corner.
+			var dish := c + Vector2(s * 0.33, -s * 0.33)
+			ci.draw_circle(dish, s * 0.13, md)
+			ci.draw_circle(dish, s * 0.11, _fade(Color(0.85, 0.88, 0.94), state))
+			ci.draw_arc(dish, s * 0.07, 0, TAU, 16, _fade(Color(0.6, 0.65, 0.72), state), 1.0)
+			ci.draw_line(dish, dish + Vector2(-s * 0.06, s * 0.06), md, 2.0)
+			ci.draw_circle(dish + Vector2(-s * 0.06, s * 0.06), s * 0.02, a)
+			# Glowing specimen tubes along the front-left.
+			for k in 3:
+				var tube := c + Vector2(-s * 0.40 + k * s * 0.09, s * 0.36)
+				var col: Color = [GREEN, CYAN, VIOLET][k]
+				ci.draw_circle(tube, s * 0.045, md)
+				_glow(ci, tube, s * 0.03, _fade(col, state), state)
 	_top_dome(ci, c, rad, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
 	# Every side without a tunnel still has a capped orange port, ready for one.
 	for d in DIRS:
@@ -207,9 +259,20 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 		"mirror":
 			_glow(ci, c, s * 0.05, a, state)
 		"vent":
-			ci.draw_circle(c, rad * 0.45, md)
-			ci.draw_circle(c, rad * 0.30, Color(0.05, 0.03, 0.02, a.a))
-			_glow(ci, c, rad * 0.22, a, state)
+			# The vent itself under the glass: a glowing magma pool with cracks.
+			var hot := _fade(Color(1.0, 0.42, 0.10), state)
+			ci.draw_circle(c, rad * 0.55, _fade(Color(0.35, 0.10, 0.04), state))
+			ci.draw_circle(c, rad * 0.42, hot.darkened(0.2))
+			ci.draw_circle(c, rad * 0.25, _fade(Color(1.0, 0.80, 0.30), state))
+			for k in 5:
+				var dir := Vector2.from_angle(k * TAU / 5.0 + 0.3)
+				ci.draw_line(c + dir * rad * 0.55, c + dir * rad * 0.80, hot, 1.5)
+			_glow(ci, c, rad * 0.20, hot, state)
+			# A big valve wheel on the front.
+			var wheel := c + Vector2(rad * 0.62, rad * 0.62)
+			ci.draw_arc(wheel, s * 0.08, 0, TAU, 18, _fade(Color(0.85, 0.25, 0.20), state), 3.0)
+			for k in 3:
+				ci.draw_line(wheel, wheel + Vector2.from_angle(k * TAU / 3.0) * s * 0.08, _fade(Color(0.85, 0.25, 0.20), state), 2.0)
 		"drill":
 			ci.draw_line(c - Vector2(rad * 0.6, 0), c + Vector2(rad * 0.6, 0), m, 2.0)
 			ci.draw_line(c - Vector2(0, rad * 0.6), c + Vector2(0, rad * 0.6), m, 2.0)
@@ -230,11 +293,21 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			for i in 8:
 				ci.draw_line(hub, hub + Vector2.from_angle(i * TAU / 8.0) * rad * 0.5, m, 2.0)
 		"forge":
-			ci.draw_circle(c + Vector2(rad * 0.35, -rad * 0.35), rad * 0.22, md)
-			ci.draw_circle(c + Vector2(rad * 0.35, -rad * 0.35), rad * 0.12, Color(0.05, 0.05, 0.05, a.a))
-			_glow(ci, c + Vector2(-rad * 0.15, rad * 0.15), rad * 0.28, a, state)
+			# The crucible pouring molten metal, with sparks.
+			ci.draw_circle(c + Vector2(-rad * 0.10, rad * 0.10), rad * 0.34, md)
+			_glow(ci, c + Vector2(-rad * 0.10, rad * 0.10), rad * 0.24, a, state)
+			if _lit(state):
+				for k in 6:
+					ci.draw_circle(c + Vector2(-rad * 0.10, rad * 0.10) + Vector2.from_angle(k * 1.1) * rad * (0.36 + 0.08 * (k % 3)), 1.5, Color(1.0, 0.85, 0.4, 0.9))
+			# Twin smokestacks with dark smoke.
+			for k in 2:
+				var stack := c + Vector2(rad * (0.30 + k * 0.32), -rad * (0.55 - k * 0.15))
+				ci.draw_circle(stack, s * 0.065, md.darkened(0.2))
+				ci.draw_circle(stack, s * 0.035, Color(0.04, 0.04, 0.04, a.a))
+				if _lit(state):
+					ci.draw_circle(stack + Vector2(s * 0.05, -s * 0.06), s * 0.05, Color(0.20, 0.20, 0.22, 0.45))
 		"rail":
-			_glow(ci, c + Vector2(s * 0.42, 0), s * 0.05, a, state)
+			_glow(ci, c, s * 0.035, a, state)
 		"commons":
 			for p in [Vector2(-0.3, -0.25), Vector2(0.32, -0.1), Vector2(0, 0.35), Vector2(-0.28, 0.25)]:
 				ci.draw_circle(c + p * rad, rad * 0.20, a)
@@ -245,9 +318,23 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			for i in 4:
 				ci.draw_rect(Rect2(c + Vector2((i % 2) * rad * 0.5 - rad * 0.48, (i / 2) * rad * 0.5 - rad * 0.48), Vector2(rad * 0.44, rad * 0.44)), md.lightened(0.2))
 		"lab":
-			ci.draw_rect(Rect2(c - Vector2(rad * 0.08, rad * 0.86), Vector2(rad * 0.16, rad * 1.72)), md)
-			ci.draw_line(c, c + Vector2(rad * 0.6, -rad * 0.6), a, 3.0)
-			_glow(ci, c + Vector2(rad * 0.6, -rad * 0.6), s * 0.04, a, state)
+			# Observatory slit across the dome, and the telescope looking out of it.
+			ci.draw_rect(Rect2(c - Vector2(rad * 0.08, rad * 0.86), Vector2(rad * 0.16, rad * 0.86)), md)
+			ci.draw_line(c, c + Vector2(0, -rad * 0.75), m.lightened(0.2), maxf(2.0, s * 0.04))
+			ci.draw_circle(c + Vector2(0, -rad * 0.75), s * 0.03, _fade(Color(0.6, 0.85, 1.0), state))
+			# A hologram of an atom: three orbits and a glowing core.
+			var holo := _fade(Color(0.75, 0.60, 1.0, 0.9), state)
+			var core := c + Vector2(0, rad * 0.22)
+			for k in 3:
+				var orbit := PackedVector2Array()
+				for i in 25:
+					var t := i * TAU / 24.0
+					orbit.append(core + Vector2(cos(t) * rad * 0.42, sin(t) * rad * 0.14).rotated(k * PI / 3.0))
+				ci.draw_polyline(orbit, holo, 1.5)
+			_glow(ci, core, s * 0.035, holo, state)
+			# Electrons.
+			for k in 3:
+				_glow(ci, core + Vector2(rad * 0.42, 0).rotated(k * PI / 3.0 + 0.6), s * 0.012, _fade(CYAN, state), state)
 		"workshop":
 			ci.draw_line(c + Vector2(-rad * 0.7, -rad * 0.2), c + Vector2(rad * 0.7, -rad * 0.2), m, 3.0)
 			ci.draw_rect(Rect2(c + Vector2(rad * 0.1, -rad * 0.32), Vector2(rad * 0.24, rad * 0.24)), a)
@@ -538,6 +625,46 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 				_iso_sphere(ci, _iso(c, tw, 0.34, v - 0.04, 0.32), tw * 0.08, _fade(Color(0.85, 0.95, 1.0), state))
 		"drill":
 			_cyl(ci, c, tw, -0.30, 0.30, 0.13, 0.26, _fade(Color(0.25, 0.45, 0.75), state), a.darkened(0.2))
+		"rail":
+			_iso_launch_track(ci, c, tw, state)
+		"vent":
+			# Radiator fin banks behind the dome, and steam from relief valves.
+			for u in [-0.36, 0.30]:
+				var v0 := -0.40 if u > 0 else -0.10
+				_box(ci, c, tw, u - 0.05, v0, u + 0.05, v0 + 0.32, 0.30, md)
+				for k in 6:
+					var hgt := 0.05 + k * 0.045
+					ci.draw_line(_iso(c, tw, u + 0.05, v0, hgt), _iso(c, tw, u + 0.05, v0 + 0.32, hgt), _fade(Color(0.95, 0.72, 0.35), state), 1.2)
+			_cyl(ci, c, tw, -0.05, -0.36, 0.035, 0.40, m, m)
+			if _lit(state):
+				for k in 3:
+					ci.draw_circle(_iso(c, tw, -0.05, -0.36, 0.48 + k * 0.10) + Vector2(k * tw * 0.03, 0), tw * (0.04 + k * 0.018), Color(0.95, 0.95, 1.0, 0.30 - k * 0.07))
+		"forge":
+			# Conveyor bringing ore in from the back-left, and twin smokestacks behind.
+			_box(ci, c, tw, -0.50, -0.08, -0.20, 0.08, 0.10, md, m.darkened(0.1))
+			for k in 2:
+				_iso_sphere(ci, _iso(c, tw, -0.44 + k * 0.12, 0, 0.13), tw * 0.025, _fade(Color(0.45, 0.42, 0.40), state))
+			for k in 2:
+				_cyl(ci, c, tw, 0.04 + k * 0.18, -0.30 + k * 0.06, 0.05, 0.46 - k * 0.06, md.darkened(0.15), Color(0.05, 0.05, 0.05, a.a))
+		"lab":
+			# Sensor mast at the back, with a blinking light.
+			var mast := _iso(c, tw, -0.36, -0.30)
+			ci.draw_line(mast, mast - Vector2(0, tw * 0.40), md.lightened(0.2), tw * 0.014)
+			for k in 2:
+				ci.draw_line(mast - Vector2(tw * 0.04, tw * (0.26 + k * 0.08)), mast - Vector2(-tw * 0.04, tw * (0.26 + k * 0.08)), md.lightened(0.2), 1.5)
+			_glow(ci, mast - Vector2(0, tw * 0.42), tw * 0.016, _fade(Color(1.0, 0.35, 0.35), state), state)
+			# Satellite dish on a stand, at the back-right, tilted to the sky.
+			var foot := _iso(c, tw, 0.34, -0.34)
+			var head := foot - Vector2(0, tw * 0.22)
+			ci.draw_line(foot, head, md, tw * 0.02)
+			var dish := _ellipse(head + Vector2(tw * 0.02, -tw * 0.04), tw * 0.13, tw * 0.07, 0, 360, 24)
+			var tilted := PackedVector2Array()
+			for p in dish:
+				tilted.append(head + (p - head).rotated(-0.45))
+			ci.draw_colored_polygon(tilted, _fade(Color(0.86, 0.89, 0.95), state))
+			ci.draw_polyline(tilted, md, 1.5)
+			ci.draw_line(head, head + Vector2(tw * 0.06, -tw * 0.12), md, 1.5)
+			_glow(ci, head + Vector2(tw * 0.06, -tw * 0.12), tw * 0.012, a, state)
 	_iso_dome(ci, c, tw, r, h, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
 	var apex := _iso(c, tw, 0, 0, 0.05 + h)
 	# Features on or through the dome.
@@ -549,11 +676,19 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 		"mirror":
 			_glow(ci, apex, tw * 0.025, a, state)
 		"vent":
-			_cyl(ci, c, tw, 0.10, -0.10, 0.07, 0.30, md, Color(0.06, 0.04, 0.03, a.a), h * 0.6)
-			if _lit(state):
-				for i in 3:
-					ci.draw_circle(_iso(c, tw, 0.10, -0.10, h * 0.6 + 0.38 + i * 0.10) + Vector2(i * tw * 0.03, 0), tw * (0.05 + i * 0.02), Color(0.9, 0.9, 0.95, 0.22 - i * 0.06))
-			_glow(ci, _iso(c, tw, 0, 0, 0.12), tw * 0.06, a, state)
+			# The magma pool glowing inside the dome.
+			var hot := _fade(Color(1.0, 0.42, 0.10), state)
+			var pool := _iso(c, tw, 0, 0, 0.07)
+			ci.draw_colored_polygon(_ellipse(pool, r * tw * 0.50, r * tw * 0.25), _fade(Color(0.35, 0.10, 0.04), state))
+			ci.draw_colored_polygon(_ellipse(pool, r * tw * 0.36, r * tw * 0.18), hot.darkened(0.15))
+			ci.draw_colored_polygon(_ellipse(pool, r * tw * 0.20, r * tw * 0.10), _fade(Color(1.0, 0.80, 0.30), state))
+			_glow(ci, pool, tw * 0.05, hot, state)
+			# A big red valve wheel on the front.
+			var wheel := _iso(c, tw, r * 0.95, r * 0.40, 0.12)
+			var red := _fade(Color(0.85, 0.25, 0.20), state)
+			ci.draw_polyline(_ellipse(wheel, tw * 0.045, tw * 0.055), red, 2.5)
+			for k in 3:
+				ci.draw_line(wheel, wheel + Vector2(cos(k * TAU / 3.0) * tw * 0.045, sin(k * TAU / 3.0) * tw * 0.055), red, 1.5)
 		"drill":
 			for k in [Vector2(-0.12, -0.12), Vector2(0.12, -0.12), Vector2(0.0, 0.12)]:
 				ci.draw_line(_iso(c, tw, k.x, k.y, h * 0.8), apex - Vector2(0, tw * 0.40), m, tw * 0.015)
@@ -576,17 +711,25 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 				ci.draw_line(hub, hub + Vector2.from_angle(i * TAU / 8.0) * tw * 0.12, md, 2.0)
 			ci.draw_arc(hub, tw * 0.10, 0, TAU, 20, a, 2.0)
 		"forge":
-			_cyl(ci, c, tw, -0.10, -0.10, 0.07, 0.40, md, Color(0.05, 0.05, 0.05, a.a), h * 0.5)
+			# Dark smoke from the stacks, a glowing furnace door, and sparks.
+			if _lit(state):
+				for k in 2:
+					var top := _iso(c, tw, 0.04 + k * 0.18, -0.30 + k * 0.06, 0.46 - k * 0.06)
+					for j in 3:
+						ci.draw_circle(top - Vector2(-j * tw * 0.03, tw * (0.05 + j * 0.06)), tw * (0.035 + j * 0.015), Color(0.20, 0.20, 0.22, 0.45 - j * 0.12))
 			var mouth := _iso(c, tw, 0.05, r * 0.9, 0.10)
-			ci.draw_colored_polygon(_ellipse(mouth, tw * 0.07, tw * 0.05, 180, 360, 10), a)
-			_glow(ci, mouth, tw * 0.04, a, state)
+			ci.draw_colored_polygon(_ellipse(mouth, tw * 0.08, tw * 0.06, 180, 360, 10), a)
+			_glow(ci, mouth, tw * 0.045, a, state)
+			if _lit(state):
+				for k in 5:
+					ci.draw_circle(mouth + Vector2(cos(k * 1.3) * tw * 0.09, -absf(sin(k * 1.3)) * tw * 0.08), 1.5, Color(1.0, 0.85, 0.4, 0.9))
+			# Finished alloy bars stacked at the front-right.
+			for k in 3:
+				var u := 0.30 + (k % 2) * 0.08
+				var z := 0.0 + (k / 2) * 0.04
+				_box(ci, c, tw, u - 0.04, 0.30, u + 0.03, 0.42, 0.035, _fade(Color(0.80, 0.84, 0.90), state), Color(0, 0, 0, 0), z)
 		"rail":
-			# The launch ramp leaves the dome toward the viewer, so it goes in front.
-			var ramp := PackedVector2Array([_iso(c, tw, r * 0.6, -0.13, 0.05), _iso(c, tw, 0.50, -0.13, 0.36), _iso(c, tw, 0.50, 0.13, 0.36), _iso(c, tw, r * 0.6, 0.13, 0.05)])
-			ci.draw_colored_polygon(ramp, md)
-			ci.draw_line(_iso(c, tw, r * 0.6, -0.07, 0.06), _iso(c, tw, 0.50, -0.07, 0.37), a, 2.0)
-			ci.draw_line(_iso(c, tw, r * 0.6, 0.07, 0.06), _iso(c, tw, 0.50, 0.07, 0.37), a, 2.0)
-			_glow(ci, _iso(c, tw, 0.47, 0, 0.36), tw * 0.035, a, state)
+			_glow(ci, _iso(c, tw, 0, 0, 0.10), tw * 0.03, a, state)
 		"commons":
 			for p in [Vector2(-0.12, 0.05), Vector2(0.12, -0.06), Vector2(0.0, 0.14)]:
 				ci.draw_circle(_iso(c, tw, p.x, p.y, 0.14), tw * 0.05, a)
@@ -598,10 +741,29 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			ci.draw_rect(Rect2(_iso(c, tw, 0.05, 0.20, 0.10) - Vector2(tw * 0.06, tw * 0.04), Vector2(tw * 0.12, tw * 0.08)), md.lightened(0.2))
 			ci.draw_rect(Rect2(_iso(c, tw, 0.05, 0.20, 0.10) - Vector2(tw * 0.06, tw * 0.04), Vector2(tw * 0.12, tw * 0.08)), a, false, 1.5)
 		"lab":
+			# Observatory slit and a telescope tube pointing out of it.
 			var slit := PackedVector2Array([apex + Vector2(-tw * 0.03, 0), apex + Vector2(tw * 0.03, 0), _iso(c, tw, 0.0, 0.30, 0.10) + Vector2(tw * 0.03, 0), _iso(c, tw, 0.0, 0.30, 0.10) + Vector2(-tw * 0.03, 0)])
 			ci.draw_colored_polygon(slit, md)
-			ci.draw_line(apex, apex + Vector2(tw * 0.14, -tw * 0.20), a, 3.0)
-			_glow(ci, apex + Vector2(tw * 0.14, -tw * 0.20), tw * 0.025, a, state)
+			var eye := apex + Vector2(-tw * 0.10, -tw * 0.17)
+			ci.draw_line(apex + Vector2(0, tw * 0.03), eye, m.lightened(0.25), tw * 0.035)
+			ci.draw_circle(eye, tw * 0.02, _fade(Color(0.6, 0.85, 1.0), state))
+			# The atom hologram glowing inside the glass.
+			var holo := _fade(Color(0.75, 0.60, 1.0, 0.9), state)
+			var core := _iso(c, tw, 0, 0, 0.17)
+			for k in 3:
+				var orbit := PackedVector2Array()
+				for i in 25:
+					var t := i * TAU / 24.0
+					orbit.append(core + Vector2(cos(t) * tw * 0.11, sin(t) * tw * 0.035).rotated(k * PI / 3.0))
+				ci.draw_polyline(orbit, holo, 1.5)
+			_glow(ci, core, tw * 0.022, holo, state)
+			for k in 3:
+				_glow(ci, core + Vector2(tw * 0.11, 0).rotated(k * PI / 3.0 + 0.6), tw * 0.008, _fade(CYAN, state), state)
+			# Glowing specimen tubes in front.
+			for k in 3:
+				var col: Color = [GREEN, CYAN, VIOLET][k]
+				_cyl(ci, c, tw, -0.28 + k * 0.10, 0.40, 0.035, 0.12, _fade(col, state).darkened(0.1), _fade(col, state))
+				_glow(ci, _iso(c, tw, -0.28 + k * 0.10, 0.40, 0.12), tw * 0.012, _fade(col, state), state)
 		"workshop":
 			ci.draw_line(_iso(c, tw, 0.30, -0.30, 0.0), _iso(c, tw, 0.30, -0.30, 0.62), md, tw * 0.025)
 			ci.draw_line(_iso(c, tw, 0.30, -0.30, 0.62), _iso(c, tw, -0.10, -0.30, 0.62), md, tw * 0.025)
@@ -742,6 +904,48 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true)
+
+
+## The Launch Rail's track at an angle: it runs along the back of the tile and
+## climbs toward the sky, on pylons, through glowing accelerator coils, with a
+## cargo pod waiting at the bottom. The small control dome sits in front of it.
+static func _iso_launch_track(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var gold := _fade(GOLD, state)
+	var cyan := _fade(CYAN, state)
+	var v := -0.30
+	var u0 := -0.48
+	var u1 := 0.50
+	var z0 := 0.05
+	var z1 := 0.42
+	var height := func(u: float) -> float: return lerpf(z0, z1, (u - u0) / (u1 - u0))
+	# Pylons from the ground up to the track.
+	for u in [-0.15, 0.15, 0.42]:
+		var zt: float = height.call(u)
+		ci.draw_line(_iso(c, tw, u, v - 0.05), _iso(c, tw, u, v - 0.05, zt), md.lightened(0.15), tw * 0.016)
+		ci.draw_line(_iso(c, tw, u, v + 0.05), _iso(c, tw, u, v + 0.05, zt), md.lightened(0.15), tw * 0.016)
+	# The track bed and its two rails.
+	var bed := PackedVector2Array([_iso(c, tw, u0, v - 0.07, z0), _iso(c, tw, u1, v - 0.07, z1), _iso(c, tw, u1, v + 0.07, z1), _iso(c, tw, u0, v + 0.07, z0)])
+	ci.draw_colored_polygon(bed, md)
+	ci.draw_line(_iso(c, tw, u0, v - 0.045, z0 + 0.01), _iso(c, tw, u1, v - 0.045, z1 + 0.01), gold, 2.0)
+	ci.draw_line(_iso(c, tw, u0, v + 0.045, z0 + 0.01), _iso(c, tw, u1, v + 0.045, z1 + 0.01), gold, 2.0)
+	# Accelerator coils: glowing rings around the track.
+	var across := Vector2(-0.5, 0.25) * tw
+	for u in [-0.25, -0.02, 0.21, 0.44]:
+		var ctr := _iso(c, tw, u, v, float(height.call(u)) + 0.05)
+		var ring := PackedVector2Array()
+		for i in 25:
+			var th := i * TAU / 24.0
+			ring.append(ctr + (across * cos(th) + Vector2(0, -tw) * sin(th)) * 0.075)
+		ci.draw_polyline(ring, m, 4.0)
+		ci.draw_polyline(ring, cyan, 2.0)
+	# The cargo pod at the bottom of the track.
+	var pod := _iso(c, tw, -0.38, v, z0 + 0.05)
+	ci.draw_colored_polygon(_ellipse(pod, tw * 0.07, tw * 0.035), _fade(WHITE, state))
+	ci.draw_polyline(_ellipse(pod, tw * 0.07, tw * 0.035), md, 1.5)
+	ci.draw_circle(pod + Vector2(tw * 0.05, -tw * 0.01), tw * 0.012, gold)
+	_glow(ci, _iso(c, tw, u1, v, z1 + 0.05), tw * 0.03, cyan, state)
 
 
 static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> void:
