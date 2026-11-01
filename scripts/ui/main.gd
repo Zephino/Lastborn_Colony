@@ -18,6 +18,7 @@ const SetupFlow = preload("res://scripts/ui/setup_flow.gd")
 const ColonyText = preload("res://scripts/ui/colony_text.gd")
 const Menus = preload("res://scripts/ui/menus.gd")
 const FleetMenu = preload("res://scripts/ui/fleet_menu.gd")
+const SpriteIcon = preload("res://scripts/ui/sprite_icon.gd")
 const UiUtil = preload("res://scripts/ui/ui_util.gd")
 const TextRules = preload("res://scripts/sim/text_rules.gd")
 
@@ -52,6 +53,8 @@ var player_name := ""
 var settings_open := false
 var menus: RefCounted
 var fleet_menu: RefCounted
+## The picture of the selected building at the top of the side panel.
+var building_pic: Control
 var signed_in_label: Label
 var narrow_game := false
 var ui_theme: Theme
@@ -339,7 +342,11 @@ func show_game() -> void:
 			b.tooltip_text = def["desc"]
 			b.clip_text = true
 			b.pressed.connect(func() -> void: _set_build("" if map_view.build_type == id else id))
-			menu.add_child(b)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var row := HBoxContainer.new()
+			row.add_child(SpriteIcon.new(id, 40.0))
+			row.add_child(b)
+			menu.add_child(row)
 			build_buttons[id] = b
 
 	map_view = MapView.new()
@@ -355,6 +362,10 @@ func show_game() -> void:
 	middle.add_child(right)
 	var right_box := VBoxContainer.new()
 	right.add_child(right_box)
+	building_pic = SpriteIcon.new("", 120.0)
+	building_pic.custom_minimum_size = Vector2(0, 120)
+	building_pic.visible = false
+	right_box.add_child(building_pic)
 	inspector = RichTextLabel.new()
 	inspector.bbcode_enabled = true
 	inspector.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -501,7 +512,7 @@ func show_build_menu() -> void:
 			if def["category"] != cat[0] or not def.get("buildable", true):
 				continue
 			var price := Actions.price_text(state, id, true)
-			options.append(["%s (%s)\n%s" % [def["name"], price, def["desc"]], _pick_build.bind(id), Actions.affordable(state, id) and state["ending"] == ""])
+			options.append(["%s (%s)\n%s" % [def["name"], price, def["desc"]], _pick_build.bind(id), Actions.affordable(state, id) and state["ending"] == "", id])
 	options.append(["Back", close_modal, true])
 	show_modal("Build", "You have %d alloy and %d parts. Choose a building, then tap a tile next to the colony. Dragging the map never builds." % [int(state["stock"]["alloy"]), int(state["stock"]["parts"])], options, true)
 
@@ -768,6 +779,8 @@ func _refresh_inspector() -> void:
 	var s := _selected_structure()
 	demolish_button.visible = not s.is_empty() and s["type"] != "hull"
 	inspector.text = ColonyText.summary(state) if c.x < 0 else ColonyText.tile(state, c, map_view.level)
+	if building_pic != null:
+		building_pic.show_type("" if s.is_empty() else str(s["type"]))
 
 
 ## Phones: the side panel's contents as dialogs.
@@ -777,7 +790,7 @@ func show_info() -> void:
 	if not s.is_empty() and s["type"] != "hull":
 		options.append(["Demolish", _demolish_and_close, true])
 	options.append(["Back", close_modal, true])
-	show_modal("Info", _plain(inspector.text), options, true)
+	show_modal("Info", _plain(inspector.text), options, true, "" if s.is_empty() else str(s["type"]))
 
 
 func _demolish_and_close() -> void:
@@ -880,7 +893,10 @@ func _process(delta: float) -> void:
 # ---------------------------------------------------------------- Modal dialogs
 
 ## options: Array of [label, Callable, enabled].
-func show_modal(title: String, body: String, options: Array, can_cancel: bool = false) -> void:
+## options: [label, Callable, enabled] or [label, Callable, enabled, building id];
+## with a building id the option shows that building's picture beside it.
+## picture: a building id to show large under the title.
+func show_modal(title: String, body: String, options: Array, can_cancel: bool = false, picture: String = "") -> void:
 	close_modal()
 	modal_can_cancel = can_cancel
 	var view := _view_size()
@@ -911,6 +927,10 @@ func show_modal(title: String, body: String, options: Array, can_cancel: bool = 
 	var heading := _label(title, 26 if view.x >= 520.0 else 22, ACCENT)
 	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(heading)
+	if picture != "":
+		var pic := SpriteIcon.new(picture, 150.0)
+		pic.custom_minimum_size = Vector2(width - 24.0, 150.0)
+		box.add_child(pic)
 	var text := Label.new()
 	text.text = body
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -921,8 +941,19 @@ func show_modal(title: String, body: String, options: Array, can_cancel: bool = 
 		var b := _button(opt[0], opt[1])
 		b.disabled = not opt[2]
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		UiUtil.fit_button_height(b, width - 24.0)
-		box.add_child(b)
+		if opt.size() > 3 and str(opt[3]) != "":
+			var row := HBoxContainer.new()
+			var icon := SpriteIcon.new(str(opt[3]), 72.0)
+			if b.disabled:
+				icon.modulate = Color(1, 1, 1, 0.45)
+			row.add_child(icon)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			UiUtil.fit_button_height(b, width - 24.0 - 80.0)
+			row.add_child(b)
+			box.add_child(row)
+		else:
+			UiUtil.fit_button_height(b, width - 24.0)
+			box.add_child(b)
 		if first == null and not b.disabled:
 			first = b
 	if first != null:

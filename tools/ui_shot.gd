@@ -72,6 +72,16 @@ func _run() -> void:
 		await process_frame
 	root.get_viewport().get_texture().get_image().save_png(out + "/deep.png")
 	main._set_level(0)
+	# Select a building to show its picture in the side panel.
+	var bunk_cell := Vector2i(-1, -1)
+	for id in st["structures"]:
+		if st["structures"][id]["type"] == "bunk" and int(st["structures"][id]["z"]) == 0:
+			bunk_cell = Vector2i(int(st["structures"][id]["x"]), int(st["structures"][id]["y"]))
+	main.map_view.selected = bunk_cell
+	main.refresh()
+	for _i in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(out + "/selected.png")
 	main.show_fleet()
 	for _i in 4:
 		await process_frame

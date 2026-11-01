@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.41
+Date: 11/01/2026
+Time: 8:10 PM
+
+### Changes
+- **Building pictures in the menus**, using the new `scripts/ui/sprite_icon.gd`, which draws one building's angled sprite on the ground it is usually built on:
+  - The build list on the left shows a small picture beside every building.
+  - The Build menu (phones) shows a picture beside every choice. Ones you can't build yet are faded.
+  - The side panel shows a large picture of the selected building above its details, and the Info dialog (phones) shows it under the title.
+- `show_modal` options can now carry a building id to show its picture, and the dialog can show one large picture under its title.
+- `tools/ui_shot.gd` also takes a screenshot with a building selected.
+
+### Reason
+The owner asked for building pictures in the Build menu and Info panel.
+
 ## Version 00.01.40
 Date: 11/01/2026
 Time: 7:55 PM
