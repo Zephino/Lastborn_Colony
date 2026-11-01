@@ -2,6 +2,16 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.20
+Date: 11/01/2026
+Time: 8:56 AM
+
+### Changes
+- **The Shaft is airtight** (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game). The hole into the ground is now sealed under a clear pressure dome, held down by a ring of bolts at the rim. The pit, ladder and hoist show through the glass. In the angled style the dome is tall enough to cover the hoist frame. Tunnels and airlocks join the rim as before.
+
+### Reason
+The owner said the shaft should look airtight.
+
 ## Version 00.01.19
 Date: 11/01/2026
 Time: 8:55 AM

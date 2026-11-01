@@ -325,8 +325,20 @@ static func _top_hole(ci: CanvasItem, c: Vector2, s: float, rad: float, links: A
 	ci.draw_line(c + Vector2(-rad * 0.95, rad * 0.25), c + Vector2(rad * 0.95, rad * 0.25), md.lightened(0.15), maxf(2.0, s * 0.035))
 	ci.draw_circle(c + Vector2(0, rad * 0.25), s * 0.04, m)
 	ci.draw_circle(c + Vector2(0, rad * 0.25), s * 0.015, orange)
+	# Airtight: a clear pressure dome over the whole pit, held down by a bolted
+	# seal ring, so the colony's air can't escape down the shaft.
+	var glass := _fade(GLASS, state)
+	ci.draw_circle(c, rad * 0.88, Color(glass.r, glass.g, glass.b, glass.a * 0.45))
+	for i in 3:
+		var dir := Vector2.from_angle(i * PI / 3.0 + PI / 6.0)
+		ci.draw_line(c - dir * rad * 0.86, c + dir * rad * 0.86, _fade(Color(0.75, 0.82, 0.90, 0.30), state), 1.0)
+	ci.draw_arc(c, rad * 0.55, 0, TAU, 28, _fade(Color(0.75, 0.82, 0.90, 0.25), state), 1.0)
+	ci.draw_arc(c - Vector2(rad * 0.25, rad * 0.25), rad * 0.45, deg_to_rad(200), deg_to_rad(260), 8, Color(1, 1, 1, 0.55 * glass.a / GLASS.a), 2.0)
+	ci.draw_arc(c, rad * 0.88, 0, TAU, 36, m.lightened(0.2), maxf(2.0, s * 0.025))
+	for i in 16:
+		ci.draw_circle(c + Vector2.from_angle(i * TAU / 16.0) * rad * 0.88, maxf(1.2, s * 0.011), md)
 	for i in 4:
-		_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.93, s * 0.02, orange, state)
+		_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.97, s * 0.02, orange, state)
 	for d in DIRS:
 		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
 
@@ -707,6 +719,20 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	ci.draw_line(top, center + Vector2(0, inner_ry * 0.4), m, 1.5)
 	ci.draw_circle(top, tw * 0.02, m)
 	_glow(ci, top, tw * 0.014, orange, state)
+	# Airtight: a clear pressure dome over the pit and hoist, sealed at the rim.
+	var glass := _fade(GLASS, state)
+	var shell := _ellipse(center, rx * 0.97, ry * 0.97, 0, 180, 16)
+	shell.append_array(_ellipse(center, rx * 0.97, 0.50 * tw, 180, 360, 22))
+	ci.draw_colored_polygon(shell, Color(glass.r, glass.g, glass.b, glass.a * 0.45))
+	var rib := _fade(Color(0.80, 0.86, 0.94, 0.40), state)
+	for k in [0.35, 0.7]:
+		ci.draw_polyline(_ellipse(center, rx * 0.97 * k, 0.50 * tw, 180, 360, 14), rib, 1.0)
+	ci.draw_polyline(_ellipse(center - Vector2(0, 0.50 * tw * 0.45), rx * 0.86, ry * 0.86, 180, 360, 16), rib, 1.0)
+	ci.draw_arc(center - Vector2(rx * 0.32, 0.50 * tw * 0.58), rx * 0.30, deg_to_rad(190), deg_to_rad(250), 6, Color(1, 1, 1, 0.6 * glass.a / GLASS.a), 2.0)
+	ci.draw_polyline(_ellipse(center, rx * 0.97, ry * 0.97), m.lightened(0.2), 3.0)
+	for i in 16:
+		var ang := i * TAU / 16.0
+		ci.draw_circle(center + Vector2(cos(ang) * rx * 0.97, sin(ang) * ry * 0.97), maxf(1.2, tw * 0.008), md)
 	for i in 4:
 		var q := Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * r * 0.95
 		_glow(ci, _iso(c, tw, q.x, q.y, 0.03), tw * 0.014, orange, state)
