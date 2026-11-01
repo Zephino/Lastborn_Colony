@@ -4,6 +4,7 @@ Applies to Cursor, local Claude Code, and Claude Code cloud. Read `README.md` an
 
 - The owner approves game-design changes. Build what the owner asked for; do not invent extra features.
 - The project rules (design, IP, determinism, saves) take priority over coding convenience.
+- **Owner rule: everything for this game lives in `Zephino/Lastborn_Colony`.** Never commit, push or create branches in `Zephino/ColdLedger`, `Zephino/Mythriven` or any other repository; they are read-only references.
 - **Owner rule: commit and push straight to `main`.** No feature branches and no pull requests until the owner says otherwise. Never force-push, and run the tests before every push.
 - Inspect git status and the current branch before modifying files. Preserve unrelated changes.
 - Do not edit the same working tree concurrently with another agent.

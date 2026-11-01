@@ -2,6 +2,17 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.12
+Date: 11/01/2026
+Time: 8:35 AM
+
+### Changes
+- New owner rule in `CLAUDE.md`, `AGENTS.md` and `.cursor/rules/git-workflow.mdc`: all Lastborn Colony work goes to `Zephino/Lastborn_Colony` only. Nothing is ever committed, pushed or branched in `Zephino/ColdLedger` or other repositories; they are read-only references. The owner approved adding this rule.
+- Checked that everything from the old `claude/awesome-faraday-ap5jrw` branch in ColdLedger (the game's first versions, before it moved here) is in this repository: all 20 files are here, and GitHub's `main` matches the latest work.
+
+### Reason
+The owner asked to delete that ColdLedger branch, to make sure everything is in the Lastborn repository, and to stop pushing to ColdLedger. The branch itself must be deleted on GitHub by the owner: this environment can't delete branches.
+
 ## Version 00.01.11
 Date: 11/01/2026
 Time: 8:25 AM

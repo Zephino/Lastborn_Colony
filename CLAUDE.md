@@ -12,6 +12,7 @@ Default mode: **developer**. Claude Code (local or cloud) builds and changes the
 4. `leaderboard-api/README.md` — the online service, when working on login, leaderboard or cloud features.
 
 ## Reference projects
+**Owner rule: all Lastborn Colony work goes to `Zephino/Lastborn_Colony` only. Never commit, push, or create branches in `Zephino/ColdLedger` or any other repository.** Reference projects are read-only.
 - `Zephino/ColdLedger`: code-structure reference only. Its data tables and building names came from Outpost and must not be copied.
 - `Zephino/Mythriven`: reference for the online service (Cloudflare Worker), the AI rules, settings and web deployment.
 
