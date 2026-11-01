@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.25
+Date: 11/01/2026
+Time: 2:14 PM
+
+### Changes
+Sprite concepts in `scripts/ui/sprites.gd` (still not used in the game), following the owner's feedback:
+- **Kelp Vat is now a kelp ring farm:** a sealed pool farmed like an ocean kelp farm. Ropes run out from a centre buoy like spokes, with kelp growing along them. Two big floating rings with orange buoys hold them up. A low glass pressure dome covers it, with pink grow lamps round its seal, and a crate of harvested kelp sits at one corner.
+- **Seam Cutter is now a laser quarry:** a stepped pit cut down into the ground with teal ore showing in its walls. A yellow gantry on four legs spans the pit, and its laser head shines a beam onto the glowing seam at the bottom, throwing sparks. Cut ore blocks wait at one corner, with a small control dome at the back.
+- **Workshop:** the gear-and-wrench sign and spare gear are gone. Inside the dome a drone with a broken rotor sits on a yellow scissor lift, with a tool wall behind it. The yellow robot arm, repair pad, rover and crane outside stay.
+- **Bunkhouse, angled view:** now matches the top-down view the owner liked. Pairs of beds stand against the walls round a central table, instead of the stacked bunk bed.
+- Survey Lab unchanged (the owner liked it). Unused drawing helpers were removed.
+
+### Reason
+The owner liked the Workshop's yellow structures but not the gear and wrench. They liked the Bunkhouse's top-down look but not its angled one, and said the Seam Cutter still looked weird. They wanted the Kelp Vat to look like ocean kelp farms with big rings.
+
 ## Version 00.01.24
 Date: 11/01/2026
 Time: 1:54 PM
