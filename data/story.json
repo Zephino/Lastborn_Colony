@@ -1,0 +1,15 @@
+{
+  "title": "Lastborn Colony",
+  "intro": [
+    "Brume turns one face to its sun and the other to the dark. On the day side, rock bakes. On the night side, the air itself freezes and falls as snow.",
+    "Between them runs the thaw line: a strip of land a few dozen kilometres wide where water can be liquid and people might live.",
+    "The Harrow & Vell Charter Company brought your colonists here on credit. The bill for the passage, the hull and the start-up stores is 6,000 marks. It is owed by every one of you, together.",
+    "Payments start on turn 30 and are due every 10 turns after that. Each one is larger than the last. Miss three in a row and the Company takes the colony.",
+    "Pay the whole debt and the charter is yours. Build west for ice and vents, east for sunlight, and keep everyone breathing."
+  ],
+  "endings": {
+    "free": { "title": "Free Charter", "body": "The last payment clears. The Company sends a two-line notice and a new flag. The thaw line belongs to the people who live on it." },
+    "receivership": { "title": "Receivership", "body": "After three missed payments, Company administrators land with armed escorts. The colony keeps running, but it is no longer yours." },
+    "silent": { "title": "Silent Colony", "body": "The last lights in the hull go out. Months later, a survey drone finds the mirror fields still turning toward the sun." }
+  }
+}

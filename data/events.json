@@ -1,0 +1,44 @@
+[
+  { "id": "dust_storm", "title": "Grit Front", "weight": 3,
+    "body": "A wall of grit rolls off the day side. The mirror fields will be half-blind for a few turns.",
+    "effects": { "storm": 3 } },
+  { "id": "vent_surge", "title": "Vent Surge", "weight": 2,
+    "body": "The ground rumbles and the vents run hot. The vent taps are giving more heat than they were rated for.",
+    "effects": { "surge": 3 } },
+  { "id": "seal_failure", "title": "Seal Failure", "weight": 3,
+    "body": "A pressure seal gave out overnight. The crew has shut the building down for repairs.",
+    "effects": { "damage": 1 } },
+  { "id": "seismic", "title": "Shifting Ice", "weight": 2,
+    "body": "An icequake split a ridge and exposed loose ore near the hull. A work crew hauls it in.",
+    "effects": { "ore": 15 } },
+  { "id": "auditor", "title": "The Auditor", "weight": 2,
+    "body": "A Company auditor arrives on the supply drop and asks to see every account.",
+    "choices": [
+      { "label": "Open the books (morale -4)", "effects": { "morale": -4 } },
+      { "label": "Pay the inspection fee (-80 marks)", "requires": { "credits": 80 }, "effects": { "credits": -80 } }
+    ] },
+  { "id": "stowaways", "title": "Stowaways", "weight": 2,
+    "body": "Four people climb out of a cargo pod, cold and frightened. They were not on any manifest.",
+    "choices": [
+      { "label": "Take them in (+4 adults, morale +2)", "effects": { "adults": 4, "morale": 2 } },
+      { "label": "Hand them to the Company (+60 marks, morale -6)", "effects": { "credits": 60, "morale": -6 } }
+    ] },
+  { "id": "rest_day", "title": "A Day Off", "weight": 2,
+    "body": "The work crews ask for one turn off. They have not stopped since landing.",
+    "choices": [
+      { "label": "Grant it (no work next turn, morale +8)", "effects": { "rest": 1, "morale": 8 } },
+      { "label": "Refuse (morale -8)", "effects": { "morale": -8 } }
+    ] },
+  { "id": "premium_buyer", "title": "Premium Buyer", "weight": 1,
+    "body": "An orbital buyer offers well over the Company price for an immediate alloy shipment.",
+    "choices": [
+      { "label": "Sell 20 alloy for 600 marks", "requires": { "alloy": 20 }, "effects": { "alloy": -20, "credits": 600 } },
+      { "label": "Decline", "effects": {} }
+    ] },
+  { "id": "debt_relief", "title": "A Quiet Offer", "weight": 1,
+    "body": "A Company clerk offers to lose some paperwork in exchange for your colony's ore.",
+    "choices": [
+      { "label": "Hand over 40 ore (-250 debt)", "requires": { "ore": 40 }, "effects": { "ore": -40, "debt": -250 } },
+      { "label": "Refuse", "effects": {} }
+    ] }
+]
