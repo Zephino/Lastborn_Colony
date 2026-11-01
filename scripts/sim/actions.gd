@@ -162,4 +162,4 @@ static func _damage_random(state: Dictionary, count: int) -> void:
 		var hit: String = Rng.pick(state, candidates)
 		state["structures"][hit]["damaged"] = int(GameData.balance()["repair_turns"])
 		var bname: String = GameData.building(state["structures"][hit]["type"])["name"]
-		state["log"].append({"turn": int(state["turn"]), "text": "%s is down for repairs." % name})
+		state["log"].append({"turn": int(state["turn"]), "text": "%s is down for repairs." % bname})

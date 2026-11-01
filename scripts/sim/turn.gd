@@ -40,7 +40,24 @@ static func end_turn(state: Dictionary) -> void:
 		net[key] = float(state["stock"][key]) - float(before.get(key, 0.0))
 	rep["net"] = net
 	state["report"] = rep
+	_quantize(state)
 	state["turn"] = int(state["turn"]) + 1
+
+
+## Rounds a stored value to 6 decimal places. Godot writes floats to JSON with
+## 15 significant digits, so unrounded values would change slightly on every
+## save and load, and a loaded game would drift from the original.
+static func q(x: float) -> float:
+	return roundf(x * 1000000.0) / 1000000.0
+
+
+static func _quantize(state: Dictionary) -> void:
+	for k in ["adults", "children", "morale", "debt", "export_reserve"]:
+		state[k] = q(float(state[k]))
+	for group in ["stock", "stats"]:
+		var d: Dictionary = state[group]
+		for k in d:
+			d[k] = q(float(d[k]))
 
 
 # 1. Construction: each unfinished building gains one turn of progress.

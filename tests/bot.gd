@@ -6,11 +6,14 @@ extends RefCounted
 const GameData = preload("res://scripts/sim/game_data.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const NewGame = preload("res://scripts/sim/new_game.gd")
+const Turn = preload("res://scripts/sim/turn.gd")
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
-const CRITICAL := ["mirror", "vent", "splitter", "drill", "vat", "bunk"]
-const MUST_AFFORD := ["mirror", "splitter", "drill", "vat"]
+const MUST_AFFORD := ["mirror", "splitter", "drill", "vat", "rail"]
 const CASH_BUFFER := 1200.0
+const BUILD_RESERVE := 40.0
+const SAVING_RESERVE := 0.0
+const ESSENTIAL := ["mirror", "vent", "splitter", "drill", "vat", "bunk", "cutter", "forge", "rail"]
 
 
 ## Plays one turn's worth of decisions (does not end the turn).
@@ -22,12 +25,23 @@ static func act(state: Dictionary) -> void:
 			if Actions.choice_allowed(state, choices[i]):
 				Actions.resolve_event(state, i)
 				break
+	# Rails sell alloy above the reserve. While the next payment is not covered,
+	# keep the reserve low so alloy is sold, and build only essentials.
+	var saving := _saving(state)
+	Actions.set_export_reserve(state, SAVING_RESERVE if saving else BUILD_RESERVE)
 	var credits := float(state["stock"]["credits"])
 	if credits > CASH_BUFFER:
 		Actions.pay_extra(state, credits - CASH_BUFFER)
-	var choice := _choose(state)
-	if choice != "":
-		_build(state, choice)
+	# Try the wanted buildings in order until one can actually be placed.
+	for choice in _choose(state):
+		if _build(state, choice):
+			break
+
+
+static func _saving(state: Dictionary) -> bool:
+	if _count(state, "rail") == 0:
+		return false
+	return float(state["stock"]["credits"]) < Turn.next_payment_amount(state) * 1.5
 
 
 static func _count(state: Dictionary, type: String) -> int:
@@ -38,17 +52,19 @@ static func _count(state: Dictionary, type: String) -> int:
 	return n
 
 
-static func _choose(state: Dictionary) -> String:
+## Returns the buildings worth trying this turn, most urgent first.
+static func _choose(state: Dictionary) -> Array:
 	var alloy := float(state["stock"]["alloy"])
+	var picks: Array = []
 	if alloy < 1.0:
-		return ""
+		return picks
 	var turn := int(state["turn"])
 	var pop := float(state["adults"]) + float(state["children"])
 	var rep: Dictionary = state["report"]
 	var want: Array = []
-	if float(rep.get("power_free", 0.0)) < 5.0:
+	if float(rep.get("power_free", 0.0)) < 3.0 or (int(rep.get("idle", 0)) > 0 and float(rep.get("power_free", 0.0)) < 6.0):
 		want.append("mirror")
-	if float(rep.get("heat_free", 0.0)) < 2.0:
+	if float(rep.get("heat_free", 0.0)) < 2.0 or (int(rep.get("idle", 0)) > 0 and float(rep.get("heat_free", 0.0)) < 3.0):
 		want.append("vent")
 	var splitters := ceili(pop * 0.11 / 5.0)
 	var vats := ceili(pop * 0.11 / 6.0)
@@ -60,13 +76,18 @@ static func _choose(state: Dictionary) -> String:
 		want.append("vat")
 	if pop > 40.0 + 12.0 * _count(state, "bunk") - 6.0:
 		want.append("bunk")
-	var forges := mini(4, 1 + turn / 25)
+	var forges := mini(10, 1 + int(pop / 20.0))
+	# Ore and a forge first: a rail with no alloy to sell earns nothing.
+	if _count(state, "cutter") < 1:
+		want.append("cutter")
+	if _count(state, "forge") < 1:
+		want.append("forge")
+	if _count(state, "forge") >= 1 and _count(state, "rail") < ceili(forges * 3.0 / 4.0):
+		want.append("rail")
 	if _count(state, "cutter") < ceili(forges * 4.0 / 5.0):
 		want.append("cutter")
 	if _count(state, "forge") < forges:
 		want.append("forge")
-	if turn >= 12 and _count(state, "rail") < ceili(forges * 3.0 / 4.0):
-		want.append("rail")
 	if float(state["morale"]) < 50.0 and _count(state, "commons") < 3 and turn > 15:
 		want.append("commons")
 	if turn > 40 and _count(state, "clinic") < 1:
@@ -76,27 +97,28 @@ static func _choose(state: Dictionary) -> String:
 		if float(state["stock"][k]) > cap * 0.9 and _count(state, "cache") < 4:
 			want.append("cache")
 			break
-	var keep := 20.0 if _count(state, "rail") > 0 else 0.0
+	var saving := _saving(state)
 	for w in want:
-		var need := GameData.num(GameData.building(w), "cost") + (0.0 if w in CRITICAL else keep)
-		if alloy >= need:
-			return w
-		if w in MUST_AFFORD:
-			return ""
-	return ""
+		if saving and not (w in ESSENTIAL):
+			continue
+		if alloy >= GameData.num(GameData.building(w), "cost"):
+			picks.append(w)
+		elif w in MUST_AFFORD:
+			break
+	return picks
 
 
 ## Builds the type at the best adjacent site, or lays a heat main toward the
 ## nearest tile it needs (ice, vent or seam) if none is in reach.
-static func _build(state: Dictionary, type: String) -> void:
+static func _build(state: Dictionary, type: String) -> bool:
 	var site := _best_site(state, type)
 	if site.x >= 0:
-		Actions.place(state, type, site.x, site.y)
-		return
+		return Actions.place(state, type, site.x, site.y)["ok"]
 	var terrain: Array = GameData.building(type)["terrain"]
 	var step := _step_toward(state, terrain)
 	if step.x >= 0:
-		Actions.place(state, "main", step.x, step.y)
+		return Actions.place(state, "main", step.x, step.y)["ok"]
+	return false
 
 
 static func _hull(state: Dictionary) -> Vector2i:

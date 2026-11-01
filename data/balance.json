@@ -38,7 +38,7 @@
   "first_payment_turn": 30,
   "payment_interval": 10,
   "payment_base": 120,
-  "payment_step": 40,
+  "payment_step": 20,
   "missed_penalty": 0.1,
   "missed_payment_morale": -6,
   "max_missed": 3,
