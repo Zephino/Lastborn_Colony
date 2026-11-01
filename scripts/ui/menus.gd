@@ -50,6 +50,22 @@ func _choose_research(id: String) -> void:
 	main.refresh()
 
 
+# ---------------------------------------------------------------- How to play
+
+## Shows one page of the guide (data/help.json), with Back and Next.
+func show_help(page: int = 0) -> void:
+	var pages := GameData.help_pages()
+	page = clampi(page, 0, pages.size() - 1)
+	var p: Dictionary = pages[page]
+	var options: Array = []
+	if page < pages.size() - 1:
+		options.append(["Next: %s" % pages[page + 1]["title"], show_help.bind(page + 1), true])
+	if page > 0:
+		options.append(["Back", show_help.bind(page - 1), true])
+	options.append(["Close", Callable(main, "close_modal"), true])
+	main.show_modal("How to play (%d of %d): %s" % [page + 1, pages.size(), p["title"]], p["body"], options, true, str(p.get("picture", "")))
+
+
 # ---------------------------------------------------------------- Settings
 
 func show_settings() -> void:

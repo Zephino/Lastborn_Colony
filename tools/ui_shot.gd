@@ -82,6 +82,11 @@ func _run() -> void:
 	for _i in 4:
 		await process_frame
 	root.get_viewport().get_texture().get_image().save_png(out + "/selected.png")
+	main.menus.show_help(5)
+	for _i in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(out + "/help.png")
+	main.close_modal()
 	main.show_fleet()
 	for _i in 4:
 		await process_frame

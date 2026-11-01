@@ -28,6 +28,7 @@ static func run(check: Callable) -> void:
 	_civic(check)
 	_saves(check)
 	_map_taps(check)
+	_help(check)
 
 
 ## A fresh colony with plenty of everything, and no random events.
@@ -268,3 +269,15 @@ static func _map_taps(check: Callable) -> void:
 	view.center_on(Vector2i(3, 4))
 	check.call(view.cell_at(view.size * 0.5) == Vector2i(3, 4), "centring the map on a tile puts it in the middle")
 	view.free()
+
+
+## The How to play guide: every page has a title, some text and a real building picture.
+static func _help(check: Callable) -> void:
+	var pages := GameData.help_pages()
+	var ok := pages.size() >= 8
+	for p in pages:
+		if str(p.get("title", "")) == "" or str(p.get("body", "")).length() < 40:
+			ok = false
+		if p.has("picture") and not GameData.has_building(str(p["picture"])):
+			ok = false
+	check.call(ok, "the How to play guide has %d pages, each with a title, text and a real building picture" % pages.size())

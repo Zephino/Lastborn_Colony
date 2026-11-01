@@ -201,6 +201,7 @@ func show_title() -> void:
 		if SaveGame.exists(slot):
 			var label := "Load saved game" if slot == "manual" else "Load autosave"
 			box.add_child(_title_button(label, func() -> void: _load(slot)))
+	box.add_child(_title_button("How to play", menus.show_help.bind(0)))
 	box.add_child(_title_button("Leaderboard", show_leaderboard.bind("")))
 	box.add_child(_title_button("Suggest a feature", menus.show_suggestion_form))
 	box.add_child(_title_button("Settings", show_settings))
@@ -594,6 +595,7 @@ func _on_menu() -> void:
 		["Save and quit to title", _save_and_quit, true],
 		["Quit to title without saving", show_title, true],
 		["Retire: post this colony's progress to the leaderboard", menus._post_score.bind("retired"), OnlineConfig.enabled()],
+		["How to play", menus.show_help.bind(0), true],
 		["Settings", show_settings, true],
 		["Back to the colony", close_modal, true],
 	], true)

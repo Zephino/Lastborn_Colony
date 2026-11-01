@@ -2,6 +2,29 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.42
+Date: 11/01/2026
+Time: 8:25 PM
+
+### Changes
+- **How to play guide:** 10 short pages in simple words, each with a building picture:
+  1. the goal (pay off the debt);
+  2. building and moving the map;
+  3. power and heat;
+  4. keeping people alive;
+  5. homes and morale;
+  6. making money;
+  7. going underground;
+  8. research and trouble;
+  9. drones and orbit;
+  10. tips.
+- Open it with **How to play** on the title screen or in the in-game Menu. Each page has Next, Back and Close.
+- The text lives in the new `data/help.json` (loaded by `GameData.help_pages()`); the viewer is `show_help` in `scripts/ui/menus.gd`.
+- A new test checks every page has a title, some text and a real building picture.
+
+### Reason
+The owner asked for a how-to-play guide for first-time players.
+
 ## Version 00.01.41
 Date: 11/01/2026
 Time: 8:10 PM

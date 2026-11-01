@@ -104,6 +104,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Story:** story events (`data/story_events.json`) arrive as the colony grows, each once, and ask you to choose. Some depend on earlier choices or on how the factions feel. Two can end the game: **Independence** (a strong Union and a weak Company: the colony declares itself free) and **Company Town** (a pleased Company and a weak Union: you sign the colony over and the debt is cancelled). Both count on the leaderboard, ranked by debt paid.
 - **Events** happen at random: grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
 - **Colony report** (button by End turn) shows where power, heat and workers go, how each resource changed, which buildings are idle and why, and the next payments. Selecting a building also says why it isn't running.
+- **How to play** (title screen, or Menu in a game): a short illustrated guide.
 - **Settings** (title screen, or Menu in a game): fullscreen, and for the web version Install app and Update app.
 - **Placing a building:** a bar shows what you're placing, with **Cancel**. Dragging the map never places anything.
 - **Keys:** Enter ends the turn. Arrow keys or WASD move the map. Q shows the surface and E the Deep. Esc cancels building or closes a dialog that can be closed. Drag the map to move it and use the mouse wheel to zoom. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
@@ -112,7 +113,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 | Path | What it is |
 | --- | --- |
-| `data/*.json` | All numbers and text: balance, buildings, research, events, story and story events, planets, difficulty, cargo, online messages. Tune the game here. |
+| `data/*.json` | All numbers and text: balance, buildings, research, events, story and story events, planets, difficulty, cargo, online messages, the How to play guide. Tune the game here. |
 | `scripts/sim/` | The rules. Has no scene or node dependencies, so it runs headless. |
 | `scripts/sim/game_data.gd` | Loads the JSON once. Also has the climate functions `light_at` and `cold_at`. |
 | `scripts/sim/rng.gd` | mulberry32 random numbers. The generator state is kept in `state["rng"]`, so saves replay exactly. |
