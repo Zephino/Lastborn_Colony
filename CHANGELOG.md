@@ -2,6 +2,17 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.29
+Date: 11/01/2026
+Time: 4:20 PM
+
+### Changes
+- **Doors only where a tunnel joins** (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game). Buildings no longer show four orange doors. A side with a tunnel has its airlock and orange door ring; a side without one is plain wall, with no capped door. This applies to every building, top-down and angled.
+- Gameplay is unchanged: a building still joins the colony through any side that touches it.
+
+### Reason
+The owner said not every building needs four entrances.
+
 ## Version 00.01.28
 Date: 11/01/2026
 Time: 4:05 PM

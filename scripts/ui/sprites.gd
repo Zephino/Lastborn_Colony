@@ -162,8 +162,11 @@ static func _top_tube(ci: CanvasItem, from: Vector2, to: Vector2, s: float, stat
 
 
 ## A tube opening in the dome wall: an orange ring around a dark hole.
-## Capped (no tunnel yet) ports get a metal cap with a small orange light.
+## A building has a door only where a tunnel joins it, so sides without a
+## tunnel ("capped") show plain wall: nothing is drawn.
 static func _top_port(ci: CanvasItem, p: Vector2, s: float, state: Dictionary, capped: bool) -> void:
+	if capped:
+		return
 	var orange := _fade(ORANGE, state)
 	ci.draw_circle(p, s * 0.075, _fade(METAL_DARK, state))
 	ci.draw_circle(p, s * 0.045, _fade(METAL, state) if capped else Color(0.03, 0.02, 0.02, orange.a))
@@ -823,8 +826,11 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.86, d.y * r * 0.86, 0.12), tw, state, true)
 
 
-## A port on the dome's side, seen at an angle: an orange ring, capped or open.
+## A port on the dome's side, seen at an angle. As with _top_port, only sides
+## with a tunnel get one.
 static func _iso_port(ci: CanvasItem, p: Vector2, tw: float, state: Dictionary, capped: bool) -> void:
+	if capped:
+		return
 	var orange := _fade(ORANGE, state)
 	ci.draw_colored_polygon(_ellipse(p, tw * 0.055, tw * 0.045), _fade(METAL_DARK, state))
 	ci.draw_colored_polygon(_ellipse(p, tw * 0.033, tw * 0.027), _fade(METAL, state) if capped else Color(0.03, 0.02, 0.02, orange.a))
