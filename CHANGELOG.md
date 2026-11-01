@@ -2,6 +2,19 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.46
+Date: 11/01/2026
+Time: 10:05 PM
+
+### Changes
+- **Colonists carry different gear on their backs by job** (`scripts/ui/people.gd`):
+  - **Workers:** a pickaxe slung across the back, and a coiled orange hose on the pack.
+  - **Scientists:** a tall antenna with a glowing teal tip, a small sensor dish, and three coloured sample tubes on the pack.
+  - **Wardens:** a radio aerial, a violet warning beacon on top of the pack, and violet reflective stripes.
+
+### Reason
+The owner suggested each kind of colonist carry something different on their back depending on their job.
+
 ## Version 00.01.45
 Date: 11/01/2026
 Time: 9:55 PM

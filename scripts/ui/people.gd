@@ -17,8 +17,11 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 	var stripe: Color = JOBS.get(job, JOBS["worker"])
 	ci.draw_colored_polygon(_oval(feet, u * 2.4, u * 0.8), Color(0, 0, 0, 0.30))
 	# Backpack (behind the body, on the side away from where they face).
-	ci.draw_rect(Rect2(feet + Vector2(-facing * u * 2.2 - u * 0.9, -u * 6.6), Vector2(u * 1.8, u * 3.0)), PACK)
-	ci.draw_rect(Rect2(feet + Vector2(-facing * u * 2.2 - u * 0.9, -u * 6.6), Vector2(u * 1.8, u * 0.6)), PACK.lightened(0.2))
+	var pack := feet + Vector2(-facing * u * 2.2, -u * 5.1)
+	_back_gear(ci, pack, u, job, facing)
+	ci.draw_rect(Rect2(pack + Vector2(-u * 0.9, -u * 1.5), Vector2(u * 1.8, u * 3.0)), PACK)
+	ci.draw_rect(Rect2(pack + Vector2(-u * 0.9, -u * 1.5), Vector2(u * 1.8, u * 0.6)), PACK.lightened(0.2))
+	_pack_front(ci, pack, u, job, facing)
 	# Legs, one forward when walking.
 	var step := u * 0.9 if stride else 0.0
 	ci.draw_line(feet + Vector2(-u * 0.6, -u * 3.2), feet + Vector2(-u * 0.6 - step * facing, -u * 0.4), SUIT_SHADE, u * 1.3)
@@ -40,6 +43,52 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 	ci.draw_colored_polygon(_oval(head + Vector2(facing * u * 0.45, u * 0.05), u * 1.05, u * 0.75), VISOR)
 	ci.draw_circle(head + Vector2(facing * u * 0.15 - u * 0.25, -u * 0.25), u * 0.28, Color(1, 1, 1, 0.75))
 	ci.draw_line(head + Vector2(-u * 1.75, -u * 0.2), head + Vector2(-u * 1.95, -u * 1.6), SUIT_SHADE, maxf(1.0, u * 0.3))
+
+
+## Gear that sticks up behind the backpack, by job (drawn before the pack).
+static func _back_gear(ci: CanvasItem, pack: Vector2, u: float, job: String, facing: float) -> void:
+	match job:
+		"worker":
+			# A pickaxe slung across the back: the handle, and the head above the shoulder.
+			var top := pack + Vector2(-facing * u * 1.6, -u * 4.4)
+			ci.draw_line(pack + Vector2(facing * u * 1.0, u * 1.8), top, Color(0.55, 0.38, 0.22), u * 0.55)
+			ci.draw_colored_polygon(PackedVector2Array([top + Vector2(-u * 1.6, u * 0.5), top + Vector2(0, -u * 0.5), top + Vector2(u * 1.6, u * 0.2), top + Vector2(0, u * 0.3)]), Color(0.62, 0.64, 0.68))
+		"scientist":
+			# A tall antenna with a glowing tip, and a small dish.
+			var mast_top := pack + Vector2(-facing * u * 0.4, -u * 6.2)
+			ci.draw_line(pack + Vector2(-facing * u * 0.4, -u * 1.4), mast_top, Color(0.55, 0.58, 0.64), maxf(1.0, u * 0.3))
+			ci.draw_circle(mast_top, u * 0.45, JOBS["scientist"])
+			var dish := pack + Vector2(facing * u * 0.5, -u * 2.6)
+			ci.draw_line(pack + Vector2(facing * u * 0.3, -u * 1.4), dish, Color(0.55, 0.58, 0.64), maxf(1.0, u * 0.3))
+			ci.draw_colored_polygon(_oval(dish + Vector2(-facing * u * 0.2, -u * 0.3), u * 0.9, u * 0.5), Color(0.88, 0.90, 0.94))
+		"warden":
+			# A radio aerial and a warning beacon on top of the pack.
+			var tip := pack + Vector2(-facing * u * 0.6, -u * 5.8)
+			ci.draw_line(pack + Vector2(-facing * u * 0.6, -u * 1.4), tip, Color(0.40, 0.42, 0.48), maxf(1.0, u * 0.25))
+			ci.draw_circle(tip, u * 0.25, Color(0.40, 0.42, 0.48))
+			ci.draw_rect(Rect2(pack + Vector2(-u * 0.5, -u * 2.3), Vector2(u * 1.0, u * 0.8)), Color(0.30, 0.30, 0.34))
+			var lamp := pack + Vector2(0, -u * 2.5)
+			ci.draw_circle(lamp, u * 1.1, Color(JOBS["warden"].r, JOBS["warden"].g, JOBS["warden"].b, 0.25))
+			ci.draw_circle(lamp, u * 0.55, JOBS["warden"])
+
+
+## Things strapped on the side of the backpack, by job (drawn over the pack).
+static func _pack_front(ci: CanvasItem, pack: Vector2, u: float, job: String, facing: float) -> void:
+	match job:
+		"worker":
+			# A coiled orange hose on the pack.
+			ci.draw_arc(pack + Vector2(0, u * 0.3), u * 0.6, 0, TAU, 10, JOBS["worker"], maxf(1.0, u * 0.35))
+		"scientist":
+			# Three coloured sample tubes in a holder.
+			var cols := [Color(0.40, 0.95, 0.55), Color(0.35, 0.90, 1.0), Color(0.72, 0.56, 1.0)]
+			for k in 3:
+				var x := pack.x - u * 0.6 + k * u * 0.6
+				ci.draw_rect(Rect2(Vector2(x - u * 0.2, pack.y - u * 0.2), Vector2(u * 0.4, u * 1.4)), cols[k])
+			ci.draw_rect(Rect2(pack + Vector2(-u * 0.9, u * 0.9), Vector2(u * 1.8, u * 0.4)), Color(0.30, 0.32, 0.36))
+		"warden":
+			# Violet reflective stripes on the pack.
+			ci.draw_line(pack + Vector2(-u * 0.9, u * 0.2), pack + Vector2(u * 0.9, u * 0.2), JOBS["warden"], maxf(1.0, u * 0.35))
+			ci.draw_line(pack + Vector2(-u * 0.9, u * 0.9), pack + Vector2(u * 0.9, u * 0.9), JOBS["warden"], maxf(1.0, u * 0.35))
 
 
 static func _oval(c: Vector2, rx: float, ry: float) -> PackedVector2Array:
