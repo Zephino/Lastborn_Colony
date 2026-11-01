@@ -2,6 +2,19 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.16
+Date: 11/01/2026
+Time: 8:48 AM
+
+### Changes
+- **Round tunnels and airlocks** (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game):
+  - Tunnels between buildings and on Heat Main tiles are now **round tubes**: shaded to look rounded, with the glowing orange stripe along the top and rib rings. In the angled style they are real cylinders with a round end face.
+  - Airlocks are now **round collars** around the tube where it meets the dome, with two amber rings, instead of square boxes.
+  - The Heat Main junction is round, with an orange ring.
+
+### Reason
+The owner asked for the tunnels and airlocks to be round.
+
 ## Version 00.01.15
 Date: 11/01/2026
 Time: 8:46 AM

@@ -102,31 +102,42 @@ static func _top_dome(ci: CanvasItem, c: Vector2, rad: float, acc: Color, inside
 	ci.draw_arc(c - Vector2(rad * 0.25, rad * 0.25), rad * 0.45, deg_to_rad(200), deg_to_rad(260), 8, Color(1, 1, 1, 0.55 * _fade(Color.WHITE, state).a), 2.0)
 
 
-## A tunnel from the edge of the dome to the tile's edge, with an airlock.
+## A round tube from the edge of the dome to the tile's edge, with a round
+## airlock collar where it meets the dome.
 static func _top_link(ci: CanvasItem, c: Vector2, s: float, d: Vector2i, rad: float, state: Dictionary) -> void:
 	var dir := Vector2(d)
+	var from := c + dir * rad * 0.85
+	var to := c + dir * s * 0.5
+	_top_tube(ci, from, to, s, state)
+	# Airlock: a round collar around the tube, with amber rings.
+	var lock_c := c + dir * (rad + s * 0.035)
+	ci.draw_circle(lock_c, s * 0.115, _fade(METAL_DARK, state))
+	ci.draw_circle(lock_c, s * 0.095, _fade(METAL, state))
+	var amber := _fade(AMBER, state)
+	ci.draw_arc(lock_c, s * 0.095, 0, TAU, 20, amber, 2.0)
+	ci.draw_arc(lock_c, s * 0.055, 0, TAU, 16, amber, 1.5)
+	ci.draw_circle(lock_c, s * 0.03, _fade(METAL_DARK, state))
+
+
+## A round tube seen from above: shaded so it looks rounded, with the glowing
+## orange stripe along its top and rib rings.
+static func _top_tube(ci: CanvasItem, from: Vector2, to: Vector2, s: float, state: Dictionary) -> void:
+	var dir := (to - from).normalized()
 	var side := Vector2(-dir.y, dir.x)
 	var md := _fade(METAL_DARK, state)
 	var m := _fade(METAL, state)
-	var from := c + dir * rad * 0.85
-	var to := c + dir * s * 0.5
 	var orange := _fade(ORANGE, state)
-	# The tube, like a Heat Main: dark casing, metal core, glowing orange stripe, ribs.
-	ci.draw_colored_polygon(PackedVector2Array([from + side * s * 0.12, to + side * s * 0.12, to - side * s * 0.12, from - side * s * 0.12]), md)
-	ci.draw_line(from, to, m, s * 0.10)
-	ci.draw_line(from, to, Color(orange.r, orange.g, orange.b, 0.8 * orange.a), s * 0.035)
-	var rib := c + dir * (rad + (s * 0.5 - rad) * 0.7)
-	ci.draw_line(rib + side * s * 0.13, rib - side * s * 0.13, md.darkened(0.3), 2.0)
-	# Airlock: a wider chamber against the dome, with amber door stripes.
-	var lock_c := c + dir * (rad + s * 0.04)
-	var half := s * 0.075
-	var chamber := PackedVector2Array([lock_c + side * s * 0.13 - dir * half, lock_c + side * s * 0.13 + dir * half, lock_c - side * s * 0.13 + dir * half, lock_c - side * s * 0.13 - dir * half])
-	ci.draw_colored_polygon(chamber, m)
-	var amber := _fade(AMBER, state)
-	ci.draw_line(lock_c + side * s * 0.11 - dir * half * 0.6, lock_c - side * s * 0.11 - dir * half * 0.6, amber, 2.0)
-	ci.draw_line(lock_c + side * s * 0.11 + dir * half * 0.6, lock_c - side * s * 0.11 + dir * half * 0.6, amber, 2.0)
-	# The opening in the dome wall: an orange ring.
-	_top_port(ci, c + dir * rad * 0.92, s, state, false)
+	var w := s * 0.11
+	# Rounded shading: dark edges, lighter middle.
+	for band in [[1.0, md], [0.75, m.darkened(0.15)], [0.45, m], [0.2, m.lightened(0.18)]]:
+		var k: float = band[0]
+		ci.draw_colored_polygon(PackedVector2Array([from + side * w * k, to + side * w * k, to - side * w * k, from - side * w * k]), band[1])
+	ci.draw_line(from, to, Color(orange.r, orange.g, orange.b, 0.85 * orange.a), s * 0.03)
+	var length := from.distance_to(to)
+	var ribs := maxi(1, int(length / (s * 0.18)))
+	for k in ribs:
+		var p := from + dir * length * (float(k) + 0.5) / ribs
+		ci.draw_line(p + side * w, p - side * w, md.darkened(0.25), 2.0)
 
 
 ## A tube opening in the dome wall: an orange ring around a dark hole.
@@ -256,17 +267,12 @@ static func _top_tunnel(ci: CanvasItem, c: Vector2, s: float, links: Array, stat
 	var m := _fade(METAL, state)
 	var a := _fade(ORANGE, state)
 	for d in links:
-		var dir := Vector2(d)
-		var side := Vector2(-dir.y, dir.x)
-		var to := c + dir * s * 0.5
-		ci.draw_colored_polygon(PackedVector2Array([c + side * s * 0.12, to + side * s * 0.12, to - side * s * 0.12, c - side * s * 0.12]), md)
-		ci.draw_line(c, to, m, s * 0.10)
-		ci.draw_line(c, to, Color(a.r, a.g, a.b, 0.7 * a.a), s * 0.03)
-		for k in 2:
-			var p := c + dir * s * (0.18 + k * 0.18)
-			ci.draw_line(p + side * s * 0.13, p - side * s * 0.13, md.darkened(0.3), 2.0)
-	ci.draw_circle(c, s * 0.14, m)
-	ci.draw_circle(c, s * 0.08, md)
+		_top_tube(ci, c, c + Vector2(d) * s * 0.5, s, state)
+	# A round junction where the tubes meet.
+	ci.draw_circle(c, s * 0.16, md)
+	ci.draw_circle(c, s * 0.13, m)
+	ci.draw_arc(c, s * 0.13, 0, TAU, 20, a, 2.0)
+	ci.draw_circle(c, s * 0.06, m.lightened(0.2))
 
 
 # ============================================================ isometric
@@ -319,33 +325,56 @@ static func _iso_dome(ci: CanvasItem, c: Vector2, tw: float, r: float, h: float,
 	ci.draw_arc(top - Vector2(rx * 0.32, h * tw * 0.58), rx * 0.30, deg_to_rad(190), deg_to_rad(250), 6, Color(1, 1, 1, 0.6 * _fade(Color.WHITE, state).a), 2.0)
 
 
-## A tunnel along one axis from the dome's edge to the tile edge, with an airlock.
+## A round tube lying along one axis of the tile (axis 0 = u, 1 = v), from a0
+## to a1, its centre line at height z, radius rr (all in tile widths).
+static func _iso_tube(ci: CanvasItem, c: Vector2, tw: float, axis: int, a0: float, a1: float, rr: float, z: float, col: Color, stripe: Color = Color(0, 0, 0, 0)) -> void:
+	var across := Vector2(-0.5, 0.25) * tw if axis == 0 else Vector2(0.5, 0.25) * tw
+	var up := Vector2(0, -tw)
+	var lo := minf(a0, a1)
+	var hi := maxf(a0, a1)
+	var ends: Array = []
+	for t in [lo, hi]:
+		var base := _iso(c, tw, t, 0.0, z) if axis == 0 else _iso(c, tw, 0.0, t, z)
+		var ring := PackedVector2Array()
+		for i in 20:
+			var th := i * TAU / 20.0
+			ring.append(base + (across * cos(th) + up * sin(th)) * rr)
+		ends.append([base, ring])
+	var all := PackedVector2Array()
+	all.append_array(ends[0][1])
+	all.append_array(ends[1][1])
+	ci.draw_colored_polygon(Geometry2D.convex_hull(all), col.darkened(0.30))
+	# A lighter band along the top so it reads as round.
+	var top0: Vector2 = ends[0][0] + up * rr * 0.55
+	var top1: Vector2 = ends[1][0] + up * rr * 0.55
+	ci.draw_line(top0, top1, col.lightened(0.10), maxf(2.0, tw * rr * 0.55))
+	if stripe.a > 0.0:
+		ci.draw_line(ends[0][0] + up * rr * 0.9, ends[1][0] + up * rr * 0.9, stripe, 2.5)
+	# The end nearer the viewer shows its round face.
+	ci.draw_colored_polygon(ends[1][1], col)
+
+
+## A round tube from the dome's edge to the tile edge, with a round airlock
+## collar where it meets the dome.
 static func _iso_link(ci: CanvasItem, c: Vector2, tw: float, d: Vector2i, r: float, state: Dictionary) -> void:
-	var dv := Vector2(d)
-	var md := _fade(METAL_DARK, state)
 	var m := _fade(METAL, state)
 	var amber := _fade(AMBER, state)
-	var a0 := r * 0.8
 	var orange := _fade(ORANGE, state)
-	var stripe := Color(orange.r, orange.g, orange.b, 0.85 * orange.a)
-	if dv.x != 0:
-		var lo := minf(dv.x * a0, dv.x * 0.5)
-		var hi := maxf(dv.x * a0, dv.x * 0.5)
-		_box(ci, c, tw, lo, -0.10, hi, 0.10, 0.12, md, m)
-		ci.draw_line(_iso(c, tw, lo, 0, 0.12), _iso(c, tw, hi, 0, 0.12), stripe, 2.5)
-		var l0 := dv.x * (r + 0.02) - 0.06
-		_box(ci, c, tw, l0, -0.12, l0 + 0.12, 0.12, 0.15, m, m.lightened(0.15))
-		ci.draw_line(_iso(c, tw, l0 + 0.12, -0.10, 0.04), _iso(c, tw, l0 + 0.12, 0.10, 0.04), amber, 2.0)
-		ci.draw_line(_iso(c, tw, l0 + 0.12, -0.10, 0.11), _iso(c, tw, l0 + 0.12, 0.10, 0.11), amber, 2.0)
-	else:
-		var lo := minf(dv.y * a0, dv.y * 0.5)
-		var hi := maxf(dv.y * a0, dv.y * 0.5)
-		_box(ci, c, tw, -0.10, lo, 0.10, hi, 0.12, md, m)
-		ci.draw_line(_iso(c, tw, 0, lo, 0.12), _iso(c, tw, 0, hi, 0.12), stripe, 2.5)
-		var l0 := dv.y * (r + 0.02) - 0.06
-		_box(ci, c, tw, -0.12, l0, 0.12, l0 + 0.12, 0.15, m, m.lightened(0.15))
-		ci.draw_line(_iso(c, tw, -0.10, l0 + 0.12, 0.04), _iso(c, tw, 0.10, l0 + 0.12, 0.04), amber, 2.0)
-		ci.draw_line(_iso(c, tw, -0.10, l0 + 0.12, 0.11), _iso(c, tw, 0.10, l0 + 0.12, 0.11), amber, 2.0)
+	var axis := 0 if d.x != 0 else 1
+	var sign := float(d.x if d.x != 0 else d.y)
+	_iso_tube(ci, c, tw, axis, sign * r * 0.8, sign * 0.5, 0.075, 0.09, m, Color(orange.r, orange.g, orange.b, 0.85 * orange.a))
+	# The airlock collar: a short, wider round section with amber rings.
+	var l0 := sign * (r + 0.01)
+	var l1 := sign * (r + 0.09)
+	_iso_tube(ci, c, tw, axis, l0, l1, 0.115, 0.09, m.lightened(0.1))
+	var face := _iso(c, tw, maxf(l0, l1), 0.0, 0.09) if axis == 0 else _iso(c, tw, 0.0, maxf(l0, l1), 0.09)
+	var across := Vector2(-0.5, 0.25) * tw if axis == 0 else Vector2(0.5, 0.25) * tw
+	for k in [0.11, 0.07]:
+		var ring := PackedVector2Array()
+		for i in 21:
+			var th := i * TAU / 20.0
+			ring.append(face + (across * cos(th) + Vector2(0, -tw) * sin(th)) * k)
+		ci.draw_polyline(ring, amber, 1.5)
 
 
 ## Draws building `type` on the diamond tile centred at `c`, `tw` pixels wide.
@@ -482,26 +511,22 @@ static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> v
 	ci.draw_circle(p - Vector2(rad * 0.25, rad * 0.25), rad * 0.6, col)
 
 
-## A Heat Main tile: tunnel segments toward each linked neighbour.
+## A Heat Main tile: round tunnel tubes toward each linked neighbour, meeting
+## at a round junction.
 static func _iso_tunnel(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
-	var md := _fade(METAL_DARK, state)
 	var m := _fade(METAL, state)
 	var a := _fade(ORANGE, state)
-	var ordered: Array = []
+	var stripe := Color(a.r, a.g, a.b, 0.85 * a.a)
+	var back: Array = []
+	var front: Array = []
 	for d in links:
-		if d.x < 0 or d.y < 0:
-			ordered.push_front(d)
-		else:
-			ordered.append(d)
-	for d in ordered:
-		var dv := Vector2(d)
-		if dv.x != 0:
-			_box(ci, c, tw, minf(0.0, dv.x * 0.5), -0.10, maxf(0.0, dv.x * 0.5), 0.10, 0.12, md, m)
-			ci.draw_line(_iso(c, tw, 0, 0, 0.12), _iso(c, tw, dv.x * 0.5, 0, 0.12), Color(a.r, a.g, a.b, 0.7 * a.a), 2.0)
-		else:
-			_box(ci, c, tw, -0.10, minf(0.0, dv.y * 0.5), 0.10, maxf(0.0, dv.y * 0.5), 0.12, md, m)
-			ci.draw_line(_iso(c, tw, 0, 0, 0.12), _iso(c, tw, 0, dv.y * 0.5, 0.12), Color(a.r, a.g, a.b, 0.7 * a.a), 2.0)
-	_cyl(ci, c, tw, 0, 0, 0.14, 0.15, md, m)
+		(back if (d.x < 0 or d.y < 0) else front).append(d)
+	for d in back:
+		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, 0.0, float(d.x if d.x != 0 else d.y) * 0.5, 0.085, 0.10, m, stripe)
+	_cyl(ci, c, tw, 0, 0, 0.16, 0.20, _fade(METAL_DARK, state), m)
+	ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.20), tw * 0.115, tw * 0.058), a, 2.0)
+	for d in front:
+		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, 0.0, float(d.x if d.x != 0 else d.y) * 0.5, 0.085, 0.10, m, stripe)
 
 
 # ============================================================ terrain
