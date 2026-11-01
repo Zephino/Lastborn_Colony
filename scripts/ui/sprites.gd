@@ -58,12 +58,18 @@ const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28,
 	"fusion": 0.36, "catcher": 0.16, "reclaimer": 0.30, "fab": 0.32, "dronebay": 0.28, "mast": 0.22,
 	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.44, "lounge": 0.34}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
-## How many doors each building has (default 2). Sides with a tunnel always
-## get an open door; spare doors show as capped ones, front sides first.
+## How many doors (tunnel entrances) each building has. Sides with a tunnel
+## always get an open door; spare doors show as capped ones, front sides first.
+## 4: hubs where people live, gather or pass between levels.
+## 2: workplaces on the way between places (in one side, out the other).
+## 1: out-of-the-way sites, machines tied to the ground, and places kept apart for safety.
 const DOORS := {
-	"hull": 4, "commons": 4, "bunk": 4, "clinic": 4, "cache": 4, "lounge": 4, "garden": 4, "academy": 4,
-	"mirror": 1, "mast": 1, "catcher": 1,
+	"hull": 4, "shaft": 4, "shaft_base": 4, "bunk": 4, "commons": 4, "clinic": 4, "academy": 4, "lounge": 4, "garden": 4,
+	"splitter": 2, "vat": 2, "forge": 2, "fab": 2, "reclaimer": 2, "cache": 2, "lab": 2, "workshop": 2, "warden": 2, "rescue": 2,
+	"mirror": 1, "vent": 1, "drill": 1, "cutter": 1, "rail": 1, "mast": 1, "catcher": 1, "dronebay": 1, "fusion": 1, "hazlab": 1,
 }
+## Spare doors go on the front sides first; a two-door building's second door
+## faces its first (opposite sides).
 const DOOR_ORDER := [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
 ## The sides that show a capped door for the building being drawn.
 static var _cap_sides: Array = []
@@ -72,6 +78,8 @@ static var _cap_sides: Array = []
 static func cap_sides(type: String, links: Array) -> Array:
 	var spare := int(DOORS.get(type, 2)) - links.size()
 	var out: Array = []
+	if int(DOORS.get(type, 2)) == 2 and links.size() == 1 and not (-(links[0] as Vector2i) in links):
+		return [-(links[0] as Vector2i)]
 	for d in DOOR_ORDER:
 		if spare <= 0:
 			break

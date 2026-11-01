@@ -43,10 +43,16 @@ func _buildings(from: int, to: int) -> void:
 		_text(GameData.building(id)["name"], o + Vector2(12, 26), 20, Color(1.0, 0.82, 0.48))
 		# Top-down, on one ground tile.
 		var r := Rect2(o + Vector2(14, 44), Vector2(120, 120))
-		var sample := {"links": [Vector2i(1, 0), Vector2i(0, 1)]} if id != "main" else {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
-		# One-door buildings get one tunnel; four-door ones show their spare doors.
-		if int(Sprites.DOORS.get(id, 2)) == 1:
-			sample = {"links": [Vector2i(1, 0)]}
+		# Each building is shown with a tunnel at every door it has.
+		var doors := int(Sprites.DOORS.get(id, 2))
+		var sample := {"links": [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)].slice(0, doors)}
+		if doors == 2:
+			# Two-door buildings are passed through: in one side, out the other.
+			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
+		if id == "main":
+			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
+		else:
+			_text("%d door%s" % [doors, "" if doors == 1 else "s"], o + Vector2(cw - 90, 26), 16, Color(0.7, 0.75, 0.8))
 		Sprites.terrain_top(self, "regolith", r)
 		Sprites.draw_top(self, id, r, sample)
 		# Angled, on one diamond.

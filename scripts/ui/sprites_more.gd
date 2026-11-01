@@ -46,17 +46,24 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 					ci.draw_line(Vector2(q.position.x + q.size.x * t, q.position.y), Vector2(q.position.x + q.size.x * t, q.end.y), _f(Color(0.55, 0.62, 0.75), state), 1.0)
 					ci.draw_line(Vector2(q.position.x, q.position.y + q.size.y * t), Vector2(q.end.x, q.position.y + q.size.y * t), _f(Color(0.40, 0.46, 0.58), state), 1.0)
 		"reclaimer":
-			# A hopper of junk at the back, a water tank at the right, an ore bin at the front-left.
-			var hop := Rect2(c + Vector2(-s * 0.48, -s * 0.48), Vector2(s * 0.22, s * 0.22))
-			ci.draw_rect(hop, md)
-			for k in 5:
-				S._rot_rect(ci, hop.position + Vector2(s * (0.05 + (k % 3) * 0.06), s * (0.06 + (k / 3) * 0.08)), Vector2.from_angle(k * 1.3), s * 0.06, s * 0.03, _f([Color(0.6, 0.55, 0.45), Color(0.5, 0.5, 0.55), Color(0.65, 0.35, 0.3)][k % 3], state))
-			ci.draw_circle(c + Vector2(s * 0.36, -s * 0.36), s * 0.11, md)
-			ci.draw_circle(c + Vector2(s * 0.36, -s * 0.36), s * 0.085, _f(S.WATER, state).darkened(0.2))
-			var bin := Rect2(c + Vector2(-s * 0.47, s * 0.28), Vector2(s * 0.18, s * 0.16))
-			ci.draw_rect(bin, md)
+			# A heap of mixed junk at the back-right, carried into the dome on a conveyor.
+			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
+			var heap := c + Vector2(s * 0.36, -s * 0.36)
+			for k in 11:
+				var off := Vector2.from_angle(k * 2.3) * s * (0.03 + (k % 4) * 0.025)
+				S._rot_rect(ci, heap + off, Vector2.from_angle(k * 1.7), s * 0.07, s * 0.045, _f(junk[k % 5], state))
+			S._rot_rect(ci, c.lerp(heap, 0.55), Vector2(1, -1), s * 0.26, s * 0.08, md)
 			for k in 4:
-				ci.draw_circle(bin.position + Vector2(s * (0.05 + (k % 2) * 0.08), s * (0.05 + (k / 2) * 0.06)), s * 0.03, _f(Color(0.45, 0.6, 0.58), state))
+				S._rot_rect(ci, c.lerp(heap, 0.42 + k * 0.08), Vector2(1, 1), s * 0.08, s * 0.01, m)
+			# A tank of recovered water at the back-left.
+			ci.draw_circle(c + Vector2(-s * 0.38, -s * 0.38), s * 0.085, md)
+			ci.draw_circle(c + Vector2(-s * 0.38, -s * 0.38), s * 0.065, _f(S.WATER, state).darkened(0.2))
+			# Crushed-scrap bales at the front-left, strapped.
+			for k in 3:
+				var bale := Rect2(c + Vector2(-s * (0.48 - (k % 2) * 0.12), s * (0.27 + (k / 2) * 0.11)), Vector2(s * 0.11, s * 0.10))
+				ci.draw_rect(bale, _f(junk[(k + 1) % 5], state).darkened(0.1))
+				ci.draw_line(Vector2(bale.position.x, bale.get_center().y), Vector2(bale.end.x, bale.get_center().y), md, 1.0)
+				ci.draw_rect(bale, md, false, 1.0)
 		"fab":
 			# A factory hall at the back with a sawtooth roof and a chimney, and parts crates at the front-left.
 			var hall := Rect2(c + Vector2(-s * 0.49, -s * 0.49), Vector2(s * 0.40, s * 0.24))
@@ -152,14 +159,14 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			S._glow(ci, c, s * 0.06, _f(S.GOLD, state), state)
 			ci.draw_arc(c, rad * 0.6, 0, TAU, 20, _f(S.GOLD, state), 2.0)
 		"reclaimer":
-			# Three arrows chasing round: recycling.
-			var g := _f(S.GREEN, state)
-			for k in 3:
-				var a0 := k * TAU / 3.0
-				ci.draw_arc(c, rad * 0.45, a0, a0 + TAU / 3.0 - 0.5, 10, g, maxf(2.5, s * 0.035))
-				var tip := c + Vector2.from_angle(a0 + TAU / 3.0 - 0.45) * rad * 0.45
-				var d := Vector2.from_angle(a0 + TAU / 3.0 - 0.45 + PI / 2.0)
-				ci.draw_colored_polygon(PackedVector2Array([tip + d * s * 0.05, tip + d.orthogonal() * s * 0.04, tip - d.orthogonal() * s * 0.04]), g)
+			# The shredder: two toothed rollers, with a green recycling sign beside it.
+			for k in 2:
+				var roll := Rect2(c + Vector2(-rad * 0.5, -rad * 0.38 + k * rad * 0.24), Vector2(rad * 0.62, rad * 0.18))
+				ci.draw_rect(roll, m.lightened(0.1))
+				for t in 6:
+					var x := roll.position.x + rad * 0.05 + t * rad * 0.1
+					ci.draw_line(Vector2(x, roll.position.y), Vector2(x, roll.end.y), md, 1.0)
+			_recycle_sign(ci, c + Vector2(rad * 0.30, rad * 0.25), rad * 0.30, _f(S.GREEN, state))
 		"fab":
 			# Inside: a conveyor belt carrying parts between two yellow robot arms.
 			ci.draw_rect(Rect2(c + Vector2(-rad * 0.7, -rad * 0.1), Vector2(rad * 1.4, rad * 0.2)), md)
@@ -274,11 +281,23 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 					ci.draw_line(panel[0].lerp(panel[3], t), panel[1].lerp(panel[2], t), _f(Color(0.40, 0.46, 0.58), state), 1.0)
 				ci.draw_polyline(PackedVector2Array([panel[0], panel[1], panel[2], panel[3], panel[0]]), md, 1.5)
 		"reclaimer":
-			S._box(ci, c, tw, -0.48, -0.48, -0.26, -0.26, 0.12, md, Color(0.3, 0.28, 0.25, md.a))
+			# A tank of recovered water at the back.
+			S._cyl(ci, c, tw, -0.36, -0.36, 0.12, 0.26, _f(S.WATER, state).darkened(0.25), _f(S.WATER, state).darkened(0.05))
+			# A heap of mixed junk at the right, and a conveyor carrying it up into the dome.
+			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
+			for k in 14:
+				var layer := 0 if k < 8 else (1 if k < 12 else 2)
+				var ang := k * 2.3
+				var rr := 0.10 - layer * 0.035
+				S._iso_sphere(ci, S._iso(c, tw, 0.36 + cos(ang) * rr, -0.36 + sin(ang) * rr, 0.02 + layer * 0.045), tw * 0.03, _f(junk[k % 5], state))
+			var belt := PackedVector2Array([S._iso(c, tw, 0.30, -0.24, 0.06), S._iso(c, tw, 0.24, -0.30, 0.06), S._iso(c, tw, 0.10, -0.16, 0.20), S._iso(c, tw, 0.16, -0.10, 0.20)])
+			ci.draw_colored_polygon(belt, md)
 			for k in 4:
-				S._iso_sphere(ci, S._iso(c, tw, -0.44 + (k % 2) * 0.1, -0.44 + (k / 2) * 0.1, 0.14), tw * 0.025, _f([Color(0.6, 0.55, 0.45), Color(0.5, 0.5, 0.55), Color(0.65, 0.35, 0.3), Color(0.55, 0.5, 0.4)][k], state))
-			S._cyl(ci, c, tw, 0.36, -0.36, 0.11, 0.30, _f(S.WATER, state).darkened(0.25), _f(S.WATER, state).darkened(0.05))
-			ci.draw_line(S._iso(c, tw, 0.12, -0.12, 0.12), S._iso(c, tw, 0.30, -0.30, 0.12), md, tw * 0.03)
+				var t := 0.2 + k * 0.2
+				ci.draw_line(belt[0].lerp(belt[3], t), belt[1].lerp(belt[2], t), m, 1.0)
+			for k in 2:
+				S._iso_sphere(ci, belt[0].lerp(belt[2], 0.3 + k * 0.35) - Vector2(0, tw * 0.015), tw * 0.018, _f(junk[k + 2], state))
+
 		"fab":
 			# The factory hall behind, with a sawtooth roof of skylights, and a smoking chimney.
 			var grey := _f(Color(0.55, 0.56, 0.58), state)
@@ -357,14 +376,26 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 				ci.draw_line(top, apex, Color(1.0, 0.95, 0.8, 0.9), 2.0)
 			S._glow(ci, apex, tw * 0.035, gold, state)
 		"reclaimer":
-			var g := _f(S.GREEN, state)
-			var mid := S._iso(c, tw, 0, 0, 0.05 + h * 0.5)
+			# Inside: the shredder's two toothed rollers, with a green glow below.
+			var mid := S._iso(c, tw, 0, 0, 0.10)
+			S._glow(ci, mid + Vector2(0, tw * 0.02), tw * 0.03, _f(S.GREEN, state), state)
+			for k in 2:
+				var roller := S._iso(c, tw, 0, -0.06 + k * 0.09) - c + c
+				S._iso_tube(ci, roller, tw, 0, -0.14, 0.14, 0.035, 0.12, m.lightened(0.05))
+				for t in 5:
+					var u := -0.12 + t * 0.06
+					ci.draw_line(S._iso(c, tw, u, -0.06 + k * 0.09, 0.12) - Vector2(0, tw * 0.03), S._iso(c, tw, u, -0.06 + k * 0.09, 0.12) - Vector2(0, tw * 0.045), md, 1.5)
+			# A big recycling sign on the dome.
+			_recycle_sign(ci, S._iso(c, tw, 0, 0, 0.05 + h * 0.62), tw * 0.075, _f(S.GREEN, state))
+			# Crushed-scrap bales stacked at the left, strapped.
+			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
 			for k in 3:
-				var a0 := rad_to_deg(k * TAU / 3.0)
-				ci.draw_polyline(S._ellipse(mid, r * tw * 0.32, r * tw * 0.20, a0, a0 + 90.0, 8), g, 2.5)
-			S._box(ci, c, tw, -0.47, 0.28, -0.29, 0.44, 0.07, md)
-			for k in 4:
-				S._iso_sphere(ci, S._iso(c, tw, -0.43 + (k % 2) * 0.08, 0.32 + (k / 2) * 0.06, 0.08), tw * 0.022, _f(Color(0.45, 0.6, 0.58), state))
+				var u := -0.48 + (k % 2) * 0.11
+				var v := 0.28 + (k / 2) * 0.04
+				var z := (k / 2) * 0.09
+				S._box(ci, c, tw, u, v, u + 0.10, v + 0.10, 0.09, _f(junk[(k + 1) % 5], state).darkened(0.1), Color(0, 0, 0, 0), z)
+				ci.draw_line(S._iso(c, tw, u + 0.10, v, z + 0.045), S._iso(c, tw, u + 0.10, v + 0.10, z + 0.045), md, 1.5)
+				ci.draw_line(S._iso(c, tw, u, v + 0.10, z + 0.045), S._iso(c, tw, u + 0.10, v + 0.10, z + 0.045), md, 1.5)
 		"fab":
 			# Inside: a conveyor with parts, and two yellow robot arms over it.
 			var belt := PackedVector2Array([S._iso(c, tw, -0.22, -0.04, 0.07), S._iso(c, tw, 0.22, -0.04, 0.07), S._iso(c, tw, 0.22, 0.04, 0.07), S._iso(c, tw, -0.22, 0.04, 0.07)])
@@ -454,6 +485,23 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			S._box(ci, c, tw, -0.48, 0.28, -0.26, 0.32, 0.12, md, Color(0, 0, 0, 0), 0.04)
 			S._glow(ci, S._iso(c, tw, -0.40, 0.30, 0.12), tw * 0.02, _f(S.PINK, state), state)
 			S._glow(ci, S._iso(c, tw, -0.32, 0.30, 0.12), tw * 0.02, _f(S.CYAN, state), state)
+
+
+## The recycling sign: three arrows chasing each other round a triangle.
+static func _recycle_sign(ci: CanvasItem, p: Vector2, size: float, col: Color) -> void:
+	var corners: Array = []
+	for k in 3:
+		corners.append(p + Vector2.from_angle(deg_to_rad(-90.0 + k * 120.0)) * size)
+	ci.draw_circle(p, size * 1.25, Color(0.05, 0.08, 0.06, 0.55 * col.a))
+	for k in 3:
+		var a: Vector2 = corners[k]
+		var b: Vector2 = corners[(k + 1) % 3]
+		var from := a.lerp(b, 0.12)
+		var to := a.lerp(b, 0.72)
+		ci.draw_line(from, to, col, maxf(2.0, size * 0.22))
+		var d := (b - a).normalized()
+		var n := d.orthogonal()
+		ci.draw_colored_polygon(PackedVector2Array([to + d * size * 0.32, to + n * size * 0.24, to - n * size * 0.24]), col)
 
 
 ## The Academy at an angle: a brick schoolhouse dome with two rows of lit

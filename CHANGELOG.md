@@ -2,6 +2,31 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.32
+Date: 11/01/2026
+Time: 5:25 PM
+
+### Changes
+Sprite concepts (still not used in the game):
+- **Reclaimer redrawn as a recycling plant:**
+  - a heap of mixed junk with a conveyor feeding the dome;
+  - a shredder with two toothed rollers and a green glow inside;
+  - a clear green recycling sign (three chasing arrows) on the dome;
+  - stacks of strapped crushed-scrap bales;
+  - a squat tank of recovered water.
+- **Door counts chosen for each building** (`DOORS` in `scripts/ui/sprites.gd`):
+  - **4 doors, hubs where people live, gather or move between levels:** Landing Hull, Shaft, Shaft Landing, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern.
+  - **2 doors, workplaces you pass through (in one side, out the opposite side):** Splitter, Kelp Vat, Forge, Fab Shop, Reclaimer, Cache, Survey Lab, Workshop, Warden Post, Rescue Station.
+  - **1 door:**
+    - out-of-the-way sites and machines tied to the ground: Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Launch Rail, Signal Mast, Beam Catcher, Drone Bay (its drones use the garage);
+    - places kept apart for safety: Fusion Core, Hazard Lab.
+  - A two-door building's spare door sits opposite its tunnel.
+  - The sprite sheet shows each building with a tunnel at every door and labels its door count.
+- Gameplay is unchanged: a building still joins the colony through any side that touches it.
+
+### Reason
+The owner said the Reclaimer needed fixing, and asked for each building to have 1, 2 or 4 entrances, whichever makes the most sense, with all buildings redrawn.
+
 ## Version 00.01.31
 Date: 11/01/2026
 Time: 5:00 PM
