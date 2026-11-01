@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.24
+Date: 11/01/2026
+Time: 1:54 PM
+
+### Changes
+- **Four buildings redrawn to show what they do** (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game):
+  - **Kelp Vat:** the dome is full of water with kelp growing in it, bubbles and pink grow lamps. A tall glass grow tank full of kelp stands beside it, and a crate of harvested kelp sits in front.
+  - **Bunkhouse:** beds and bunk beds can be seen through the glass around a table with a warm lamp. It has a lit front door, a lamp post and a planter of shrubs.
+  - **Seam Cutter:** a boom with a spiked cutting drum chews into cracks of teal ore in the ground, raising dust. A conveyor carries ore to a heap, and fresh ore sits inside the dome.
+  - **Workshop:** a gear-and-wrench sign glows on the dome. A robot arm welds a broken rover on a hazard-striped repair pad, and a small crane lifts an engine block. Parts crates and a spare gear stand at the back.
+- **The Survey Lab is now a giant radio telescope:** a huge mesh dish set into the ground, with three lattice towers holding a receiver platform on cables high over the middle. It has a small glass control dome at one corner. The old lab drawing code was removed.
+- All are drawn both top-down and angled. Tunnels, airlocks and ports join them as before.
+
+### Reason
+The owner said the Seam Cutter, Workshop, Bunkhouse and Kelp Vat didn't look like what they do. They also asked for the Survey Lab to be like a big radio telescope set into the ground.
+
 ## Version 00.01.23
 Date: 11/01/2026
 Time: 1:42 PM
