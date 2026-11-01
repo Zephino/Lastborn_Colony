@@ -1,0 +1,36 @@
+---
+description: Lastborn Colony project rules. Always apply.
+alwaysApply: true
+---
+
+# Lastborn Colony — standing rules
+
+## Source of truth
+- Read `README.md` before starting a task. It describes the game, the code layout and the turn order.
+- The owner decides the design. If a task seems to conflict with the existing design, stop and ask instead of guessing.
+- Never remove or rewrite working features unless asked.
+
+## Content and IP
+- Everything in the game is original: setting, names, buildings, numbers, story and art.
+- Never copy names, numbers, data tables or designs from other games, including Outpost and Cold Ledger's Outpost-derived data. Cold Ledger may be used only as a reference for code structure and general ideas.
+- No third-party art, sound or fonts unless the owner approves them under `dependencies.mdc`. Art is drawn in code.
+
+## Code
+- Godot 4.3+, GDScript with static typing where practical. Keep scripts focused (aim for under ~400 lines).
+- All tuning numbers and player-facing game text go in `res://data/*.json`, never hard-coded.
+- `scripts/sim/` holds the rules and must not depend on scenes or nodes, so it runs headless.
+- The whole game is one plain `Dictionary` state that saves directly to JSON. No objects in it.
+- Every random decision goes through `scripts/sim/rng.gd`. Never call Godot's global `randf()`/`randi()` in `scripts/sim/`.
+- `state["structures"]` is processed in insertion order; keep ids increasing and saves unsorted.
+- Values that are saved must stay exact through a save and load (see `Turn._quantize`).
+- New state fields need a default in `new_game.gd`, any int restored in `save_game.gd`, and a test.
+
+## Online services
+- The game talks only to the owner's Cloudflare Worker in `leaderboard-api/`. Its public address lives in `scripts/net/online_config.gd`.
+- Secrets (GitHub token, Google client id and secret) live only in Cloudflare. Never put them in the repo or in chat.
+- The game must stay fully playable offline; online features fail quietly with a short message.
+
+## Working with the owner
+- The owner is not a professional programmer. Explain things simply.
+- When a step needs the Godot editor, Cloudflare, Google or GitHub settings, give exact click-by-click instructions.
+- End every task by telling the owner how to test what you built.

@@ -1,0 +1,19 @@
+---
+description: Investigate reproducible failures and trace their underlying cause
+alwaysApply: true
+---
+
+# Bug Investigation
+
+When asked to fix a bug:
+
+1. Gather the observed behavior, expected behavior, error output (including Godot's Output and Debugger panels), and steps that trigger it.
+2. Reproduce the failure when practical, or explain which evidence is available if reproduction is impossible. Use `tests/trace.gd` (a turn-by-turn trace for any seed) to reach the situation quickly.
+3. Trace the failing path through relevant code, data (`res://data/` JSON), and scenes.
+4. Narrow the cause with logs, a focused test, or a small read-only diagnostic.
+5. State the evidence for the likely root cause before changing code.
+6. Fix the cause within the approved scope, then rerun the reproduction and a relevant regression check.
+
+Do not hide a failure by catching and ignoring it or changing an unrelated setting. In particular, never fix a balance problem by hard-coding a number instead of changing data, and never fix a test by weakening or deleting it. If the evidence points to a different scope than the approved work, explain the change in scope before editing.
+
+After the fix, describe the cause and the fix in that change's `CHANGELOG.md` entry.

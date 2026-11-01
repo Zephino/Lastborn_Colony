@@ -1,0 +1,26 @@
+---
+description: Update maintained documentation when a change affects setup or operation
+alwaysApply: true
+---
+
+# Documentation Rule
+
+Update relevant maintained documentation as part of the same approved change when the work changes:
+
+- Setup, dependencies, addons, export or deployment steps (`README.md`, `CREDITS.md`, `leaderboard-api/README.md`)
+- User-visible controls, settings or rules of play (`README.md`, "How to play")
+- Configuration keys, JSON data fields, or file formats (comments at the top of the relevant script, and `README.md`)
+
+## Design decisions
+
+The owner decides the game's design. If you had to make a design decision the owner didn't ask for, say so in your reply and in the `CHANGELOG.md` entry, so the owner can approve or reverse it.
+
+## How to update
+
+1. Find the document people already use for that topic.
+2. Edit that document instead of making a redundant copy.
+3. Make commands, examples, and instructions agree with the final implementation.
+4. Explain any manual step the owner must perform in the Godot editor, click by click.
+5. Never rewrite past `CHANGELOG.md` entries; add new ones.
+
+If the approved change has no documentation impact, do not add filler documentation.

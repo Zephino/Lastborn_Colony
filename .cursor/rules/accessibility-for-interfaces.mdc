@@ -1,0 +1,25 @@
+---
+description: Make game menus and HUD usable with keyboard, mouse, touch, and players with different needs
+globs: scenes/**,scripts/ui/**
+alwaysApply: false
+---
+
+# Accessibility for Game Interfaces
+
+Apply this rule when creating or changing a menu, HUD element, or other interface in Godot.
+
+## Controls and navigation
+
+- Every menu must be fully usable with keyboard, mouse, and touch. Give the first control focus when a menu or dialog opens, and keep Tab order logical.
+- Focused controls must have a clearly visible focus style.
+- Touch targets are at least 44 px high, since the game is playable in a phone browser.
+- Never require holding or rapid tapping when a single press would do.
+
+## Feedback and content
+
+- Never communicate meaning by color alone: shortages, idle buildings and terrain also use text, symbols or the inspector.
+- Keep text readable at the smallest supported screen size.
+- Make status changes understandable: important events (shortages, plague, missed payments, endings) appear in the log and, when they need a decision, in a dialog.
+- Player-facing text belongs in `data/*.json` where practical, so it can be edited or translated later.
+
+Do not change unrelated screens solely to meet this rule; mention broader issues to the owner separately.

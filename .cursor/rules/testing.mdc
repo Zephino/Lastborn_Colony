@@ -1,0 +1,28 @@
+---
+description: Write tests for game logic and give manual test steps for game feel
+alwaysApply: true
+---
+
+# Testing
+
+## Automated tests (logic)
+
+Write automated tests for pure logic, where a wrong number would silently break the game:
+
+- the turn order and each step's rules (allocation, production, life support, population, morale, crime, plague, payments)
+- placement rules and every player action's `{ok, reason}` result
+- research effects
+- saving and loading (a loaded game must play on identically)
+- seeded generation and determinism (same seed and actions → same game)
+- JSON data validation
+- the scripted bot: it must still win on the test seeds after any balance change
+
+Tests live in `res://tests/` and run headless with `godot --headless --script res://tests/run_tests.gd`. They must all pass before every push.
+
+## Manual tests (feel)
+
+Movement, combat feel, readability, and fun can't be unit-tested. For these, give the owner short step-by-step manual tests in your reply.
+
+## Never claim what you didn't test
+
+Headless tests are not playtesting. Say which checks ran, and never claim visual or gameplay testing you didn't do.

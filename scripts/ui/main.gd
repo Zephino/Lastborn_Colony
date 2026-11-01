@@ -77,10 +77,13 @@ func _button(text: String, action: Callable) -> Button:
 func show_title() -> void:
 	_clear_screen()
 	state = {}
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(root)
+	screen = root
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
-	screen = center
+	root.add_child(center)
 	var box := VBoxContainer.new()
 	box.custom_minimum_size = Vector2(420, 0)
 	box.add_theme_constant_override("separation", 12)
@@ -108,6 +111,9 @@ func show_title() -> void:
 			var label := "Load saved game" if slot == "manual" else "Load autosave"
 			box.add_child(_button(label, func() -> void: _load(slot)))
 	box.add_child(_button("Quit", func() -> void: get_tree().quit()))
+	var version := _label("v" + str(ProjectSettings.get_setting("application/config/version", "")), 13, Color(0.55, 0.6, 0.66))
+	root.add_child(version)
+	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 12)
 
 
 func _on_new_colony(name_edit: LineEdit, seed_box: SpinBox) -> void:

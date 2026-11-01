@@ -28,14 +28,19 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Keep people alive.** Each person uses 0.1 food, 0.1 oxygen and 0.05 water per turn. Shortages kill people, and oxygen shortages kill fastest.
 - **Morale** sets production efficiency (50–130%). Commons and the Clinic raise it. Shortages, overcrowding and missed payments lower it. Below 20, people leave.
 - **Money:** Forges turn ore into alloy, and Launch Rails sell alloy for 20 marks each. Rails never sell below your export reserve, which you set in the right panel. You can also pay the debt early from there.
-- **Events** happen at random: grit storms, vent surges, broken seals, stowaways, auditors and offers. Some ask you to choose.
+- **Research:** Survey Labs produce research toward the topic you pick. Finished topics boost buildings, housing or exports, or reduce breakdowns, plague and crime.
+- **People age:** children grow into adults, and adults grow into elders, who don't work and die sooner. A Clinic helps everyone live longer.
+- **Breakdowns:** machines wear out and break down now and then. A Workshop speeds up repairs.
+- **Crime** grows with population, crowding and low morale. It steals alloy and marks and lowers morale. Warden Posts hold it down.
+- **Plague** can break out in a larger colony. Survey Labs must research a cure before time runs out, or about a tenth of the colony dies.
+- **Events** happen at random: grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
 - **Keys:** Enter ends the turn and Esc cancels building. Right-drag pans the map and the mouse wheel zooms. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
 
 ## Layout
 
 | Path | What it is |
 | --- | --- |
-| `data/*.json` | All numbers and text: balance, buildings, events, story. Tune the game here. |
+| `data/*.json` | All numbers and text: balance, buildings, research, events, story. Tune the game here. |
 | `scripts/sim/` | The rules. Has no scene or node dependencies, so it runs headless. |
 | `scripts/sim/game_data.gd` | Loads the JSON once. Also has the climate functions `light_at` and `cold_at`. |
 | `scripts/sim/rng.gd` | mulberry32 random numbers. The generator state is kept in `state["rng"]`, so saves replay exactly. |
@@ -43,10 +48,13 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/new_game.gd` | Builds a fresh state `Dictionary`. |
 | `scripts/sim/actions.gd` | Player actions. Each one returns `{ok, reason}`. |
 | `scripts/sim/turn.gd` | `end_turn(state)`. |
+| `scripts/sim/research.gd` | Research topics and their effects. |
 | `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |
 | `scripts/ui/main.gd` | All screens, built in code. |
 | `scripts/ui/map_view.gd` | Map drawing and mouse input. |
-| `tests/` | Headless test runner and the scripted bot. |
+| `tests/` | Headless test runner, the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
+| `.cursor/rules/`, `AGENTS.md`, `CLAUDE.md` | Rules for AI assistants working on the project. |
+| `CHANGELOG.md`, `VERSION` | What changed in each version, and the current version. |
 
 ### Turn order
 
@@ -57,14 +65,18 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 3. Connectivity to the hull
 4. Allocation of workers, power and heat
 5. Production and export
-6. Storage caps
-7. Life support
-8. Population
-9. Morale and defection
-10. Company payment
-11. Timers
-12. Random events
-13. Endings
+6. Research (or the plague cure)
+7. Storage caps
+8. Life support
+9. Population: births, growing up, aging, deaths
+10. Morale and defection
+11. Crime
+12. Breakdowns
+13. Plague
+14. Company payment
+15. Timers
+16. Random events
+17. Endings
 
 ### Rules for changing the code
 
@@ -74,5 +86,9 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- **This first version has not been run in Godot yet.** The scripts parse cleanly with `gdtoolkit`, and the economy was checked with a Python model: a scripted player clears the debt between turns 126 and 170 on 20 of 20 seeds, and a colony that builds nothing dies by about turn 50. Run the tests and play it once before building on top of it.
-- Ideas: underground levels, research, a second rival faction, trade prices that change, difficulty settings, and sound.
+- All 73 headless test checks pass in Godot 4.3. The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
+- Ideas: more planets, underground levels, a rival faction, changing trade prices, difficulty settings, and sound.
+
+## License
+
+Copyright (c) 2026 Zephino. All rights reserved. See `LICENSE` and `CREDITS.md`.

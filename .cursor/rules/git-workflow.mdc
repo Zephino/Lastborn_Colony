@@ -1,0 +1,13 @@
+---
+description: Use Git so every approved step can be recovered
+alwaysApply: true
+---
+
+# Git Workflow
+
+- The project is a Git repository. If it isn't yet, propose initializing one with a Godot-appropriate `.gitignore` (ignore `.godot/`, `*.import` caches as appropriate, export builds, `*.tmp`, OS files).
+- **Owner rule: commit and push straight to `main`.** No feature branches and no pull requests until the owner says otherwise. Run the tests before every push.
+- Commit after each completed task with a message in the form: `vXX.XX.XX: short description`.
+- Never commit secrets: API keys, GitHub tokens, Google client secrets, signing certificates, or passwords. Worker secrets live only in Cloudflare (Settings → Variables and Secrets). Public values (the Worker address, a KV namespace id) are safe to commit.
+- Never rewrite history (no force-push, no rebasing shared history) unless the owner asks.
+- Large binary assets (art, audio) are committed normally at first; propose Git LFS only if the repository grows large.

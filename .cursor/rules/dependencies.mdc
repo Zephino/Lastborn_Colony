@@ -1,0 +1,27 @@
+---
+description: Evaluate and document new packages, Godot addons, and plugins before adding them
+alwaysApply: true
+---
+
+# Dependency Rule
+
+Dependencies in this project include Godot addons and plugins (Asset Library, GitHub), GDExtensions, editor tools, fonts, and asset packs.
+
+## Before proposing one
+
+1. Check whether Godot 4 already has a built-in facility, or the project already has a suitable addon.
+2. Confirm it solves a real requirement the owner asked for.
+3. Check compatibility with the project's exact Godot 4 version and every export target (Web first; Windows, macOS, Linux).
+4. **Check the license allows commercial use and redistribution** in a sold game. Reject anything with an unclear license.
+5. Consider maintenance: recent updates, open issues, whether it is still supported.
+
+Propose it in two lines (what it is, why it's needed) as required by `think-before-acting.mdc`. Do not add it before the owner approves.
+
+## When adding it
+
+- Pin an exact version. Record name, version, source URL, and license in `CREDITS.md` (create it if missing).
+- Put Godot addons in `res://addons/` and enable them in Project Settings, with click-by-click instructions for any editor step.
+- Update `README.md` if a new install step is needed.
+- Run the project and confirm zero new errors in the Output panel.
+
+Do not add a dependency solely to avoid a small, clear change using existing tools.
