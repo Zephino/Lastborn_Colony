@@ -150,10 +150,23 @@ static func resolve_event(state: Dictionary, choice_index: int) -> Dictionary:
 ## Applies an event effect dictionary. Keys:
 ## stock names (food, credits, ...) add to stock; morale/adults/debt add to those;
 ## storm/surge/rest set a timer in turns; damage shuts down that many random buildings.
+## Story effects: company/union change those relations (0-100); flag sets a
+## story flag; ending ends the game with that ending.
 static func apply_effects(state: Dictionary, effects: Dictionary) -> void:
 	for key in effects:
+		if key == "flag":
+			state["flags"][str(effects[key])] = true
+			continue
+		if key == "ending":
+			var ending := str(effects[key])
+			state["ending"] = ending
+			state["pending_event"] = ""
+			state["log"].append({"turn": int(state["turn"]), "text": GameData.story()["endings"][ending]["title"] + "."})
+			continue
 		var v := float(effects[key])
 		match key:
+			"company", "union":
+				state["factions"][key] = clampf(float(state["factions"][key]) + v, 0.0, 100.0)
 			"morale":
 				state["morale"] = clampf(float(state["morale"]) + v, 0.0, 100.0)
 			"adults":

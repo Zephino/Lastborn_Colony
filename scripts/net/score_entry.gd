@@ -18,7 +18,7 @@ const MAX_COLONY_LENGTH := 24
 const MAX_TURN := 5000
 const MAX_DEBT_TOTAL := 1000000
 const MAX_POPULATION := 100000
-const ENDINGS := ["free", "receivership", "silent", "retired"]
+const ENDINGS := ["free", "receivership", "silent", "retired", "independence", "company_town"]
 const DEFAULT_PLANET := "brume"
 
 

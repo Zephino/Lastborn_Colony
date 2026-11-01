@@ -36,6 +36,7 @@ func _init() -> void:
 	test_input_rules()
 	test_manifest()
 	test_difficulty()
+	test_story()
 	test_colony_text()
 	test_planets_and_sites()
 	test_research()
@@ -248,6 +249,85 @@ func test_difficulty() -> void:
 	check(e["difficulty"] == "hard" and ScoreEntry.problem(e) == "", "scores carry their difficulty")
 
 
+## Ends turns until a given story event is waiting, answering others with their first non-ending choice.
+func _play_until_event(s: Dictionary, id: String, turns: int) -> bool:
+	for _i in turns:
+		if s["pending_event"] == id:
+			return true
+		if s["pending_event"] != "":
+			var ev := GameData.event(s["pending_event"])
+			var choices: Array = ev["choices"]
+			for i in choices.size():
+				if not (choices[i]["effects"] as Dictionary).has("ending") and Actions.choice_allowed(s, choices[i]):
+					Actions.resolve_event(s, i)
+					break
+		Turn.end_turn(s)
+	return s["pending_event"] == id
+
+
+func test_story() -> void:
+	print("Story and factions")
+	var known := ["company", "union", "flag", "ending", "morale", "credits", "alloy", "rest", "debt", "adults", "food", "oxygen", "water", "ore"]
+	for e in GameData.story_events():
+		var has_way_on := false
+		for c in e["choices"]:
+			var effects: Dictionary = c["effects"]
+			for k in effects:
+				check(k in known, "%s: effect %s is understood" % [e["id"], k])
+			if effects.has("ending"):
+				check(GameData.story()["endings"].has(effects["ending"]), "%s: ending %s has text" % [e["id"], effects["ending"]])
+			else:
+				has_way_on = true
+		check(has_way_on, "%s: there is always a choice that doesn't end the game" % e["id"])
+	var s := NewGame.create(1, "Margin")
+	check(float(s["factions"]["company"]) == 50.0 and float(s["factions"]["union"]) == 50.0, "both factions start at 50")
+	check(_play_until_event(s, "first_shift", 6), "the first story event arrives early")
+	Actions.resolve_event(s, 0)
+	check(float(s["factions"]["union"]) == 60.0, "a choice changes the Union's standing")
+	check(s["story_done"].has("first_shift"), "a story event happens once")
+	# The Assembly: a strong Union and a weak Company can end the game.
+	var a := NewGame.create(2, "Margin")
+	a["turn"] = 60
+	a["factions"] = {"company": 20.0, "union": 90.0}
+	a["story_done"] = []
+	for e in GameData.story_events():
+		if e["id"] != "assembly":
+			a["story_done"].append(e["id"])
+	Turn.end_turn(a)
+	check(a["pending_event"] == "assembly", "the Assembly comes when the Union is strong and the Company weak")
+	Actions.resolve_event(a, 1)
+	check(a["ending"] == "independence", "declaring the colony free ends the game as Independence")
+	var e2 := ScoreEntry.from_state(a, "Ari", "")
+	check(e2["ending"] == "independence" and ScoreEntry.problem(e2) == "", "an Independence score can be posted")
+	# A flag set by one choice unlocks a later event.
+	var f := NewGame.create(3, "Margin")
+	f["turn"] = 36
+	f["story_done"] = []
+	for e in GameData.story_events():
+		if e["id"] != "promise_kept":
+			f["story_done"].append(e["id"])
+	Turn.end_turn(f)
+	check(f["pending_event"] == "", "a follow-up waits for the flag it needs")
+	Actions.apply_effects(f, {"flag": "promised_shipments"})
+	f["story_cooldown"] = 0
+	Turn.end_turn(f)
+	check(f["pending_event"] == "promise_kept", "the follow-up comes once the flag is set")
+	# Company relations change who comes on the supply drop.
+	var p := NewGame.create(4, "Margin")
+	p["turn"] = 30
+	p["factions"]["company"] = 10.0
+	p["story_done"] = GameData.story_events().map(func(x): return x["id"])
+	var adults := float(p["adults"])
+	Turn.end_turn(p)
+	check(int(p["payments_made"]) == 1 and float(p["adults"]) < adults + 3.0, "a Company that dislikes you sends no settlers")
+	check(float(p["factions"]["company"]) == 13.0, "paying on time raises Company relations")
+	var old: Dictionary = JSON.parse_string(SaveGame.to_text(p))
+	for k in ["factions", "flags", "story_done", "story_cooldown"]:
+		old.erase(k)
+	var loaded: Dictionary = SaveGame.from_text(JSON.stringify(old))
+	check(float(loaded["factions"]["union"]) == 50.0 and loaded["story_done"].is_empty(), "a save from before the story loads with neutral factions")
+
+
 func test_manifest() -> void:
 	print("Ship manifest")
 	var rec := Manifest.recommended()
@@ -325,6 +405,8 @@ func test_research() -> void:
 	for _i in 40:
 		if Research.is_done(s, "coatings"):
 			break
+		if s["pending_event"] != "":
+			Actions.resolve_event(s, 0)
 		Turn.end_turn(s)
 	check(Research.is_done(s, "coatings"), "the lab finishes the topic")
 	check(absf(Research.mult(s, "out:mirror") - 1.25) < 1e-9, "the finished topic boosts mirrors by 25%")

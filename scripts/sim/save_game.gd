@@ -7,7 +7,7 @@ const TextRules = preload("res://scripts/sim/text_rules.gd")
 const GameData = preload("res://scripts/sim/game_data.gd")
 
 const DIR := "user://saves"
-const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest"]
+const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "story_cooldown", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest"]
 const STRUCT_INT_FIELDS := ["x", "y", "progress", "damaged"]
 
 
@@ -43,13 +43,19 @@ const DEFAULTS := {
 	"crime": 0.0,
 	"plague": {"active": false, "turns_left": 0, "cure": 0.0, "need": 0.0},
 	"research": {"current": "", "progress": 0.0, "done": []},
+	"factions": {"company": 50.0, "union": 50.0},
+	"flags": {},
+	"story_done": [],
+	"story_cooldown": 0,
 }
 
 
 static func normalize(state: Dictionary) -> void:
 	for k in DEFAULTS:
 		if not state.has(k):
-			state[k] = (DEFAULTS[k] as Variant) if typeof(DEFAULTS[k]) != TYPE_DICTIONARY else (DEFAULTS[k] as Dictionary).duplicate(true)
+			var d: Variant = DEFAULTS[k]
+			# Copy lists and dictionaries, so loaded games never share one.
+			state[k] = d.duplicate(true) if (typeof(d) == TYPE_DICTIONARY or typeof(d) == TYPE_ARRAY) else d
 	if not state.has("debt_total"):
 		state["debt_total"] = 6000.0
 	# A save can come from a file or the cloud: never trust its text or ids.

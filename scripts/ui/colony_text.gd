@@ -34,6 +34,7 @@ static func summary(state: Dictionary) -> String:
 	lines.append("[b]%s[/b], on %s (%s)" % [TextRules.escape_bbcode(str(state["colony_name"])), GameData.planet(state["planet"])["name"], GameData.difficulty(state["difficulty"])["name"]])
 	lines.append("Adults %s, children %s, elders %s." % [fmt(float(state["adults"])), fmt(float(state["children"])), fmt(float(state["elders"]))])
 	lines.append("Crime %s." % fmt(float(state["crime"])))
+	lines.append("Company relations %s, Union %s." % [fmt(float(state["factions"]["company"])), fmt(float(state["factions"]["union"]))])
 	if state["plague"]["active"]:
 		lines.append("[color=%s]Plague! Cure %d of %d, %d turns left.[/color]" % [RED, int(state["plague"]["cure"]), int(state["plague"]["need"]), int(state["plague"]["turns_left"])])
 	lines.append("Production efficiency %d%% (from morale)." % int(round(Turn.efficiency(state) * 100.0)))
@@ -176,6 +177,16 @@ static func report(state: Dictionary) -> String:
 		for key in counts:
 			items.append("%d × %s" % [int(counts[key]), key])
 		lines.append("IDLE OR STARVED: " + ", ".join(items))
+	var f: Dictionary = state["factions"]
+	var fnotes := PackedStringArray()
+	var b2 := GameData.balance()
+	if float(f["company"]) >= float(b2["company_good"]):
+		fnotes.append("the Company sends extra settlers")
+	elif float(f["company"]) <= float(b2["company_bad"]):
+		fnotes.append("the Company sends no settlers")
+	if float(f["union"]) <= float(b2["union_strike_level"]):
+		fnotes.append("the crews are close to striking")
+	lines.append("FACTIONS: Company %s, Union %s (out of 100)%s." % [fmt(float(f["company"])), fmt(float(f["union"])), (": " + ", ".join(fnotes)) if not fnotes.is_empty() else ""])
 	var research: Dictionary = state["research"]
 	if state["plague"]["active"]:
 		lines.append("RESEARCH: all labs on the plague cure, %d of %d." % [int(state["plague"]["cure"]), int(state["plague"]["need"])])

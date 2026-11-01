@@ -2,6 +2,37 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.10
+Date: 11/01/2026
+Time: 8:13 AM
+
+### Changes
+- **Factions.** The Company (Harrow & Vell) and the Crews' Union each have a relation from 0 to 100, starting at 50.
+  - **Company:** at 60 or more, each supply drop brings 2 extra settlers; at 25 or less, it brings none. Missed-payment penalties are 50% harsher at 0 and half as harsh at 100. Paying on time raises relations by 3, and missing a payment lowers them by 10.
+  - **Union:** each point above or below 50 moves the morale the colony is heading for by 0.1. Shortages lower it by 2 a turn; morale above 60 raises it slowly.
+  - Both show in the colony summary, and the Colony report says what they are doing to you.
+- **Story.** 11 original story events (`data/story_events.json`) with characters and choices:
+  - Each arrives once, when its conditions hold: turn, population, faction standing, or a flag set by an earlier choice (for example, a promise made to the inspector is called in later). There are at least 6 turns between story events.
+  - Every event has at least one choice that doesn't end the game. Choices can change relations, morale, marks and alloy, start a strike, or set a story flag.
+- **Two new endings:**
+  - **Independence:** the Assembly, when the Union is at 75+ and the Company at 30 or less after turn 60.
+  - **Company Town:** A Generous Offer, when the Company is at 80+ and the Union at 40 or less after turn 60.
+
+  Both have their own ending text and can be posted to the leaderboard, which accepts them and ranks them by debt paid.
+- Older saves load with neutral factions and no story yet.
+- The test bot never takes a game-ending story choice, because it plays for a Free Charter.
+- **Tests:** 348 game checks (69 new) and 55 server tests pass. The new checks cover:
+  - every story event's effects, and that each event has a choice that doesn't end the game;
+  - faction changes, and flags unlocking a follow-up event;
+  - the Assembly leading to Independence, and posting that score;
+  - the Company withholding settlers;
+  - older saves.
+
+  The scripted player still wins at least 2 of 3 games on every planet and difficulty. The first story event was checked on a phone-sized screen here.
+
+### Reason
+The owner chose story and factions as the second of the next three features.
+
 ## Version 00.01.09
 Date: 11/01/2026
 Time: 8:08 AM

@@ -73,6 +73,8 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Breakdowns:** machines wear out and break down now and then. A Workshop speeds up repairs.
 - **Crime** grows with population, crowding and low morale. It steals alloy and marks and lowers morale. Warden Posts hold it down.
 - **Plague** can break out in a larger colony. Survey Labs must research a cure before time runs out, or about a tenth of the colony dies.
+- **Factions:** the Company (Harrow & Vell) and the Crews' Union each have a relation from 0 to 100, shown in the colony summary and the report. Good Company relations soften missed-payment penalties and bring extra settlers; poor ones bring none. Good Union relations lift morale; very poor ones lead to a strike. Paying on time pleases the Company, missing a payment angers it, and shortages anger the Union.
+- **Story:** story events (`data/story_events.json`) arrive as the colony grows, each once, and ask you to choose. Some depend on earlier choices or on how the factions feel. Two can end the game: **Independence** (a strong Union and a weak Company: the colony declares itself free) and **Company Town** (a pleased Company and a weak Union: you sign the colony over and the debt is cancelled). Both count on the leaderboard, ranked by debt paid.
 - **Events** happen at random: grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
 - **Colony report** (button by End turn) shows where power, heat and workers go, how each resource changed, which buildings are idle and why, and the next payments. Selecting a building also says why it isn't running.
 - **Settings** (title screen, or Menu in a game): fullscreen, and for the web version Install app and Update app.
@@ -83,7 +85,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 | Path | What it is |
 | --- | --- |
-| `data/*.json` | All numbers and text: balance, buildings, research, events, story, planets, difficulty, cargo, online messages. Tune the game here. |
+| `data/*.json` | All numbers and text: balance, buildings, research, events, story and story events, planets, difficulty, cargo, online messages. Tune the game here. |
 | `scripts/sim/` | The rules. Has no scene or node dependencies, so it runs headless. |
 | `scripts/sim/game_data.gd` | Loads the JSON once. Also has the climate functions `light_at` and `cold_at`. |
 | `scripts/sim/rng.gd` | mulberry32 random numbers. The generator state is kept in `state["rng"]`, so saves replay exactly. |
@@ -127,7 +129,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 13. Plague
 14. Company payment
 15. Timers
-16. Random events
+16. Story events, then random events
 17. Endings
 
 ### Rules for changing the code
@@ -139,7 +141,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 ## Status and next steps
 
 - All 269 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). A colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
-- Ideas: underground levels, a rival faction, changing trade prices, difficulty settings, and sound.
+- Ideas: underground levels, changing trade prices, difficulty settings, and sound.
 
 ## Input safety
 

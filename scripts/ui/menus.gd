@@ -197,7 +197,7 @@ func _on_board_loaded(entries: Array, error: String) -> void:
 			if e.get("ending", "") == "free":
 				how = "bought out the charter in %d turns" % int(e.get("turn", 0))
 			else:
-				var endings := {"receivership": "taken by the Company", "silent": "went silent", "retired": "retired"}
+				var endings := {"receivership": "taken by the Company", "silent": "went silent", "retired": "retired", "independence": "declared independence", "company_town": "became a Company town"}
 				how = "paid %d of %d marks, %s on turn %d" % [int(e.get("debt_paid", 0)), int(e.get("debt_total", 0)), endings.get(e.get("ending", ""), "ended"), int(e.get("turn", 0))]
 			# Names come from the server: clean them again before showing them.
 			var who := TextRules.clean_name(str(e.get("name", "?")), TextRules.MAX_PLAYER_NAME)

@@ -232,3 +232,12 @@ test("unknown paths answer 404", async () => {
   assert.equal((await worker.fetch(new Request("https://example.workers.dev/admin"), fakeEnv())).status, 404);
   assert.equal((await worker.fetch(new Request("https://example.workers.dev/leaderboard/../admin"), fakeEnv())).status, 404);
 });
+
+test("story endings are accepted and rank by debt paid like other non-free endings", () => {
+  for (const ending of ["independence", "company_town"]) {
+    const { entry: e, error } = validateScore(score({ ending, debt_paid: 2500 }));
+    assert.equal(error, undefined, ending);
+    assert.equal(e.ending, ending);
+  }
+  assert.equal(validateScore(score({ ending: "victory" })).error, "invalid ending");
+});

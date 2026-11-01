@@ -10,7 +10,9 @@
  *   difficulty  "easy", "normal" or "hard" (games from before difficulty
  *               levels existed send none and count as "normal")
  *   ending      "free" (paid off the Charter), "receivership" (the Company took
- *               over), "silent" (everyone died) or "retired" (the player left)
+ *               over), "silent" (everyone died), "retired" (the player left),
+ *               "independence" (the colony declared itself free) or
+ *               "company_town" (the colony was signed over to the Company)
  *   turn        turns played, 1..5000
  *   debt_paid   marks paid off, 0..debt_total ("free" means all of it)
  *   debt_total  the colony's starting debt, 1..1,000,000
@@ -36,7 +38,7 @@ export const MAX_POPULATION = 100_000;
 /** No more boards than this (stops junk planet ids filling KV). */
 export const MAX_PLANETS = 16;
 export const DIFFICULTIES = ["easy", "normal", "hard"];
-export const ENDINGS = ["free", "receivership", "silent", "retired"];
+export const ENDINGS = ["free", "receivership", "silent", "retired", "independence", "company_town"];
 export const ABOUT =
   "Lastborn Colony shared leaderboard. Written only by the leaderboard Worker; edits by hand are overwritten.";
 

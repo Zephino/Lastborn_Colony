@@ -38,6 +38,7 @@ static func end_turn(state: Dictionary) -> void:
 	_plague(state, rep)
 	_payments(state, rep)
 	_timers(state)
+	_story(state)
 	_events(state)
 	_endings(state)
 	var net := {}
@@ -59,6 +60,8 @@ static func q(x: float) -> float:
 static func _quantize(state: Dictionary) -> void:
 	for k in ["adults", "children", "elders", "morale", "debt", "export_reserve", "crime"]:
 		state[k] = q(float(state[k]))
+	for k in state["factions"]:
+		state["factions"][k] = q(float(state["factions"][k]))
 	state["plague"]["cure"] = q(float(state["plague"]["cure"]))
 	state["research"]["progress"] = q(float(state["research"]["progress"]))
 	for group in ["stock", "stats"]:
@@ -393,6 +396,12 @@ static func _morale(state: Dictionary, rep: Dictionary) -> void:
 	target += float(b["overcrowding_morale"]) * float(rep["overcrowding"])
 	target += float(b["morale_per_missed_payment"]) * int(state["missed_in_row"])
 	target += Research.add(state, "morale")
+	# The Union: good relations lift morale, poor ones weigh on it.
+	target += (float(state["factions"]["union"]) - 50.0) * float(b["union_morale_per_point"])
+	if not (rep["shortages"] as Dictionary).is_empty():
+		_shift_faction(state, "union", float(b["union_drift_shortage"]))
+	elif float(state["morale"]) > 60.0:
+		_shift_faction(state, "union", float(b["union_drift_high_morale"]))
 	target += float(b["crime_morale"]) * float(state["crime"])
 	if state["plague"]["active"]:
 		target += float(b["plague_morale"])
@@ -515,9 +524,18 @@ static func _payments(state: Dictionary, rep: Dictionary) -> void:
 		state["debt"] = float(state["debt"]) - amount
 		state["payments_made"] = int(state["payments_made"]) + 1
 		state["missed_in_row"] = 0
+		_shift_faction(state, "company", float(b["company_payment_gain"]))
+		# The Company sends more settlers to a colony it likes, none to one it doesn't.
+		var company := float(state["factions"]["company"])
 		var arriving := float(b["immigrants"])
+		if company >= float(b["company_good"]):
+			arriving += float(b["company_extra_immigrants"])
+		elif company <= float(b["company_bad"]):
+			arriving = 0.0
 		var housing := float(rep["housing"])
-		if population(state) + arriving <= housing:
+		if arriving <= 0.0:
+			log_msg(state, "Paid the Company %d marks. Relations are too poor for them to send colonists." % int(amount))
+		elif population(state) + arriving <= housing:
 			state["adults"] = float(state["adults"]) + arriving
 			state["stats"]["arrivals"] = float(state["stats"]["arrivals"]) + arriving
 			log_msg(state, "Paid the Company %d marks. %d new colonists came down on the supply drop." % [int(amount), int(arriving)])
@@ -525,7 +543,10 @@ static func _payments(state: Dictionary, rep: Dictionary) -> void:
 			log_msg(state, "Paid the Company %d marks. No room for new colonists this time." % int(amount))
 	else:
 		state["missed_in_row"] = int(state["missed_in_row"]) + 1
-		state["debt"] = float(state["debt"]) + amount * float(b["missed_penalty"])
+		# Penalties are harsher when relations are poor (x1.0 at 50, x1.5 at 0, x0.5 at 100).
+		var harshness := 1.5 - float(state["factions"]["company"]) / 100.0
+		state["debt"] = float(state["debt"]) + amount * float(b["missed_penalty"]) * harshness
+		_shift_faction(state, "company", -float(b["company_missed_loss"]))
 		state["morale"] = clampf(float(state["morale"]) + float(b["missed_payment_morale"]), 0.0, 100.0)
 		log_msg(state, "Missed a payment of %d marks (%d in a row). The Company adds a penalty." % [int(amount), int(state["missed_in_row"])])
 
@@ -538,8 +559,51 @@ static func _timers(state: Dictionary) -> void:
 
 
 # 16. Random events. Events with choices pause the game until resolved.
+static func _shift_faction(state: Dictionary, key: String, delta: float) -> void:
+	state["factions"][key] = clampf(float(state["factions"][key]) + delta, 0.0, 100.0)
+
+
+## Whether a story event's "when" conditions hold now.
+static func story_ready(state: Dictionary, when: Dictionary) -> bool:
+	var f: Dictionary = state["factions"]
+	if int(state["turn"]) < int(when.get("turn_min", 0)):
+		return false
+	if population(state) < float(when.get("pop_min", 0)):
+		return false
+	if float(f["company"]) < float(when.get("company_min", 0)) or float(f["company"]) > float(when.get("company_max", 100)):
+		return false
+	if float(f["union"]) < float(when.get("union_min", 0)) or float(f["union"]) > float(when.get("union_max", 100)):
+		return false
+	if when.has("flag") and not state["flags"].has(when["flag"]):
+		return false
+	if when.has("not_flag") and state["flags"].has(when["not_flag"]):
+		return false
+	return true
+
+
+# 16a. Story: the first story event whose conditions hold (in file order) is
+#      shown, at most one every few turns. Each happens once.
+static func _story(state: Dictionary) -> void:
+	if int(state["story_cooldown"]) > 0:
+		state["story_cooldown"] = int(state["story_cooldown"]) - 1
+		return
+	if state["pending_event"] != "":
+		return
+	for e in GameData.story_events():
+		if e["id"] in state["story_done"] or not story_ready(state, e.get("when", {})):
+			continue
+		state["story_done"].append(e["id"])
+		state["pending_event"] = e["id"]
+		state["story_cooldown"] = int(GameData.balance()["story_cooldown"])
+		log_msg(state, "%s. %s" % [e["title"], e["body"]])
+		return
+
+
 static func _events(state: Dictionary) -> void:
 	var b := GameData.balance()
+	# A story event is already waiting for a decision this turn.
+	if state["pending_event"] != "":
+		return
 	if int(state["turn"]) < int(b["event_grace_turns"]):
 		return
 	if not Rng.chance(state, float(b["event_chance"]) * GameData.diff(state, "event_chance")):

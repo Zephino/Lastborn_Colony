@@ -25,6 +25,9 @@ static func act(state: Dictionary) -> void:
 		var ev := GameData.event(state["pending_event"])
 		var choices: Array = ev["choices"]
 		for i in choices.size():
+			# The bot plays for a Free Charter: it never takes a story ending.
+			if (choices[i].get("effects", {}) as Dictionary).has("ending"):
+				continue
 			if Actions.choice_allowed(state, choices[i]):
 				Actions.resolve_event(state, i)
 				break

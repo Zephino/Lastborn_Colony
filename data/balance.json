@@ -109,5 +109,16 @@
       -5,
       6
     ]
-  ]
+  ],
+  "faction_start": 50,
+  "story_cooldown": 6,
+  "company_payment_gain": 3,
+  "company_missed_loss": 10,
+  "union_morale_per_point": 0.1,
+  "union_strike_level": 20,
+  "union_drift_high_morale": 0.5,
+  "union_drift_shortage": -2,
+  "company_good": 60,
+  "company_bad": 25,
+  "company_extra_immigrants": 2
 }

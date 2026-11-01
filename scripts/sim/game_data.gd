@@ -11,6 +11,7 @@ static var _research: Array = []
 static var _planets: Array = []
 static var _cargo: Dictionary = {}
 static var _difficulties: Array = []
+static var _story_events: Array = []
 
 
 static func _load_json(path: String) -> Variant:
@@ -35,6 +36,7 @@ static func ensure_loaded() -> void:
 	_planets = _load_json("res://data/planets.json")
 	_cargo = _load_json("res://data/cargo.json")
 	_difficulties = _load_json("res://data/difficulty.json")
+	_story_events = _load_json("res://data/story_events.json")
 
 
 static func balance() -> Dictionary:
@@ -63,11 +65,20 @@ static func events() -> Array:
 	return _events
 
 
+## A random event (data/events.json) or a story event (data/story_events.json).
 static func event(id: String) -> Dictionary:
 	for e in events():
 		if e["id"] == id:
 			return e
+	for e in story_events():
+		if e["id"] == id:
+			return e
 	return {}
+
+
+static func story_events() -> Array:
+	ensure_loaded()
+	return _story_events
 
 
 static func research_topics() -> Array:
