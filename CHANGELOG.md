@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.19
+Date: 11/01/2026
+Time: 8:55 AM
+
+### Changes
+- **The Shaft is a hole into the ground** (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game). Instead of a dome it is an open, round pit:
+  - a metal rim with orange-and-black hazard stripes and four lights;
+  - rock walls getting darker with depth until they go black;
+  - a ladder down the far wall;
+  - a hoist frame over the opening, with its cable dropping into the pit.
+- Tunnels, airlocks and orange ports join the rim like any other building. Drawn both top-down and angled; in the angled style you see the far inside wall going down into the dark.
+
+### Reason
+The owner said the shaft is a hole into the earth.
+
 ## Version 00.01.18
 Date: 11/01/2026
 Time: 8:53 AM

@@ -45,7 +45,7 @@ const INTERIOR := {
 	"forge": Color(0.30, 0.16, 0.10), "lab": Color(0.20, 0.16, 0.32),
 }
 ## Dome size (radius, as a fraction of a tile) for each building.
-const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.30}
+const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.40}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 
@@ -168,6 +168,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 		_top_link(ci, c, s, d, rad, state)
 	if type == "hull":
 		_top_pad(ci, c, s, rad, links, state)
+		return
+	if type == "shaft":
+		_top_hole(ci, c, s, rad, links, state)
 		return
 	# Fittings outside the dome, drawn first so the dome sits on top.
 	match type:
@@ -293,6 +296,39 @@ static func _top_pad(ci: CanvasItem, c: Vector2, s: float, rad: float, links: Ar
 	# The control dome at the back-left corner.
 	_top_dome(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.12, orange, Color(0.30, 0.26, 0.22), state)
 	_glow(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.025, orange, state)
+
+
+## The Shaft, seen from above: an open hole into the ground. Rock walls fade to
+## black, a striped rim with lights runs round it, a ladder goes down one side,
+## and a hoist frame spans the opening.
+static func _top_hole(ci: CanvasItem, c: Vector2, s: float, rad: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var orange := _fade(ORANGE, state)
+	var rock := _fade(Color(0.30, 0.26, 0.23), state)
+	# Rim: a metal ring with hazard stripes.
+	ci.draw_circle(c, rad, md)
+	for i in 16:
+		var a0 := i * TAU / 16.0
+		ci.draw_arc(c, rad * 0.93, a0, a0 + TAU / 32.0, 4, orange if i % 2 == 0 else Color(0.05, 0.05, 0.05, orange.a), maxf(2.0, s * 0.03))
+	# The hole: rock walls getting darker with depth.
+	for k in 6:
+		var t := float(k) / 5.0
+		ci.draw_circle(c + Vector2(0, rad * 0.05 * t), rad * (0.84 - 0.62 * t), rock.lerp(Color(0.0, 0.0, 0.0, rock.a), t))
+	# A ladder down the far wall.
+	for side in [-1.0, 1.0]:
+		ci.draw_line(c + Vector2(side * rad * 0.10, -rad * 0.82), c + Vector2(side * rad * 0.06, -rad * 0.25), m, 1.5)
+	for k in 5:
+		var y := -rad * 0.78 + k * rad * 0.12
+		ci.draw_line(c + Vector2(-rad * 0.09, y), c + Vector2(rad * 0.09, y), m, 1.0)
+	# Hoist frame across the opening, with its cable going down.
+	ci.draw_line(c + Vector2(-rad * 0.95, rad * 0.25), c + Vector2(rad * 0.95, rad * 0.25), md.lightened(0.15), maxf(2.0, s * 0.035))
+	ci.draw_circle(c + Vector2(0, rad * 0.25), s * 0.04, m)
+	ci.draw_circle(c + Vector2(0, rad * 0.25), s * 0.015, orange)
+	for i in 4:
+		_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.93, s * 0.02, orange, state)
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
 
 
 ## What shape a tunnel piece is, from its links: "none", "end", "straight",
@@ -469,6 +505,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	if type == "hull":
 		_iso_pad(ci, c, tw, r, links, state)
 		return
+	if type == "shaft":
+		_iso_hole(ci, c, tw, r, links, state)
+		return
 	# Tunnels toward the back go behind the dome; toward the front, in front of it.
 	for d in links:
 		if d.x < 0 or d.y < 0:
@@ -620,6 +659,63 @@ static func _iso_pad(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Arr
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.97, d.y * r * 0.97, 0.03), tw, state, true)
+
+
+## The Shaft at an angle: a round hole in the ground. You see the far inside
+## wall going down into darkness, a striped rim with lights, a ladder, and an
+## A-frame hoist with its cable dropping into the hole.
+static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var orange := _fade(ORANGE, state)
+	var rock := _fade(Color(0.32, 0.27, 0.24), state)
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, r, state)
+	var center := _iso(c, tw, 0, 0, 0.02)
+	var rx := r * tw * 0.72
+	var ry := rx * 0.5
+	# Rim.
+	ci.draw_colored_polygon(_ellipse(center, rx * 1.06, ry * 1.06), md)
+	for i in 16:
+		var a0 := float(i) * 360.0 / 16.0
+		ci.draw_polyline(_ellipse(center, rx, ry, a0, a0 + 11.25, 3), orange if i % 2 == 0 else Color(0.05, 0.05, 0.05, orange.a), 3.0)
+	# The opening: the far wall shows as a band of rock fading down to black.
+	var inner_rx := rx * 0.86
+	var inner_ry := ry * 0.86
+	ci.draw_colored_polygon(_ellipse(center, inner_rx, inner_ry), Color(0.0, 0.0, 0.0, rock.a))
+	var depth := tw * 0.30
+	# The far inside wall: bands of rock between the top edge of the opening and
+	# curves further down inside it, each band darker, so the pit looks deep.
+	for k in 4:
+		var t0 := float(k) / 4.0
+		var t1 := float(k + 1) / 4.0
+		var band := _ellipse(center + Vector2(0, inner_ry * 0.9 * t0), inner_rx * (1.0 - 0.10 * t0), inner_ry * (1.0 - 0.45 * t0), 180, 360, 20)
+		band.append_array(_ellipse(center + Vector2(0, inner_ry * 0.9 * t1), inner_rx * (1.0 - 0.10 * t1), inner_ry * (1.0 - 0.45 * t1), 360, 180, 20))
+		ci.draw_colored_polygon(band, rock.lerp(Color(0, 0, 0, rock.a), 0.15 + t0 * 0.6))
+	# Ladder on the far wall.
+	for side in [-1.0, 1.0]:
+		ci.draw_line(center + Vector2(side * tw * 0.03, -inner_ry * 0.95), center + Vector2(side * tw * 0.03, inner_ry * 0.1), m, 1.5)
+	for k in 4:
+		var y := -inner_ry * 0.95 + k * inner_ry * 0.27
+		ci.draw_line(center + Vector2(-tw * 0.03, y), center + Vector2(tw * 0.03, y), m, 1.0)
+	# The A-frame hoist and its cable.
+	var top := _iso(c, tw, 0, 0, 0.42)
+	for foot in [Vector2(-r * 0.9, 0), Vector2(r * 0.9, 0)]:
+		ci.draw_line(_iso(c, tw, foot.x, foot.y - 0.08, 0.02), top, md.lightened(0.2), tw * 0.018)
+		ci.draw_line(_iso(c, tw, foot.x, foot.y + 0.08, 0.02), top, md.lightened(0.2), tw * 0.018)
+	ci.draw_line(top, center + Vector2(0, inner_ry * 0.4), m, 1.5)
+	ci.draw_circle(top, tw * 0.02, m)
+	_glow(ci, top, tw * 0.014, orange, state)
+	for i in 4:
+		var q := Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * r * 0.95
+		_glow(ci, _iso(c, tw, q.x, q.y, 0.03), tw * 0.014, orange, state)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, r, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links):
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true)
 
 
 static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> void:
