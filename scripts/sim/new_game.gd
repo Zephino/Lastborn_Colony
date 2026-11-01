@@ -36,6 +36,7 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 		"site": site,
 		"manifest": manifest.duplicate(),
 		"kits": {},
+		"door_rules": true,
 		"pods": 0,
 		"drones": {},
 		"satellites": {},
@@ -84,7 +85,8 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 ## Adds a structure record. Insertion order of state["structures"] is the
 ## processing order inside a priority band, so keep ids increasing.
 ## z is the level: 0 the surface, 1 the Deep.
-static func add_structure(state: Dictionary, type: String, x: int, y: int, built: bool, z: int = 0) -> String:
+## rot: how many quarter-turns the building is turned (which way its doors face).
+static func add_structure(state: Dictionary, type: String, x: int, y: int, built: bool, z: int = 0, rot: int = 0) -> String:
 	var id := str(int(state["next_id"]))
 	state["next_id"] = int(state["next_id"]) + 1
 	state["structures"][id] = {
@@ -93,6 +95,7 @@ static func add_structure(state: Dictionary, type: String, x: int, y: int, built
 		"x": x,
 		"y": y,
 		"z": z,
+		"rot": posmod(rot, 4),
 		"progress": 0,
 		"built": built,
 		"damaged": 0,

@@ -31,17 +31,18 @@ func _run() -> void:
 				for x in int(st["width"]):
 					if placed:
 						break
-					if Actions.structure_at(st, x, y).is_empty() and Actions.touches_colony(st, x, y) and Actions.terrain_at(st, x, y) in GameData.building(type)["terrain"]:
+					var rot := Actions.auto_rot(st, type, x, y)
+					if Actions.structure_at(st, x, y).is_empty() and rot >= 0 and Actions.terrain_at(st, x, y) in GameData.building(type)["terrain"]:
 						var hull: Dictionary = st["structures"]["1"]
 						if absi(x - int(hull["x"])) + absi(y - int(hull["y"])) <= radius:
-							NewGame.add_structure(st, type, x, y, type != "lab")
+							NewGame.add_structure(st, type, x, y, type != "lab", 0, rot)
 							placed = true
 	# Something under construction, drones at work and satellites in orbit.
 	for y in int(st["height"]):
 		var done := false
 		for x in int(st["width"]):
-			if Actions.structure_at(st, x, y).is_empty() and Actions.touches_colony(st, x, y) and Actions.terrain_at(st, x, y) == "regolith":
-				NewGame.add_structure(st, "academy", x, y, false)
+			if Actions.structure_at(st, x, y).is_empty() and Actions.auto_rot(st, "academy", x, y) >= 0 and Actions.terrain_at(st, x, y) == "regolith":
+				NewGame.add_structure(st, "academy", x, y, false, 0, Actions.auto_rot(st, "academy", x, y))
 				done = true
 				break
 		if done:
@@ -82,6 +83,23 @@ func _run() -> void:
 	for _i in 4:
 		await process_frame
 	root.get_viewport().get_texture().get_image().save_png(out + "/selected.png")
+	# Placing a Kelp Vat: the see-through preview with its doors.
+	main.map_view.selected = Vector2i(-1, -1)
+	main._set_build("vat")
+	for y in int(st["height"]):
+		for x in int(st["width"]):
+			if main.map_view.hover.x < 0 and Actions.structure_at(st, x, y).is_empty() and Actions.auto_rot(st, "vat", x, y) >= 0 and Actions.terrain_at(st, x, y) == "regolith":
+				main.map_view.hover = Vector2i(x, y)
+	main.refresh()
+	for _i in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(out + "/placing.png")
+	main._rotate_build()
+	main.refresh()
+	for _i in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(out + "/placing_turned.png")
+	main._set_build("")
 	main.menus.show_help(5)
 	for _i in 4:
 		await process_frame

@@ -2,6 +2,39 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.52
+Date: 11/01/2026
+Time: 11:30 PM
+
+### Changes
+**Doors count in play, and buildings can be turned.**
+- Each building has a set number of doors (new `doors` field in `data/buildings.json`):
+  - **4, hubs:** Landing Pad, Shaft, Shaft Landing, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern.
+  - **2, workplaces:** Splitter, Kelp Vat, Forge, Fab Shop, Reclaimer, Cache, Survey Lab, Workshop, Warden Post, Rescue Station. The two doors are on opposite sides.
+  - **1, outlying machines:** Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Signal Mast, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab.
+  - Heat Mains join on every side.
+- **Joining:** neighbouring buildings join, and share power, heat and workers, only where a door meets a door or a Heat Main (`Actions.joined` in the connectivity step).
+- **Turning:** a building can be turned in quarter-turns (`rot`, saved with it), and its doors turn with it.
+  - When placing, the game turns it automatically to the first way that joins the colony. Press **R** or the new **Rotate** button to turn it yourself.
+  - A building with no door facing the colony can't be placed, and says why.
+- **Placing preview:** a see-through copy of the building, turned the way it will be built, with orange markers on its door sides. The tile shows green or red for that turn.
+- **On the map:** tunnels and airlocks show only where doors meet, and spare doors show capped. Rounded halls (Workshop, Fab Shop, Drone Bay, Cache, Rescue Station, Reclaimer) lie along their doors. Their other artwork keeps facing the camera the same way.
+- **Old saves** (no `door_rules`) keep joining on any side.
+- **Test bot:** it now hangs one- and two-door buildings off Heat Mains, keeping the hubs' doors free; otherwise it boxed itself in. It still wins every test it must, but games take longer:
+
+| Brume seed | Before | Now |
+|---|---|---|
+| 1 | 167 turns | 131 turns |
+| 2 | 129 turns | 221 turns |
+| 3 | 90 turns | 168 turns |
+
+  Door rules make the game harder. This needs watching in real play.
+- New tests for door turning, joining only through doors, refusing a wrongly turned building, and old saves (460 checks pass).
+- The How to play guide, the README and the placing hint explain doors and turning.
+
+### Reason
+The owner decided doors should stay on the sides planned for each building, with the building turned to face them.
+
 ## Version 00.01.51
 Date: 11/01/2026
 Time: 10:55 PM

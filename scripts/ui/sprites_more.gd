@@ -481,19 +481,19 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			var pts := PackedVector2Array()
 			for k in 6:
 				var ang := deg_to_rad(70.0 * k / 5.0)
-				pts.append(S._iso(c, tw, -0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)))
+				pts.append(S._isov(c, tw, -0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)))
 			for k in 6:
 				var ang := deg_to_rad(70.0 * (5 - k) / 5.0)
-				pts.append(S._iso(c, tw, 0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)))
+				pts.append(S._isov(c, tw, 0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)))
 			ci.draw_colored_polygon(pts, red)
 			for k in range(1, 5):
 				var ang := deg_to_rad(70.0 * k / 5.0)
-				ci.draw_line(S._iso(c, tw, -0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)), S._iso(c, tw, 0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)), red.darkened(0.3), 1.0)
-			ci.draw_line(S._iso(c, tw, -dims.x, dims.y * cos(1.1), z0 + dims.y * sin(1.1)), S._iso(c, tw, dims.x, dims.y * cos(1.1), z0 + dims.y * sin(1.1)), red, maxf(2.0, tw * 0.014))
+				ci.draw_line(S._isov(c, tw, -0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)), S._isov(c, tw, 0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)), red.darkened(0.3), 1.0)
+			ci.draw_line(S._isov(c, tw, -dims.x, dims.y * cos(1.1), z0 + dims.y * sin(1.1)), S._isov(c, tw, dims.x, dims.y * cos(1.1), z0 + dims.y * sin(1.1)), red, maxf(2.0, tw * 0.014))
 			var ridge := z0 + dims.y
-			S._glow(ci, S._iso(c, tw, -0.08, 0, ridge + 0.02), tw * 0.02, red, state)
-			S._glow(ci, S._iso(c, tw, 0.08, 0, ridge + 0.02), tw * 0.02, _f(Color(0.35, 0.55, 1.0), state), state)
-			_iso_rover(ci, c, tw, Vector2(0.0, 0.41), red, state)
+			S._glow(ci, S._isov(c, tw, -0.08, 0, ridge + 0.02), tw * 0.02, red, state)
+			S._glow(ci, S._isov(c, tw, 0.08, 0, ridge + 0.02), tw * 0.02, _f(Color(0.35, 0.55, 1.0), state), state)
+			_iso_rover(ci, c, tw, S._va(0.0, 0.41), red, state)
 		"academy":
 			_school(ci, c, tw, r, h, state)
 		"hazlab":

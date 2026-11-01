@@ -151,7 +151,7 @@ static func _choose(state: Dictionary) -> Array:
 static func _build(state: Dictionary, type: String) -> bool:
 	var site := _best_site(state, type)
 	if site.x >= 0:
-		return Actions.place(state, type, site.x, site.y)["ok"]
+		return Actions.place(state, type, site.x, site.y, 0, site.z)["ok"]
 	var terrain: Array = GameData.building(type)["terrain"]
 	var step := _step_toward(state, terrain)
 	if step.x >= 0:
@@ -167,13 +167,32 @@ static func _hull(state: Dictionary) -> Vector2i:
 	return Vector2i.ZERO
 
 
-static func _best_site(state: Dictionary, type: String) -> Vector2i:
+## The turn (0-3) that joins this building to the colony through a Heat Main,
+## or -1. With door rules the bot keeps the hubs' doors free for more mains, and
+## hangs one- and two-door buildings off the main network.
+static func _main_rot(state: Dictionary, type: String, x: int, y: int) -> int:
+	for r in 4:
+		for d in Actions.door_dirs(type, r):
+			var n: Vector2i = Vector2i(x, y) + d
+			if Actions.inside(state, n.x, n.y) and Actions.structure_at(state, n.x, n.y).get("type", "") == "main":
+				return r
+	return -1
+
+
+## The best tile for a building, and how to turn it, as (x, y, rot); x = -1 if none.
+static func _best_site(state: Dictionary, type: String) -> Vector3i:
 	var hull := _hull(state)
-	var best := Vector2i(-1, -1)
+	var best := Vector3i(-1, -1, -1)
 	var best_score := INF
+	var picky: bool = Actions.door_rules(state) and type != "main" and int(GameData.building(type).get("doors", 4)) < 4
 	for y in int(state["height"]):
 		for x in int(state["width"]):
-			if not Actions.check_place(state, type, x, y)["ok"]:
+			var rot := -1
+			if picky:
+				rot = _main_rot(state, type, x, y)
+				if rot < 0:
+					continue
+			if not Actions.check_place(state, type, x, y, 0, rot)["ok"]:
 				continue
 			var score := float(absi(x - hull.x) + absi(y - hull.y))
 			if type == "mirror":
@@ -183,7 +202,7 @@ static func _best_site(state: Dictionary, type: String) -> Vector2i:
 				score += 3.0
 			if score < best_score:
 				best_score = score
-				best = Vector2i(x, y)
+				best = Vector3i(x, y, rot)
 	return best
 
 
@@ -194,7 +213,8 @@ static func _step_toward(state: Dictionary, terrain: Array) -> Vector2i:
 	var queue: Array = []
 	for y in int(state["height"]):
 		for x in int(state["width"]):
-			if _open(state, x, y) and Actions.touches_colony(state, x, y):
+			# Start from tiles where a Heat Main would join the colony (through a door).
+			if _open(state, x, y) and Actions.touches_colony(state, x, y) and Actions.auto_rot(state, "main", x, y) >= 0:
 				parent[Vector2i(x, y)] = Vector2i(x, y)
 				queue.append(Vector2i(x, y))
 	var head := 0

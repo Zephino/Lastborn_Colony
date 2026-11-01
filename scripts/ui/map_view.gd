@@ -30,6 +30,8 @@ var pan := Vector2.ZERO
 var selected := Vector2i(-1, -1)
 var hover := Vector2i(-1, -1)
 var build_type := ""
+## How the building being placed is turned (0-3), or -1 to turn it automatically.
+var build_rot := -1
 ## Which level is shown: 0 the surface, 1 the Deep.
 var level := 0
 var _dragging := false
@@ -223,7 +225,7 @@ func _draw() -> void:
 	if hover.x >= 0:
 		var hc := cell_center(hover)
 		if build_type != "":
-			var ok: bool = Actions.check_place(state, build_type, hover.x, hover.y, level)["ok"]
+			var ok: bool = Actions.check_place(state, build_type, hover.x, hover.y, level, build_rot)["ok"]
 			draw_colored_polygon(_diamond(hc, 1.0), Color(0.3, 1.0, 0.5, 0.40) if ok else Color(1.0, 0.3, 0.3, 0.40))
 		draw_polyline(_diamond_loop(hc, 1.0), Color(1, 1, 1, 0.75), 1.5)
 	if selected.x >= 0:
@@ -251,6 +253,17 @@ func _draw() -> void:
 				People.draw_colonist(self, c + _proj(p["at"]), tile_size * 0.22, p["job"], p["facing"], p["stride"])
 	if level == 0:
 		_draw_orbit()
+	# The building being placed, see-through, turned the way it would be built,
+	# with its doors showing.
+	if build_type != "" and hover.x >= 0 and Actions.structure_at(state, hover.x, hover.y, level).is_empty():
+		var rot := preview_rot()
+		var doors := Actions.door_dirs(build_type, maxi(rot, 0))
+		var ghost := {"built": false, "links": [], "doors": doors}
+		Sprites.draw_iso(self, build_type, cell_center(hover), tile_size, ghost)
+		for d in doors:
+			var edge := cell_center(hover) + _proj(Vector2(d) * 0.5)
+			draw_circle(edge, maxf(4.0, tile_size * 0.05), Color(1.0, 0.55, 0.20))
+			draw_circle(edge, maxf(2.0, tile_size * 0.025), Color(1.0, 0.9, 0.6))
 	# The selected tile's outline again, faintly, so it shows through tall buildings.
 	if selected.x >= 0:
 		draw_polyline(_diamond_loop(cell_center(selected), 1.0), Color(1.0, 0.85, 0.3, 0.45), 1.5)
@@ -268,15 +281,34 @@ func _diamond_loop(c: Vector2, k: float) -> PackedVector2Array:
 	return d
 
 
-## Which sides of a structure join a neighbour on the same level (for tunnels
-## and doors). A shaft also joins straight down, which isn't shown as a side.
+## Which sides of a structure join a neighbour on the same level: where their
+## doors meet (or any side, in games from before door rules). A shaft also
+## joins straight down, which isn't shown as a side.
 func _links(s: Dictionary) -> Array:
 	var out: Array = []
 	for d in DIRS:
 		var n: Vector2i = Vector2i(int(s["x"]), int(s["y"])) + d
-		if Actions.inside(state, n.x, n.y) and not Actions.structure_at(state, n.x, n.y, level).is_empty():
+		if not Actions.inside(state, n.x, n.y):
+			continue
+		var other := Actions.structure_at(state, n.x, n.y, level)
+		if not other.is_empty() and Actions.joined(state, s, other, d):
 			out.append(d)
 	return out
+
+
+## How the building being placed would be turned on the hovered tile.
+func preview_rot() -> int:
+	if build_rot >= 0:
+		return build_rot
+	if hover.x < 0:
+		return 0
+	return maxi(0, Actions.auto_rot(state, build_type, hover.x, hover.y, level))
+
+
+## A quarter-turn for the building being placed.
+func rotate_build() -> void:
+	build_rot = (preview_rot() + 1) % 4
+	queue_redraw()
 
 
 func _draw_structure(s: Dictionary, c: Vector2) -> void:
@@ -288,6 +320,8 @@ func _draw_structure(s: Dictionary, c: Vector2) -> void:
 		"active": bool(s["active"]) or conduit or not s["built"],
 		"links": _links(s),
 	}
+	if Actions.door_rules(state):
+		look["doors"] = Actions.door_dirs(str(s["type"]), int(s.get("rot", 0)))
 	Sprites.draw_iso(self, s["type"], c, tw, look)
 	# Status markers above the tile.
 	var mark := c - Vector2(0, tw * 0.42)

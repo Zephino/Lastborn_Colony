@@ -35,6 +35,61 @@ static func structure_at(state: Dictionary, x: int, y: int, z: int = 0) -> Dicti
 	return state["structures"][id]
 
 
+## The sides a building's doors face (tunnels join only through doors), after
+## turning it `rot` quarter-turns. Base layouts: 1 door faces +y; 2 doors face
+## +x and -x (in one side, out the other); 4 doors face every side.
+static func door_dirs(type: String, rot: int) -> Array:
+	var n := int(GameData.building(type).get("doors", 4))
+	var base: Array = DIRS if n >= 4 else ([Vector2i(1, 0), Vector2i(-1, 0)] if n == 2 else [Vector2i(0, 1)])
+	var out: Array = []
+	for d in base:
+		var v: Vector2i = d
+		for _i in posmod(rot, 4):
+			v = Vector2i(-v.y, v.x)
+		out.append(v)
+	return out
+
+
+## Whether this game uses door rules (saves from before them connect on any side).
+static func door_rules(state: Dictionary) -> bool:
+	return bool(state.get("door_rules", false))
+
+
+## Whether structure s has a door on side d.
+static func has_door(s: Dictionary, d: Vector2i) -> bool:
+	return d in door_dirs(str(s["type"]), int(s.get("rot", 0)))
+
+
+## Whether two neighbouring structures join, where b sits on a's side d.
+static func joined(state: Dictionary, a: Dictionary, b: Dictionary, d: Vector2i) -> bool:
+	if not door_rules(state):
+		return true
+	return has_door(a, d) and has_door(b, -d)
+
+
+## Whether a building of this type, turned `rot`, at (x, y) would join the colony
+## through one of its doors.
+static func connects(state: Dictionary, type: String, x: int, y: int, z: int, rot: int) -> bool:
+	if not door_rules(state):
+		return touches_colony(state, x, y, z)
+	for d in door_dirs(type, rot):
+		var n: Vector2i = Vector2i(x, y) + d
+		if not inside(state, n.x, n.y):
+			continue
+		var other := structure_at(state, n.x, n.y, z)
+		if not other.is_empty() and has_door(other, -d):
+			return true
+	return false
+
+
+## The first turn (0-3) that lets this building join the colony here, or -1.
+static func auto_rot(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> int:
+	for r in 4:
+		if connects(state, type, x, y, z, r):
+			return r
+	return -1
+
+
 static func touches_colony(state: Dictionary, x: int, y: int, z: int = 0) -> bool:
 	for d in DIRS:
 		var n: Vector2i = Vector2i(x, y) + d
@@ -87,7 +142,9 @@ static func unlocked(state: Dictionary, type: String) -> bool:
 	return need == "" or Research.is_done(state, need)
 
 
-static func check_place(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> Dictionary:
+## rot: how the building is turned (0-3), or -1 to turn it automatically to the
+## first way that joins the colony.
+static func check_place(state: Dictionary, type: String, x: int, y: int, z: int = 0, rot: int = -1) -> Dictionary:
 	if state["ending"] != "":
 		return result(false, "The game is over.")
 	if not GameData.has_building(type):
@@ -115,6 +172,10 @@ static func check_place(state: Dictionary, type: String, x: int, y: int, z: int 
 		return result(false, "Solid bedrock below: a shaft can't be dug here.")
 	if not touches_colony(state, x, y, z):
 		return result(false, "Must be next to the colony. Extend with heat mains." if z == 0 else "Must be next to the colony in the Deep. Start from a Shaft Landing.")
+	if door_rules(state):
+		var r := auto_rot(state, type, x, y, z) if rot < 0 else rot
+		if r < 0 or not connects(state, type, x, y, z, r):
+			return result(false, "No door lines up with the colony here. Turn the building (R) so a door faces a door or Heat Main next to it." if rot >= 0 else "None of its doors can face a door or Heat Main here. Lay a Heat Main up to it, or build next to a building with a spare door.")
 	if has_kit(state, type):
 		return result(true)
 	var cost := build_cost(state, type, x, y, z)
@@ -130,16 +191,19 @@ static func has_kit(state: Dictionary, type: String) -> bool:
 	return int(state.get("kits", {}).get(type, 0)) > 0
 
 
-static func place(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> Dictionary:
-	var check := check_place(state, type, x, y, z)
+static func place(state: Dictionary, type: String, x: int, y: int, z: int = 0, rot: int = -1) -> Dictionary:
+	var check := check_place(state, type, x, y, z, rot)
 	if not check["ok"]:
 		return check
+	var turn_to := rot
+	if turn_to < 0:
+		turn_to = maxi(0, auto_rot(state, type, x, y, z))
 	if has_kit(state, type):
 		state["kits"][type] = int(state["kits"][type]) - 1
 	else:
 		state["stock"]["alloy"] = float(state["stock"]["alloy"]) - build_cost(state, type, x, y, z)
 		state["stock"]["parts"] = float(state["stock"]["parts"]) - parts_cost(type)
-	var id := NewGame.add_structure(state, type, x, y, false, z)
+	var id := NewGame.add_structure(state, type, x, y, false, z, turn_to)
 	if excavation(state, x, y, z):
 		var def := GameData.building(type)
 		state["structures"][id]["build_turns"] = int(GameData.num(def, "turns")) + int(GameData.balance()["deep"]["excavate_turns"])

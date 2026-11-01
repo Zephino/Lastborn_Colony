@@ -52,6 +52,8 @@ const DEFAULTS := {
 	"satellites": {},
 	"waste": 0.0,
 	"trained": 0.0,
+	# Saves from before door rules keep joining on any side.
+	"door_rules": false,
 }
 
 
@@ -81,6 +83,7 @@ static func normalize(state: Dictionary) -> void:
 		for k in STRUCT_INT_FIELDS:
 			s[k] = int(s[k])
 		s["z"] = clampi(int(s.get("z", 0)), 0, 1)
+		s["rot"] = posmod(int(s.get("rot", 0)), 4)
 		if s.has("build_turns"):
 			s["build_turns"] = int(s["build_turns"])
 		occupancy[NewGame.cell_key(s["x"], s["y"], s["z"])] = id

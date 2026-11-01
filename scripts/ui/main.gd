@@ -414,6 +414,10 @@ func show_game() -> void:
 	placing_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	placing_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	placing_row.add_child(placing_label)
+	var turn_button := _button("Rotate", _rotate_build)
+	turn_button.custom_minimum_size = Vector2(88, 44)
+	turn_button.tooltip_text = "Turn the building so its doors face where you want (R)."
+	placing_row.add_child(turn_button)
 	var cancel := _button("Cancel", func() -> void: _set_build(""))
 	cancel.custom_minimum_size = Vector2(88, 44)
 	placing_row.add_child(cancel)
@@ -535,13 +539,22 @@ func _set_build(id: String) -> void:
 	if map_view == null:
 		return
 	map_view.build_type = id
+	map_view.build_rot = -1
 	for key in build_buttons:
 		build_buttons[key].button_pressed = key == id
 	if placing_bar != null:
 		placing_bar.visible = id != ""
 		if id != "":
-			placing_label.text = "Placing %s: tap a green tile next to the colony. Drag to move the map." % GameData.building(id)["name"] if narrow_game else "Placing %s: click a green tile next to the colony. Drag to move the map, Esc to stop." % GameData.building(id)["name"]
+			placing_label.text = "Placing %s: tap a green tile. Its doors (orange) must face a door or Heat Main; Rotate turns it." % GameData.building(id)["name"] if narrow_game else "Placing %s: click a green tile. Its doors (orange) must face a door or Heat Main; R or Rotate turns it. Esc to stop." % GameData.building(id)["name"]
 	map_view.queue_redraw()
+	_refresh_hint()
+
+
+## Turns the building being placed a quarter-turn (its doors move round).
+func _rotate_build() -> void:
+	if map_view == null or map_view.build_type == "":
+		return
+	map_view.rotate_build()
 	_refresh_hint()
 
 
@@ -552,7 +565,7 @@ func _on_tile_clicked(cell: Vector2i) -> void:
 		return
 	if map_view.build_type != "":
 		var placed_type: String = map_view.build_type
-		var r := Actions.place(state, placed_type, cell.x, cell.y, map_view.level)
+		var r := Actions.place(state, placed_type, cell.x, cell.y, map_view.level, map_view.build_rot)
 		if not r["ok"]:
 			hint_label.text = r["reason"]
 			if narrow_game:
@@ -677,6 +690,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		map_view.pan_by(pan_keys[key])
 		get_viewport().set_input_as_handled()
 		return
+	if key == KEY_R and modal == null and map_view.build_type != "" and not (get_viewport().gui_get_focus_owner() is LineEdit):
+		_rotate_build()
+		get_viewport().set_input_as_handled()
+		return
 	if (key == KEY_Q or key == KEY_E) and modal == null and not (get_viewport().gui_get_focus_owner() is LineEdit):
 		_set_level(0 if key == KEY_Q else 1)
 		get_viewport().set_input_as_handled()
@@ -763,7 +780,7 @@ func _refresh_hint() -> void:
 		var text := "Placing %s. %s" % [def["name"], def["desc"]]
 		var h: Vector2i = map_view.hover
 		if h.x >= 0:
-			var r := Actions.check_place(state, map_view.build_type, h.x, h.y, map_view.level)
+			var r := Actions.check_place(state, map_view.build_type, h.x, h.y, map_view.level, map_view.build_rot)
 			if not r["ok"]:
 				text = r["reason"]
 			elif GameData.num(def, "heat_need") > 0.0:

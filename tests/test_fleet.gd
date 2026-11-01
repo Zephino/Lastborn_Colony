@@ -29,6 +29,7 @@ static func run(check: Callable) -> void:
 	_saves(check)
 	_map_taps(check)
 	_help(check)
+	_doors(check)
 
 
 ## A fresh colony with plenty of everything, and no random events.
@@ -50,8 +51,9 @@ static func _put(s: Dictionary, type: String) -> String:
 		for x in int(s["width"]):
 			if not Actions.structure_at(s, x, y).is_empty() or not Actions.touches_colony(s, x, y):
 				continue
-			if Actions.terrain_at(s, x, y) in def["terrain"]:
-				return NewGame.add_structure(s, type, x, y, true)
+			var rot := Actions.auto_rot(s, type, x, y)
+			if rot >= 0 and Actions.terrain_at(s, x, y) in def["terrain"]:
+				return NewGame.add_structure(s, type, x, y, true, 0, rot)
 	return ""
 
 
@@ -92,7 +94,7 @@ static func _parts_and_research(check: Callable) -> void:
 	var spot := Vector2i(-1, -1)
 	for y in int(s["height"]):
 		for x in int(s["width"]):
-			if spot.x < 0 and Actions.structure_at(s, x, y).is_empty() and Actions.touches_colony(s, x, y) and Actions.terrain_at(s, x, y) == "regolith":
+			if spot.x < 0 and Actions.structure_at(s, x, y).is_empty() and Actions.auto_rot(s, "fusion", x, y) >= 0 and Actions.terrain_at(s, x, y) == "regolith":
 				spot = Vector2i(x, y)
 	var r: Dictionary = Actions.check_place(s, "fusion", spot.x, spot.y)
 	check.call(not r["ok"] and str(r["reason"]).contains("Contained Fusion"), "a Fusion Core needs its research first")
@@ -148,7 +150,7 @@ static func _drones(check: Callable) -> void:
 static func _free_regolith(s: Dictionary) -> Vector2i:
 	for y in int(s["height"]):
 		for x in int(s["width"]):
-			if Actions.structure_at(s, x, y).is_empty() and Actions.touches_colony(s, x, y) and Actions.terrain_at(s, x, y) == "regolith":
+			if Actions.structure_at(s, x, y).is_empty() and Actions.auto_rot(s, "commons", x, y) >= 0 and Actions.terrain_at(s, x, y) == "regolith":
 				return Vector2i(x, y)
 	return Vector2i(-1, -1)
 
@@ -286,3 +288,39 @@ static func _help(check: Callable) -> void:
 		if p.has("picture") and not GameData.has_building(str(p["picture"])):
 			ok = false
 	check.call(ok, "the How to play guide has %d pages, each with a title, text and a real building picture" % pages.size())
+
+
+## Door rules: buildings join only where doors meet; buildings can be turned.
+static func _doors(check: Callable) -> void:
+	check.call(Actions.door_dirs("mirror", 0) == [Vector2i(0, 1)] and Actions.door_dirs("mirror", 1) == [Vector2i(-1, 0)], "a one-door building's door turns with it")
+	check.call(Actions.door_dirs("vat", 1) == [Vector2i(0, 1), Vector2i(0, -1)], "a two-door building's doors stay opposite when turned")
+	check.call(Actions.door_dirs("bunk", 3).size() == 4, "hubs have four doors")
+	var s := _colony()
+	check.call(Actions.door_rules(s), "new games use door rules")
+	var hull: Dictionary = s["structures"]["1"]
+	var hx := int(hull["x"])
+	var hy := int(hull["y"])
+	# East of the pad, a Mirror Field's single door must face west, back to the pad.
+	check.call(Actions.auto_rot(s, "mirror", hx + 1, hy) == 1, "placing turns a building so its door faces the colony")
+	var wrong := Actions.check_place(s, "mirror", hx + 1, hy, 0, 0)
+	check.call(not wrong["ok"] and str(wrong["reason"]).contains("door"), "a building turned with no door facing the colony is refused, and says why")
+	check.call(Actions.place(s, "mirror", hx + 1, hy, 0, 1)["ok"] and int(Actions.structure_at(s, hx + 1, hy)["rot"]) == 1, "a building keeps the way it was turned")
+	# Something beyond the Mirror Field can't join through its back wall.
+	var behind := Actions.check_place(s, "main", hx + 2, hy)
+	check.call(not behind["ok"], "nothing joins through a wall without a door")
+	# Built next to each other but facing away, two buildings don't join.
+	var t := _colony()
+	var th: Dictionary = t["structures"]["1"]
+	var mx := int(th["x"]) + 1
+	var my := int(th["y"])
+	var main_id := NewGame.add_structure(t, "main", mx, my, true)
+	var away := NewGame.add_structure(t, "mirror", mx + 1, my, true, 0, 0)
+	check.call(Turn.connectivity(t).has(main_id) and not Turn.connectivity(t).has(away), "a building whose door faces away from the colony isn't connected")
+	t["structures"][away]["rot"] = 1
+	check.call(Turn.connectivity(t).has(away), "turned to face the Heat Main, it is")
+	# Saves from before door rules still join on any side.
+	var old: Dictionary = JSON.parse_string(SaveGame.to_text(t))
+	old.erase("door_rules")
+	old["structures"][away]["rot"] = 0
+	var loaded: Variant = SaveGame.from_text(JSON.stringify(old))
+	check.call(typeof(loaded) == TYPE_DICTIONARY and not Actions.door_rules(loaded) and Turn.connectivity(loaded).has(away), "a save from before door rules still joins on any side")

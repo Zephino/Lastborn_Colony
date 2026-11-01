@@ -75,6 +75,39 @@ const DOOR_ORDER := [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-
 static var _cap_sides: Array = []
 
 
+## The sides that show a capped door, and the way a hall lies, for the building
+## being drawn. With "doors" in the state (the game's door rules), its doors are
+## exactly those sides; otherwise its door count is laid out as in DOOR_ORDER.
+static func _set_doors(type: String, links: Array, state: Dictionary) -> void:
+	_vault_axis = 0
+	if state.has("doors"):
+		var doors: Array = state["doors"]
+		_cap_sides = []
+		for d in doors:
+			if not (d in links):
+				_cap_sides.append(d)
+		# A two-door hall lies along its doors.
+		if doors.size() == 2 and (doors[0] as Vector2i).x == 0:
+			_vault_axis = 1
+	else:
+		_cap_sides = cap_sides(type, links)
+
+
+## Which way a rounded hall (vault) lies: 0 along u, 1 along v.
+static var _vault_axis := 0
+
+
+## _iso for a point given along/across the hall (swapped when it lies along v).
+static func _isov(c: Vector2, tw: float, along: float, across: float, h: float = 0.0) -> Vector2:
+	var q := _va(along, across)
+	return _iso(c, tw, q.x, q.y, h)
+
+
+## (u, v) for a hall lying along u, swapped when it lies along v.
+static func _va(u: float, v: float) -> Vector2:
+	return Vector2(u, v) if _vault_axis == 0 else Vector2(v, u)
+
+
 static func cap_sides(type: String, links: Array) -> Array:
 	var spare := int(DOORS.get(type, 2)) - links.size()
 	var out: Array = []
@@ -106,7 +139,8 @@ static func _ext(type: String, d: Vector2i, r: float) -> float:
 	match SHAPE.get(type, "dome"):
 		"vault":
 			var dims := _vault_dims(r)
-			return dims.x if d.x != 0 else dims.y
+			var along_u := _vault_axis == 0
+			return (dims.x if d.x != 0 else dims.y) if along_u else (dims.y if d.x != 0 else dims.x)
 		"silo":
 			return r * 0.78
 	return r
@@ -128,6 +162,8 @@ static func _top_hull(ci: CanvasItem, type: String, c: Vector2, rad: float, acc:
 	match SHAPE.get(type, "dome"):
 		"vault":
 			var dims := _vault_dims(rad)
+			if _vault_axis == 1:
+				dims = Vector2(dims.y, dims.x)
 			var box := Rect2(c - dims, dims * 2.0)
 			ci.draw_rect(Rect2(box.position + Vector2(rad * 0.08, rad * 0.12), box.size), Color(0, 0, 0, 0.28 * _fade(Color.WHITE, state).a))
 			ci.draw_rect(box, _fade(METAL_DARK, state))
@@ -205,12 +241,14 @@ static func _iso_vault(ci: CanvasItem, c: Vector2, tw: float, dims: Vector2, acc
 	var hl := dims.x
 	var hw := dims.y
 	var z0 := 0.03
-	_box(ci, c, tw, -hl - 0.01, -hw - 0.01, hl + 0.01, hw + 0.01, z0, md, md.lightened(0.1))
+	var lo := _va(-hl - 0.01, -hw - 0.01)
+	var hi := _va(hl + 0.01, hw + 0.01)
+	_box(ci, c, tw, lo.x, lo.y, hi.x, hi.y, z0, md, md.lightened(0.1))
 	var shell := PackedVector2Array()
 	for t in [-hl, hl]:
 		for k in 13:
 			var a := PI * k / 12.0
-			shell.append(_iso(c, tw, t, hw * cos(a), z0 + hw * sin(a)))
+			shell.append(_isov(c, tw, t, hw * cos(a), z0 + hw * sin(a)))
 	var hull := Geometry2D.convex_hull(shell)
 	ci.draw_colored_polygon(hull, _fade(inside, state))
 	var glass := _fade(GLASS, state)
@@ -221,11 +259,11 @@ static func _iso_vault(ci: CanvasItem, c: Vector2, tw: float, dims: Vector2, acc
 		var arc := PackedVector2Array()
 		for j in 13:
 			var a := PI * j / 12.0
-			arc.append(_iso(c, tw, t, hw * cos(a), z0 + hw * sin(a)))
+			arc.append(_isov(c, tw, t, hw * cos(a), z0 + hw * sin(a)))
 		ci.draw_polyline(arc, rib if k < 5 else md.lightened(0.2), 1.0 if k < 5 else 2.5)
-	ci.draw_line(_iso(c, tw, -hl, hw * cos(1.2), z0 + hw * sin(1.2)), _iso(c, tw, hl, hw * cos(1.2), z0 + hw * sin(1.2)), Color(1, 1, 1, 0.5 * glass.a / GLASS.a), 2.0)
-	ci.draw_line(_iso(c, tw, -hl, hw, z0), _iso(c, tw, hl, hw, z0), _fade(acc, state), maxf(1.5, tw * 0.012))
-	ci.draw_line(_iso(c, tw, hl, -hw, z0), _iso(c, tw, hl, hw, z0), _fade(acc, state), maxf(1.5, tw * 0.012))
+	ci.draw_line(_isov(c, tw, -hl, hw * cos(1.2), z0 + hw * sin(1.2)), _isov(c, tw, hl, hw * cos(1.2), z0 + hw * sin(1.2)), Color(1, 1, 1, 0.5 * glass.a / GLASS.a), 2.0)
+	ci.draw_line(_isov(c, tw, -hl, hw, z0), _isov(c, tw, hl, hw, z0), _fade(acc, state), maxf(1.5, tw * 0.012))
+	ci.draw_line(_isov(c, tw, hl, -hw, z0), _isov(c, tw, hl, hw, z0), _fade(acc, state), maxf(1.5, tw * 0.012))
 
 
 ## The newer buildings' fittings, drones and satellites live in sprites_more.gd.
@@ -353,7 +391,7 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	var m := _fade(METAL, state)
 	var md := _fade(METAL_DARK, state)
 	var links := _links(type, state)
-	_cap_sides = cap_sides(type, links)
+	_set_doors(type, links, state)
 	if type == "main":
 		_top_tunnel(ci, c, s, links, state)
 		return
@@ -856,7 +894,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	var m := _fade(METAL, state)
 	var md := _fade(METAL_DARK, state)
 	var links := _links(type, state)
-	_cap_sides = cap_sides(type, links)
+	_set_doors(type, links, state)
 	if type == "main":
 		_iso_tunnel(ci, c, tw, links, state)
 		return

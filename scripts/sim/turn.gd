@@ -135,6 +135,10 @@ static func connectivity(state: Dictionary) -> Dictionary:
 		var links: Array = []
 		for d in DIRS:
 			var n: Vector2i = Vector2i(int(s["x"]), int(s["y"])) + d
+			# Neighbours join only where their doors meet (games with door rules).
+			var other_id: String = state["occupancy"].get(NewGame.cell_key(n.x, n.y, z), "")
+			if other_id != "" and not Actions.joined(state, s, state["structures"][other_id], d):
+				continue
 			links.append(NewGame.cell_key(n.x, n.y, z))
 		# A shaft and its landing join the two levels.
 		if s["type"] == "shaft":
