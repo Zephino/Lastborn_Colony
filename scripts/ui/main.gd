@@ -11,6 +11,13 @@ const SaveGame = preload("res://scripts/sim/save_game.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const AppActions = preload("res://scripts/ui/app_actions.gd")
 const Research = preload("res://scripts/sim/research.gd")
+const Online = preload("res://scripts/net/online.gd")
+const OnlineConfig = preload("res://scripts/net/online_config.gd")
+const ScoreEntry = preload("res://scripts/net/score_entry.gd")
+
+const PROFILE_PATH := "user://profile.json"
+const PLANET := "brume"
+const PLANET_NAME := "Brume"
 
 const BG := Color(0.06, 0.07, 0.09)
 const PANEL := Color(0.10, 0.11, 0.14)
@@ -34,6 +41,11 @@ var hint_label: Label
 var modal: Control
 var modal_can_cancel := false
 var busy := false
+var online: Node
+var toast: Label
+var toast_left := 0.0
+var player_name := ""
+var settings_open := false
 
 
 func _ready() -> void:
@@ -49,6 +61,15 @@ func _ready() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	online = Online.new()
+	add_child(online)
+	online.board_loaded.connect(_on_board_loaded)
+	online.score_submitted.connect(func(_ok: bool, message: String) -> void: _toast(message))
+	online.sign_in_message.connect(_toast)
+	online.account_changed.connect(_on_account_changed)
+	online.cloud_saved.connect(func(_ok: bool, message: String) -> void: _toast(message))
+	online.cloud_loaded.connect(_on_cloud_loaded)
+	player_name = _load_profile().get("name", "")
 	show_title()
 
 
@@ -109,11 +130,19 @@ func show_title() -> void:
 	seed_box.max_value = 999999
 	seed_box.value = randi_range(1, 999999)
 	box.add_child(seed_box)
+	box.add_child(_label("Your name on the leaderboard"))
+	var player_edit := LineEdit.new()
+	player_edit.text = player_name
+	player_edit.max_length = ScoreEntry.MAX_NAME_LENGTH
+	player_edit.placeholder_text = "Letters, numbers, spaces, - and _"
+	player_edit.text_changed.connect(_on_player_name_changed)
+	box.add_child(player_edit)
 	box.add_child(_button("New colony", _on_new_colony.bind(name_edit, seed_box)))
 	for slot in ["manual", "autosave"]:
 		if SaveGame.exists(slot):
 			var label := "Load saved game" if slot == "manual" else "Load autosave"
 			box.add_child(_button(label, func() -> void: _load(slot)))
+	box.add_child(_button("Leaderboard", show_leaderboard))
 	box.add_child(_button("Settings", show_settings))
 	if not AppActions.is_web():
 		box.add_child(_button("Quit", func() -> void: get_tree().quit()))
@@ -322,6 +351,7 @@ func _on_menu() -> void:
 	show_modal("Menu", "Unsaved progress since your last save or autosave will be lost.", [
 		["Save and quit to title", _save_and_quit, true],
 		["Quit to title without saving", show_title, true],
+		["Retire: post this colony's progress to the leaderboard", _post_score.bind("retired"), OnlineConfig.enabled()],
 		["Settings", show_settings, true],
 		["Back to the colony", close_modal, true],
 	], true)
@@ -375,7 +405,7 @@ func _show_ending() -> void:
 	var st: Dictionary = state["stats"]
 	var body := "%s\n\nTurn %d. Population %d. Born %d, died %d, arrived %d. Alloy exported: %d." % [
 		e["body"], int(state["turn"]) - 1, int(_pop()), int(st["births"]), int(st["deaths"]), int(st["arrivals"]), int(st["exported"])]
-	show_modal(e["title"], body, [["Look around", close_modal, true], ["Back to title", show_title, true]])
+	show_modal(e["title"], body, [["Post score to the leaderboard", _post_score.bind(""), OnlineConfig.enabled()], ["Look around", close_modal, true], ["Back to title", show_title, true]])
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -620,11 +650,28 @@ func show_settings() -> void:
 				notes.append("Install app works in Chrome and Edge (and on phones) once the page has loaded.")
 		options.append(["Update app", _on_update, true])
 		notes.append("Update app reloads the newest version from the internet. Your saved games are kept.")
-	options.append(["Back", close_modal, true])
+	if OnlineConfig.enabled():
+		if online.is_signed_in():
+			notes.append("Signed in as %s. Cloud save keeps one game for your account, so you can carry on from another device." % online.account_name())
+			options.append(["Save this game to the cloud" if not state.is_empty() else "Save my last saved game to the cloud", _cloud_upload, not state.is_empty() or SaveGame.exists("manual")])
+			options.append(["Load my game from the cloud", online.download_save, true])
+			options.append(["Sign out", online.sign_out, true])
+		elif online.is_signing_in():
+			notes.append("Finish signing in with Google in your browser.")
+			options.append(["Cancel sign-in", online.cancel_sign_in, true])
+		else:
+			options.append(["Sign in with Google", online.start_sign_in, true])
+			notes.append("Signing in lets you keep a cloud save and carry on from another device. It's optional.")
+	options.append(["Back", _close_settings, true])
 	var body := "Lastborn Colony v%s" % str(ProjectSettings.get_setting("application/config/version", ""))
 	if not notes.is_empty():
 		body += "\n\n" + "\n".join(notes)
 	show_modal("Settings", body, options, true)
+	settings_open = true
+
+
+func _close_settings() -> void:
+	close_modal()
 
 
 func _on_fullscreen() -> void:
@@ -642,6 +689,122 @@ func _on_update() -> void:
 	if state.size() > 0 and state.get("ending", "") == "":
 		SaveGame.save(state, "autosave")
 	AppActions.update_now()
+
+
+# ---------------------------------------------------------------- Online
+
+func _on_account_changed() -> void:
+	if settings_open:
+		show_settings()
+
+
+func _on_player_name_changed(text: String) -> void:
+	player_name = text
+	_save_profile()
+
+
+func _load_profile() -> Dictionary:
+	if not FileAccess.file_exists(PROFILE_PATH):
+		return {}
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PROFILE_PATH))
+	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+
+
+func _save_profile() -> void:
+	var f := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify({"name": player_name}))
+
+
+func _post_score(ending_override: String) -> void:
+	if state.is_empty():
+		return
+	var entry := ScoreEntry.from_state(state, player_name, ending_override)
+	var problem := ScoreEntry.problem(entry)
+	if problem != "":
+		_toast(problem)
+		return
+	online.submit_score(entry)
+	_toast("Sending score…")
+
+
+func show_leaderboard() -> void:
+	show_modal("Leaderboard: %s" % PLANET_NAME, "Loading…", [["Back", close_modal, true]], true)
+	online.fetch_board(PLANET)
+
+
+func _on_board_loaded(entries: Array, error: String) -> void:
+	if modal == null:
+		return
+	var lines := PackedStringArray()
+	if error != "":
+		lines.append(error)
+	elif entries.is_empty():
+		lines.append("No scores yet. Finish a colony and post your score to be the first.")
+	else:
+		lines.append("Free charters first (fewest turns), then the most debt paid.\n")
+		var rank := 1
+		for e in entries.slice(0, 25):
+			var how := ""
+			if e.get("ending", "") == "free":
+				how = "bought out the charter in %d turns" % int(e.get("turn", 0))
+			else:
+				var endings := {"receivership": "taken by the Company", "silent": "went silent", "retired": "retired"}
+				how = "paid %d of %d marks, %s on turn %d" % [int(e.get("debt_paid", 0)), int(e.get("debt_total", 0)), endings.get(e.get("ending", ""), "ended"), int(e.get("turn", 0))]
+			lines.append("%d. %s (%s): %s" % [rank, e.get("name", "?"), e.get("colony", "?"), how])
+			rank += 1
+	show_modal("Leaderboard: %s" % PLANET_NAME, "\n".join(lines), [["Back", close_modal, true]], true)
+
+
+func _cloud_upload() -> void:
+	if not state.is_empty():
+		online.upload_save(SaveGame.to_text(state))
+	elif SaveGame.exists("manual"):
+		online.upload_save(FileAccess.get_file_as_string(SaveGame.path_for("manual")))
+
+
+func _on_cloud_loaded(text: String, error: String) -> void:
+	if error != "":
+		_toast(error)
+		return
+	var loaded: Variant = SaveGame.from_text(text)
+	if typeof(loaded) == TYPE_STRING:
+		_toast(loaded)
+		return
+	state = loaded
+	SaveGame.save(state, "manual")
+	show_game()
+	_after_turn()
+	_toast("Loaded your game from the cloud.")
+
+
+## A short message along the bottom of the screen that fades after a few seconds.
+func _toast(message: String) -> void:
+	if toast == null:
+		toast = Label.new()
+		toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0.02, 0.03, 0.05, 0.92)
+		style.set_content_margin_all(10)
+		style.set_corner_radius_all(6)
+		toast.add_theme_stylebox_override("normal", style)
+		toast.z_index = 100
+		add_child(toast)
+	toast.text = message
+	toast.visible = true
+	move_child(toast, get_child_count() - 1)
+	toast.custom_minimum_size = Vector2(minf(640.0, size.x - 32.0), 0)
+	toast.reset_size()
+	toast.position = Vector2((size.x - toast.size.x) * 0.5, size.y - toast.size.y - 24.0)
+	toast_left = 5.0
+
+
+func _process(delta: float) -> void:
+	if toast != null and toast.visible:
+		toast_left -= delta
+		if toast_left <= 0.0:
+			toast.visible = false
 
 
 # ---------------------------------------------------------------- Modal dialogs
@@ -689,3 +852,4 @@ func close_modal() -> void:
 	if modal != null:
 		modal.queue_free()
 	modal = null
+	settings_open = false

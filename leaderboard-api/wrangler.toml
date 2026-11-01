@@ -1,0 +1,39 @@
+name = "lastborn-colony"
+workers_dev = true
+main = "src/index.js"
+compatibility_date = "2024-10-01"
+
+# KV namespace created in Cloudflare and bound as LEADERBOARD_KV.
+# (A namespace id is public, not a secret, so it is safe to keep here.)
+[[kv_namespaces]]
+binding = "LEADERBOARD_KV"
+id = "90125d9378f84cd4b05edd98a1b5f9a3"
+
+# Durable Objects (SQLite-backed, available on the free plan): one SaveVault
+# per player's cloud save, and one AccountVault per Google account or
+# sign-in in progress.
+[[durable_objects.bindings]]
+name = "SAVE_VAULT"
+class_name = "SaveVault"
+
+[[durable_objects.bindings]]
+name = "ACCOUNTS"
+class_name = "AccountVault"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SaveVault", "AccountVault"]
+
+[vars]
+# Only used if the optional GITHUB_TOKEN secret is set (a public copy of the
+# board on the repository's `data` branch). The board works without it.
+GITHUB_OWNER = "Zephino"
+GITHUB_REPO = "Lastborn_Colony"
+GITHUB_BRANCH = "data"
+GITHUB_PATH = "leaderboard.json"
+
+# Secrets are never written here (Cloudflare dashboard → Workers & Pages →
+# lastborn-colony → Settings → Variables and Secrets, type "Secret"):
+#   GOOGLE_CLIENT_ID      Sign in with Google (see README.md)
+#   GOOGLE_CLIENT_SECRET
+#   GITHUB_TOKEN          optional: copy the board to GitHub

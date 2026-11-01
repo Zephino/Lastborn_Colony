@@ -11,6 +11,7 @@ const Turn = preload("res://scripts/sim/turn.gd")
 const SaveGame = preload("res://scripts/sim/save_game.gd")
 const Bot = preload("res://tests/bot.gd")
 const Research = preload("res://scripts/sim/research.gd")
+const TestOnline = preload("res://tests/test_online.gd")
 
 var checks := 0
 var failures := 0
@@ -28,6 +29,8 @@ func _init() -> void:
 	test_crime()
 	test_breakdowns_and_repairs()
 	test_plague()
+	print("Online (no network)")
+	TestOnline.run(check)
 	test_idle_colony_fails()
 	test_bot_colonies()
 	print("\n%d checks, %d failed" % [checks, failures])

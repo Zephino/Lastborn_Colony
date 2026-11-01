@@ -17,6 +17,12 @@ The web version is rebuilt and published automatically every time something is p
 - **Install app** (Settings) installs it like an app in Chrome and Edge, or on Android. On iPhone or iPad: tap **Share**, then **Add to Home Screen**.
 - **Updates:** for 30 seconds after the game opens, it checks for a newer version and switches to it. **Update app** (Settings) does the same at any time. Your saves are kept.
 
+### Leaderboard, Google sign-in and cloud save
+
+- **Leaderboard** (title screen) shows how far players got on each planet: colonies that bought out their charter come first (fewest turns wins), then everyone else by how much debt they paid off. Type your name on the title screen, then post a score when a colony ends, or choose **Menu → Retire** to post one that's still running.
+- **Sign in with Google** (Settings) is optional. It lets you keep one cloud save and carry on from another device: **Save this game to the cloud** on one device, then **Load my game from the cloud** on the other.
+- These features use the owner's Cloudflare Worker in `leaderboard-api/` (https://lastborn-colony.thebotcoder.workers.dev). Without it, or offline, the game plays normally and these buttons explain what's missing. Setup steps for the owner: `leaderboard-api/README.md`.
+
 ### One-time GitHub Pages setting (owner)
 
 1. Open https://github.com/Zephino/Lastborn_Colony/settings/pages
@@ -72,6 +78,10 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |
 | `scripts/ui/main.gd` | All screens, built in code. |
 | `scripts/ui/map_view.gd` | Map drawing and mouse input. |
+| `scripts/net/` | Online features: leaderboard, Google sign-in, cloud save (`online.gd`), the Worker's address (`online_config.gd`). |
+| `scripts/ui/app_actions.gd` | Fullscreen, Install app and Update app. |
+| `leaderboard-api/` | The Cloudflare Worker behind the online features (not part of the game build). |
+| `web/update.js`, `.github/workflows/web.yml` | The web version's self-updater, and the workflow that builds and publishes it. |
 | `tests/` | Headless test runner, the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
 | `.cursor/rules/`, `AGENTS.md`, `CLAUDE.md` | Rules for AI assistants working on the project. |
 | `CHANGELOG.md`, `VERSION` | What changed in each version, and the current version. |
@@ -106,7 +116,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- All 73 headless test checks pass in Godot 4.3. The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
+- All 137 headless test checks pass in Godot 4.3, and the Worker's 29 tests pass. The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
 - Ideas: more planets, underground levels, a rival faction, changing trade prices, difficulty settings, and sound.
 
 ## License

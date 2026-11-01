@@ -3,9 +3,11 @@
 # The game's tests run first; if any fail, nothing is published, so the live
 # game is never replaced by a broken build.
 #
-# One-time setting: GitHub → this repo → Settings → Pages → Build and
-# deployment → Source = "GitHub Actions". With "Deploy from a branch", GitHub
-# publishes the README instead of the game.
+# Recommended one-time setting: GitHub → this repo → Settings → Pages → Build
+# and deployment → Source = "GitHub Actions". While the source is "Deploy from
+# a branch", GitHub also publishes the README on every push; the deploy job
+# below waits for that to finish so the game is always published last, then
+# checks the site really shows the game.
 name: Web build
 
 on:
@@ -17,6 +19,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: pages
@@ -82,5 +85,36 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: VERSION
+          sparse-checkout-cone-mode: false
+
+      - name: Wait for GitHub's own Pages publish of this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Up to 5 minutes; if there is none (source set to GitHub Actions), go ahead.
+          for i in $(seq 1 30); do
+            open=$(gh api "repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}" \
+              --jq '[.workflow_runs[] | select(.name == "pages build and deployment" and .status != "completed")] | length')
+            if [ "$open" = "0" ]; then echo "No other Pages publish running."; exit 0; fi
+            echo "Waiting for GitHub's Pages publish to finish ($i)…"
+            sleep 10
+          done
+          echo "Still running after 5 minutes; publishing the game anyway."
+
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Check the site shows the game
+        run: |
+          url="${{ steps.deployment.outputs.page_url }}"
+          v=$(tr -d '[:space:]' < VERSION)
+          for i in $(seq 1 12); do
+            if curl -sfL --max-time 20 "$url?check=$i" | grep -q "LASTBORN_VERSION=\"$v\""; then echo "Version $v is live at $url"; exit 0; fi
+            echo "Not the game yet ($i); waiting for GitHub's cache…"
+            sleep 15
+          done
+          echo "::error::$url doesn't show the game. Re-run this workflow, or set Settings → Pages → Source to GitHub Actions."
+          exit 1
