@@ -25,7 +25,7 @@ func _draw() -> void:
 
 
 func _buildings() -> void:
-	_text("Lastborn Colony: building concept sprites. Left: top-down. Right: angled. Small: under construction / idle.", Vector2(24, 40), 24, Color(0.95, 0.62, 0.30))
+	_text("Lastborn Colony: domes joined by tunnels, with an airlock at each dome. Left: top-down. Right: angled. Small: under construction / idle.", Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
 	var ids: Array = GameData.building_ids()
 	var cols := 4
 	var cw := 470.0
@@ -37,12 +37,13 @@ func _buildings() -> void:
 		_text(GameData.building(id)["name"], o + Vector2(12, 26), 20, Color(1.0, 0.82, 0.48))
 		# Top-down, on one ground tile.
 		var r := Rect2(o + Vector2(14, 44), Vector2(120, 120))
+		var sample := {"links": [Vector2i(1, 0), Vector2i(0, 1)]} if id != "main" else {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
 		Sprites.terrain_top(self, "regolith", r)
-		Sprites.draw_top(self, id, r)
+		Sprites.draw_top(self, id, r, sample)
 		# Angled, on one diamond.
 		var c := o + Vector2(290, 150)
 		Sprites.terrain_iso(self, "regolith", c, 200.0)
-		Sprites.draw_iso(self, id, c, 200.0)
+		Sprites.draw_iso(self, id, c, 200.0, sample)
 		# Under construction and idle, small.
 		var y := o.y + ch - 64
 		for j in 2:
@@ -104,10 +105,8 @@ func _world() -> void:
 			Sprites.draw_iso(self, b[Vector2i(x, y)], c, tw, _links(b, Vector2i(x, y)))
 
 
-## Which neighbours a heat main joins (any building next to it).
+## Which neighbours a building is joined to by tunnels (any building next to it).
 func _links(b: Dictionary, cell: Vector2i) -> Dictionary:
-	if b.get(cell, "") != "main":
-		return {}
 	var out: Array = []
 	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		if b.has(cell + d):

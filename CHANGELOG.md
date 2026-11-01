@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.14
+Date: 11/01/2026
+Time: 8:44 AM
+
+### Changes
+- **Sprite concepts redrawn as a space colony** (`scripts/ui/sprites.gd`, still not used in the game):
+  - **Domes:** every building is a pressurised dome with a metal base ring, glass shell and ribs, and a band in its group colour. Each dome shows its job through the glass and with fittings outside: kelp in the Kelp Vat, a garden in the Commons, a furnace chimney and glowing door on the Forge, an observatory slit and antenna on the Survey Lab, a beacon tower on the Warden Post, gas tanks beside the Splitter, a launch ramp from the Launch Rail, and mirror wings beside the Mirror Field dome.
+  - **Tunnels:** a short tunnel joins each dome to every neighbouring building, and Heat Main tiles are longer tunnels with ribs and a junction.
+  - **Airlocks:** every tunnel meets a dome through an airlock, a chamber with amber-striped doors.
+  - Both styles, top-down and angled, are updated. In the angled style, tunnels going away from the viewer are drawn behind the dome and tunnels coming toward the viewer in front of it.
+- The concept sheets (`tools/sprite_sheet.gd`) now show each building with two tunnels, and a sample colony with every building joined to its neighbours.
+
+### Reason
+The owner wants every building to look like a dome, joined to the next building by a tunnel, with an airlock between buildings, because the colony is in space.
+
 ## Version 00.01.13
 Date: 11/01/2026
 Time: 8:40 AM
