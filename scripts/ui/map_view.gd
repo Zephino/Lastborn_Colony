@@ -366,10 +366,12 @@ func _draw_structure(s: Dictionary, o: Vector2) -> void:
 			draw_line(r.position + Vector2(ts * 0.1, ts * 0.35), r.position + Vector2(r.size.x - ts * 0.1, ts * 0.35), Color(1.0, 0.72, 0.15, a * dim), 3.0)
 		"dronebay":
 			draw_rect(r.grow(-ts * 0.06), Color(0.30 * dim, 0.30 * dim, 0.34 * dim, a))
-			draw_line(c - Vector2(ts * 0.25, ts * 0.25), c + Vector2(ts * 0.25, ts * 0.25), Color(0.85, 0.85, 0.9, a), 2.0)
-			draw_line(c + Vector2(ts * 0.25, -ts * 0.25), c - Vector2(ts * 0.25, -ts * 0.25), Color(0.85, 0.85, 0.9, a), 2.0)
-			for k in 4:
-				draw_circle(c + Vector2.from_angle(PI / 4.0 + k * PI / 2.0) * ts * 0.33, ts * 0.09, Color(1.0, 0.72, 0.15, a * dim))
+			# A little six-wheeled rover.
+			for k in 3:
+				for side in [-1.0, 1.0]:
+					draw_rect(Rect2(c + Vector2(-ts * 0.24 + k * ts * 0.2 - ts * 0.06, side * ts * 0.17 - ts * 0.04), Vector2(ts * 0.12, ts * 0.08)), Color(0.08, 0.08, 0.09, a))
+			draw_rect(Rect2(c - Vector2(ts * 0.3, ts * 0.13), Vector2(ts * 0.6, ts * 0.26)), Color(1.0 * dim, 0.72 * dim, 0.15 * dim, a))
+			draw_rect(Rect2(c + Vector2(ts * 0.14, -ts * 0.09), Vector2(ts * 0.1, ts * 0.18)), Color(0.35, 0.65, 0.75, a))
 		"mast":
 			draw_line(c + Vector2(0, ts * 0.4), c - Vector2(0, ts * 0.4), Color(0.8, 0.82, 0.88, a), 3.0)
 			for k in 3:

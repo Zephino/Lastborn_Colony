@@ -91,7 +91,7 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 			ci.draw_rect(lot, _f(Color(0.24, 0.24, 0.26), state))
 			var paint := _f(Color(0.92, 0.92, 0.88), state)
 			ci.draw_polyline(PackedVector2Array([lot.position + Vector2(s * 0.04, lot.size.y - s * 0.03), lot.position + Vector2(s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, lot.size.y - s * 0.03)]), paint, 1.5)
-			S._top_drone(ci, lot.get_center() + Vector2(0, -s * 0.01), s * 0.075, state)
+			S._top_drone(ci, lot.get_center() + Vector2(0, -s * 0.01), s * 0.11, state)
 		"mast":
 			# Guy wires from the mast to three anchors.
 			for ang in [200.0, 320.0, 80.0]:
@@ -176,8 +176,8 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 				S._glow(ci, hand, s * 0.012, _f(S.AMBER, state), state)
 		"dronebay":
 			# Two drones docked inside.
-			S._top_drone(ci, c + Vector2(-rad * 0.35, 0), rad * 0.22, state)
-			S._top_drone(ci, c + Vector2(rad * 0.35, 0), rad * 0.22, state)
+			S._top_drone(ci, c + Vector2(0, -rad * 0.35), rad * 0.32, state)
+			S._top_drone(ci, c + Vector2(0, rad * 0.35), rad * 0.32, state)
 		"mast":
 			# The lattice mast from above, with its dishes and a red light.
 			ci.draw_rect(Rect2(c - Vector2(s * 0.05, s * 0.05), Vector2(s * 0.1, s * 0.1)), md)
@@ -305,7 +305,7 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 			ci.draw_colored_polygon(lot, _f(Color(0.24, 0.24, 0.26), state))
 			var paint := _f(Color(0.92, 0.92, 0.88), state)
 			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, 0.24, -0.23, 0.006), S._iso(c, tw, 0.24, -0.45, 0.006), S._iso(c, tw, 0.45, -0.45, 0.006), S._iso(c, tw, 0.45, -0.23, 0.006)]), paint, 1.5)
-			S._iso_drone(ci, S._iso(c, tw, 0.345, -0.345) - c + c, tw, 0.01, 0.07, state)
+			S._iso_drone(ci, S._iso(c, tw, 0.345, -0.345) - c + c, tw, 0.0, 0.11, state)
 		"mast":
 			for ang in [200.0, 320.0]:
 				var q := Vector2.from_angle(deg_to_rad(ang)) * 0.46
@@ -382,7 +382,7 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 				var u := -0.47 + (k % 2) * 0.12
 				S._box(ci, c, tw, u, 0.28 + (k / 2) * 0.1, u + 0.1, 0.36 + (k / 2) * 0.1, 0.07, _f(Color(0.30, 0.42, 0.58), state), Color(0, 0, 0, 0), (k / 2) * 0.07)
 		"dronebay":
-			S._iso_drone(ci, S._iso(c, tw, -0.06, -0.06) - c + c, tw, 0.06, 0.07, state)
+			S._iso_drone(ci, S._iso(c, tw, -0.04, -0.04) - c + c, tw, 0.05, 0.11, state)
 			# The garage: a box with a roll-up door, half open, a drone parked inside and a light above.
 			var wall := _f(Color(0.50, 0.52, 0.56), state)
 			var u0 := -0.49
@@ -393,7 +393,7 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			S._box(ci, c, tw, u0, v0, u1, v1, hgt, wall, wall.lightened(0.1))
 			var door := PackedVector2Array([S._iso(c, tw, u0 + 0.04, v1, 0.0), S._iso(c, tw, u1 - 0.04, v1, 0.0), S._iso(c, tw, u1 - 0.04, v1, 0.16), S._iso(c, tw, u0 + 0.04, v1, 0.16)])
 			ci.draw_colored_polygon(door, Color(0.06, 0.06, 0.07, wall.a))
-			S._iso_drone(ci, S._iso(c, tw, (u0 + u1) * 0.5, v1 - 0.06) - c + c, tw, 0.0, 0.05, state)
+			S._iso_drone(ci, S._iso(c, tw, (u0 + u1) * 0.5, v1 - 0.08) - c + c, tw, 0.0, 0.08, state)
 			var roll := PackedVector2Array([S._iso(c, tw, u0 + 0.04, v1, 0.08), S._iso(c, tw, u1 - 0.04, v1, 0.08), S._iso(c, tw, u1 - 0.04, v1, 0.16), S._iso(c, tw, u0 + 0.04, v1, 0.16)])
 			ci.draw_colored_polygon(roll, wall.lightened(0.15))
 			for k in 4:

@@ -2,6 +2,20 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.31
+Date: 11/01/2026
+Time: 5:00 PM
+
+### Changes
+- **Drones are wheeled rovers, not flying drones.**
+  - The small drone drawn at the Workshop and Drone Bay (`_top_drone` and `_iso_drone` in `scripts/ui/sprites.gd`) is now a yellow six-wheeled rover with a cab window and a headlight, matching the units sheet.
+  - The one on the Workshop's lift is missing a wheel (it lies beside it) and shows a red light.
+  - The rovers at the Drone Bay (inside, in the garage and in the parking lot) are bigger.
+- The Drone Bay's map icon in the game is now a little rover too.
+
+### Reason
+The owner pointed out that the drones are wheeled vehicles, not quadcopters.
+
 ## Version 00.01.30
 Date: 11/01/2026
 Time: 4:45 PM

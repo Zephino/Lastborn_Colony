@@ -359,14 +359,14 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			for i in 4:
 				ci.draw_rect(Rect2(c + Vector2((i % 2) * rad * 0.5 - rad * 0.48, (i / 2) * rad * 0.5 - rad * 0.48), Vector2(rad * 0.44, rad * 0.44)), md.lightened(0.2))
 		"workshop":
-			# A tool wall at the back, and a drone up on a yellow lift being fixed.
+			# A tool wall at the back, and a drone (a rover missing a wheel) up on a yellow lift.
 			ci.draw_rect(Rect2(c + Vector2(-rad * 0.50, -rad * 0.80), Vector2(rad * 1.0, rad * 0.16)), _fade(Color(0.45, 0.34, 0.22), state))
 			for k in 5:
 				ci.draw_line(c + Vector2(-rad * 0.42 + k * rad * 0.20, -rad * 0.76), c + Vector2(-rad * 0.36 + k * rad * 0.20, -rad * 0.68), m.lightened(0.3), 2.0)
 			var lift := Rect2(c - Vector2(rad * 0.42, rad * 0.32), Vector2(rad * 0.84, rad * 0.64))
 			ci.draw_rect(lift, _fade(HAZARD, state).darkened(0.1))
 			ci.draw_rect(lift, md, false, 1.5)
-			_top_drone(ci, c, rad * 0.40, state)
+			_top_drone(ci, c, rad * 0.40, state, true)
 			# A robot arm reaches from the dome to the rover, welding it.
 			var j0 := c + Vector2(-rad * 0.70, rad * 0.70)
 			var j1 := c + Vector2(-s * 0.20, s * 0.43)
@@ -787,7 +787,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			ci.draw_rect(Rect2(_iso(c, tw, 0.05, 0.20, 0.10) - Vector2(tw * 0.06, tw * 0.04), Vector2(tw * 0.12, tw * 0.08)), md.lightened(0.2))
 			ci.draw_rect(Rect2(_iso(c, tw, 0.05, 0.20, 0.10) - Vector2(tw * 0.06, tw * 0.04), Vector2(tw * 0.12, tw * 0.08)), a, false, 1.5)
 		"workshop":
-			# A tool wall at the back, and a drone up on a yellow scissor lift.
+			# A tool wall at the back, and a drone (a rover missing a wheel) up on a yellow scissor lift.
 			var wood := _fade(Color(0.45, 0.34, 0.22), state)
 			_box(ci, c, tw, -0.18, -0.24, 0.18, -0.20, 0.14, wood, Color(0, 0, 0, 0), 0.05)
 			for k in 5:
@@ -799,7 +799,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 				ci.draw_line(_iso(c, tw, -0.10, sd, 0.07), _iso(c, tw, 0.10, sd, 0.16), yel.darkened(0.2), 2.0)
 				ci.draw_line(_iso(c, tw, 0.10, sd, 0.07), _iso(c, tw, -0.10, sd, 0.16), yel.darkened(0.2), 2.0)
 			_box(ci, c, tw, -0.11, -0.09, 0.11, 0.09, 0.015, yel, Color(0, 0, 0, 0), 0.16)
-			_iso_drone(ci, c, tw, 0.19, 0.10, state)
+			_iso_drone(ci, c, tw, 0.18, 0.11, state, true)
 			# The repair pad at the left, with hazard stripes round its edge.
 			var corners := [_iso(c, tw, -0.48, 0.17), _iso(c, tw, -0.17, 0.17), _iso(c, tw, -0.17, 0.48), _iso(c, tw, -0.48, 0.48)]
 			ci.draw_colored_polygon(PackedVector2Array(corners), md.lightened(0.05))
@@ -994,42 +994,58 @@ static func _uv_slab(ci: CanvasItem, c: Vector2, tw: float, bc: Vector2, along: 
 	ci.draw_colored_polygon(lid, col)
 
 
-## A four-rotor drone seen from above, one rotor's light red (it's broken).
-static func _top_drone(ci: CanvasItem, p: Vector2, size: float, state: Dictionary) -> void:
+## A small six-wheeled work drone (a rover) seen from above, nose to the right.
+## A broken one is missing a wheel and shows a red light.
+static func _top_drone(ci: CanvasItem, p: Vector2, size: float, state: Dictionary, broken: bool = false) -> void:
 	var md := _fade(METAL_DARK, state)
-	var m := _fade(METAL, state)
-	for k in 4:
-		ci.draw_line(p, p + Vector2.from_angle(PI / 4.0 + k * PI / 2.0) * size, md, maxf(2.0, size * 0.14))
-	for k in 4:
-		var e := p + Vector2.from_angle(PI / 4.0 + k * PI / 2.0) * size
-		ci.draw_circle(e, size * 0.34, Color(md.r, md.g, md.b, 0.85 * md.a))
-		ci.draw_arc(e, size * 0.34, 0, TAU, 16, m.lightened(0.3), 1.0)
-		if k != 2:
-			var blade := Vector2.from_angle(k * 0.9) * size * 0.30
-			ci.draw_line(e - blade, e + blade, m.lightened(0.4), 1.5)
-	ci.draw_rect(Rect2(p - Vector2(size * 0.26, size * 0.26), Vector2(size * 0.52, size * 0.52)), _fade(WHITE, state).darkened(0.15))
-	_glow(ci, p, size * 0.10, _fade(CYAN, state), state)
-	_glow(ci, p + Vector2.from_angle(PI / 4.0 + PI) * size, size * 0.12, _fade(Color(1.0, 0.3, 0.3), state), state)
+	var tyre := Color(0.08, 0.08, 0.09, md.a)
+	var length := size * 1.5
+	var width := size * 0.9
+	for k in 3:
+		for side in [-1.0, 1.0]:
+			if broken and k == 2 and side > 0.0:
+				continue
+			var w := p + Vector2(-length * 0.32 + k * length * 0.32, side * width * 0.55)
+			ci.draw_rect(Rect2(w - Vector2(size * 0.17, size * 0.09), Vector2(size * 0.34, size * 0.18)), tyre)
+	var body := Rect2(p - Vector2(length * 0.5, width * 0.5), Vector2(length, width))
+	ci.draw_rect(body, _fade(Color(0.95, 0.74, 0.18), state))
+	ci.draw_rect(body, md, false, 1.0)
+	ci.draw_rect(Rect2(body.end - Vector2(length * 0.30, width * 0.85), Vector2(length * 0.22, width * 0.7)), _fade(CYAN, state).darkened(0.35))
+	ci.draw_rect(Rect2(body.position + Vector2(length * 0.12, width * 0.2), Vector2(length * 0.4, width * 0.6)), md.lightened(0.2))
+	_glow(ci, Vector2(body.end.x, p.y), size * 0.08, _fade(WHITE, state), state)
+	if broken:
+		ci.draw_rect(Rect2(p + Vector2(length * 0.42, width * 0.9), Vector2(size * 0.34, size * 0.18)), tyre)
+		_glow(ci, p, size * 0.12, _fade(Color(1.0, 0.3, 0.3), state), state)
 
 
-## The same drone at an angle, sitting at height z; `size` is in tile units.
-static func _iso_drone(ci: CanvasItem, c: Vector2, tw: float, z: float, size: float, state: Dictionary) -> void:
+## The same rover at an angle, sitting at height z; `size` is in tile units.
+static func _iso_drone(ci: CanvasItem, c: Vector2, tw: float, z: float, size: float, state: Dictionary, broken: bool = false) -> void:
 	var md := _fade(METAL_DARK, state)
-	var m := _fade(METAL, state)
-	var hub := _iso(c, tw, 0, 0, z + 0.02)
-	var ends: Array = []
-	for k in 4:
-		var q := Vector2.from_angle(PI / 4.0 + k * PI / 2.0) * size
-		ends.append(_iso(c, tw, q.x, q.y, z + 0.03))
-	for e in ends:
-		ci.draw_line(hub, e, md, maxf(2.0, tw * 0.012))
-	for k in 4:
-		var e: Vector2 = ends[k]
-		ci.draw_colored_polygon(_ellipse(e, tw * 0.045, tw * 0.022), Color(md.r, md.g, md.b, 0.85 * md.a))
-		ci.draw_polyline(_ellipse(e, tw * 0.045, tw * 0.022), m.lightened(0.3), 1.0)
-	_box(ci, c, tw, -0.04, -0.04, 0.04, 0.04, 0.03, _fade(WHITE, state).darkened(0.15), Color(0, 0, 0, 0), z)
-	_glow(ci, _iso(c, tw, 0, 0, z + 0.04), tw * 0.012, _fade(CYAN, state), state)
-	_glow(ci, ends[2], tw * 0.014, _fade(Color(1.0, 0.3, 0.3), state), state)
+	var tyre := Color(0.08, 0.08, 0.09, md.a)
+	var hl := size * 0.75
+	var hw := size * 0.45
+	var wr := size * 0.22
+	var wheel_z := z + wr
+	# Far-side wheels, the body, then near-side wheels.
+	for k in 3:
+		var u := -hl * 0.65 + k * hl * 0.65
+		ci.draw_colored_polygon(_ellipse(_iso(c, tw, u, -hw, wheel_z), tw * wr * 0.75, tw * wr * 0.75), tyre)
+	var yel := _fade(Color(0.95, 0.74, 0.18), state)
+	_box(ci, c, tw, -hl, -hw, hl, hw, size * 0.32, yel, Color(0, 0, 0, 0), z + wr * 0.9)
+	_box(ci, c, tw, -hl * 0.6, -hw * 0.6, hl * 0.2, hw * 0.6, size * 0.14, md.lightened(0.2), Color(0, 0, 0, 0), z + wr * 0.9 + size * 0.32)
+	var top := z + wr * 0.9 + size * 0.32
+	ci.draw_colored_polygon(PackedVector2Array([_iso(c, tw, hl, -hw * 0.7, top - size * 0.04), _iso(c, tw, hl, hw * 0.7, top - size * 0.04), _iso(c, tw, hl, hw * 0.7, top - size * 0.18), _iso(c, tw, hl, -hw * 0.7, top - size * 0.18)]), _fade(CYAN, state).darkened(0.35))
+	for k in 3:
+		if broken and k == 2:
+			continue
+		var u := -hl * 0.65 + k * hl * 0.65
+		var wp := _iso(c, tw, u, hw, wheel_z)
+		ci.draw_colored_polygon(_ellipse(wp, tw * wr * 0.75, tw * wr * 0.75), tyre)
+		ci.draw_colored_polygon(_ellipse(wp, tw * wr * 0.3, tw * wr * 0.3), md.lightened(0.3))
+	_glow(ci, _iso(c, tw, hl, 0, top - size * 0.1), tw * size * 0.12, _fade(WHITE, state), state)
+	if broken:
+		ci.draw_colored_polygon(_ellipse(_iso(c, tw, hl * 1.4, hw * 1.6, z + 0.005), tw * wr * 0.75, tw * wr * 0.35), tyre)
+		_glow(ci, _iso(c, tw, 0, 0, top + size * 0.16), tw * size * 0.15, _fade(Color(1.0, 0.3, 0.3), state), state)
 
 
 ## The Kelp Vat, seen from above: a sealed pool farmed like an ocean kelp farm.
