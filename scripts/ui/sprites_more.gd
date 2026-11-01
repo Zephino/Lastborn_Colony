@@ -159,14 +159,13 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			S._glow(ci, c, s * 0.06, _f(S.GOLD, state), state)
 			ci.draw_arc(c, rad * 0.6, 0, TAU, 20, _f(S.GOLD, state), 2.0)
 		"reclaimer":
-			# The shredder: two toothed rollers, with a green recycling sign beside it.
+			# The shredder: two toothed rollers.
 			for k in 2:
 				var roll := Rect2(c + Vector2(-rad * 0.5, -rad * 0.38 + k * rad * 0.24), Vector2(rad * 0.62, rad * 0.18))
 				ci.draw_rect(roll, m.lightened(0.1))
 				for t in 6:
 					var x := roll.position.x + rad * 0.05 + t * rad * 0.1
 					ci.draw_line(Vector2(x, roll.position.y), Vector2(x, roll.end.y), md, 1.0)
-			_recycle_sign(ci, c + Vector2(rad * 0.30, rad * 0.25), rad * 0.30, _f(S.GREEN, state))
 		"fab":
 			# Inside: a conveyor belt carrying parts between two yellow robot arms.
 			ci.draw_rect(Rect2(c + Vector2(-rad * 0.7, -rad * 0.1), Vector2(rad * 1.4, rad * 0.2)), md)
@@ -385,8 +384,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 				for t in 5:
 					var u := -0.12 + t * 0.06
 					ci.draw_line(S._iso(c, tw, u, -0.06 + k * 0.09, 0.12) - Vector2(0, tw * 0.03), S._iso(c, tw, u, -0.06 + k * 0.09, 0.12) - Vector2(0, tw * 0.045), md, 1.5)
-			# A big recycling sign on the dome.
-			_recycle_sign(ci, S._iso(c, tw, 0, 0, 0.05 + h * 0.62), tw * 0.075, _f(S.GREEN, state))
 			# Crushed-scrap bales stacked at the left, strapped.
 			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
 			for k in 3:
@@ -485,23 +482,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			S._box(ci, c, tw, -0.48, 0.28, -0.26, 0.32, 0.12, md, Color(0, 0, 0, 0), 0.04)
 			S._glow(ci, S._iso(c, tw, -0.40, 0.30, 0.12), tw * 0.02, _f(S.PINK, state), state)
 			S._glow(ci, S._iso(c, tw, -0.32, 0.30, 0.12), tw * 0.02, _f(S.CYAN, state), state)
-
-
-## The recycling sign: three arrows chasing each other round a triangle.
-static func _recycle_sign(ci: CanvasItem, p: Vector2, size: float, col: Color) -> void:
-	var corners: Array = []
-	for k in 3:
-		corners.append(p + Vector2.from_angle(deg_to_rad(-90.0 + k * 120.0)) * size)
-	ci.draw_circle(p, size * 1.25, Color(0.05, 0.08, 0.06, 0.55 * col.a))
-	for k in 3:
-		var a: Vector2 = corners[k]
-		var b: Vector2 = corners[(k + 1) % 3]
-		var from := a.lerp(b, 0.12)
-		var to := a.lerp(b, 0.72)
-		ci.draw_line(from, to, col, maxf(2.0, size * 0.22))
-		var d := (b - a).normalized()
-		var n := d.orthogonal()
-		ci.draw_colored_polygon(PackedVector2Array([to + d * size * 0.32, to + n * size * 0.24, to - n * size * 0.24]), col)
 
 
 ## The Academy at an angle: a brick schoolhouse dome with two rows of lit

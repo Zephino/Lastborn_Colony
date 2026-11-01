@@ -2,6 +2,16 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.33
+Date: 11/01/2026
+Time: 5:35 PM
+
+### Changes
+- **Reclaimer:** the green recycling symbol is gone (sprite concept, top-down and angled). The shredder's rollers now show inside the dome instead.
+
+### Reason
+The owner didn't like the recycling symbol.
+
 ## Version 00.01.32
 Date: 11/01/2026
 Time: 5:25 PM
