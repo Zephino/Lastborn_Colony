@@ -59,6 +59,8 @@ static func apply(state: Dictionary, manifest: Dictionary) -> void:
 				state["stock"][k] = float(state["stock"][k]) + v
 			else:
 				state[k] = float(state[k]) + v
+		if item.has("pod"):
+			state["pods"] = int(state.get("pods", 0)) + int(item["pod"]) * n
 		if item.has("kit"):
 			var kits: Dictionary = state["kits"]
 			kits[item["kit"]] = int(kits.get(item["kit"], 0)) + n

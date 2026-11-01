@@ -111,6 +111,21 @@
       "debt": 350,
       "max": 1,
       "kit": "lab"
+    },
+    {
+      "id": "pod",
+      "name": "Supply pod",
+      "desc": "Stays aboard the ship in orbit. Call it down any time for 50 alloy, 40 food and 40 oxygen.",
+      "debt": 300,
+      "max": 2,
+      "pod": 1
+    },
+    {
+      "id": "probe",
+      "name": "Survey probes",
+      "desc": "Dropped ahead of the ship. The landing-site screen also shows what lies in the Deep under each site.",
+      "debt": 150,
+      "max": 1
     }
   ],
   "recommended": {

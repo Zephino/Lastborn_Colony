@@ -19,6 +19,7 @@ const MapGen = preload("res://scripts/sim/map_gen.gd")
 const ColonyText = preload("res://scripts/ui/colony_text.gd")
 const TextRules = preload("res://scripts/sim/text_rules.gd")
 const ScoreEntry = preload("res://scripts/net/score_entry.gd")
+const TestFleet = preload("res://tests/test_fleet.gd")
 
 var checks := 0
 var failures := 0
@@ -45,6 +46,7 @@ func _init() -> void:
 	test_crime()
 	test_breakdowns_and_repairs()
 	test_plague()
+	TestFleet.run(check)
 	print("Online (no network)")
 	TestOnline.run(check)
 	test_idle_colony_fails()
@@ -85,9 +87,9 @@ func test_rng() -> void:
 
 func test_data() -> void:
 	print("Data")
-	check(GameData.building_ids().size() == 19, "19 buildings loaded")
+	check(GameData.building_ids().size() == 30, "30 buildings loaded")
 	check(GameData.events().size() == 10, "10 events loaded")
-	check(GameData.research_topics().size() == 13, "13 research topics loaded")
+	check(GameData.research_topics().size() == 16, "16 research topics loaded")
 	for t in GameData.research_topics():
 		for req in t["requires"]:
 			check(not GameData.topic(req).is_empty(), "%s requires a real topic (%s)" % [t["id"], req])

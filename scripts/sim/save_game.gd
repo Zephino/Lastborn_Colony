@@ -7,7 +7,7 @@ const TextRules = preload("res://scripts/sim/text_rules.gd")
 const GameData = preload("res://scripts/sim/game_data.gd")
 
 const DIR := "user://saves"
-const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "story_cooldown", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest"]
+const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "story_cooldown", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest", "pods"]
 const STRUCT_INT_FIELDS := ["x", "y", "progress", "damaged"]
 
 
@@ -47,6 +47,11 @@ const DEFAULTS := {
 	"flags": {},
 	"story_done": [],
 	"story_cooldown": 0,
+	"pods": 0,
+	"drones": {},
+	"satellites": {},
+	"waste": 0.0,
+	"trained": 0.0,
 }
 
 
@@ -83,6 +88,12 @@ static func normalize(state: Dictionary) -> void:
 	state["plague"]["turns_left"] = int(state["plague"]["turns_left"])
 	for k in state["kits"]:
 		state["kits"][k] = int(state["kits"][k])
+	for group in ["drones", "satellites"]:
+		for k in state[group]:
+			state[group][k] = int(state[group][k])
+	# Saves from before parts existed.
+	if not state["stock"].has("parts"):
+		state["stock"]["parts"] = 0.0
 	for k in state["manifest"]:
 		state["manifest"][k] = int(state["manifest"][k])
 	for entry in state["log"]:

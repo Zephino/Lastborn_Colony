@@ -109,6 +109,8 @@ static func _choose(state: Dictionary) -> Array:
 		want.append("lab")
 	if turn > 40 and _count(state, "workshop") < 1:
 		want.append("workshop")
+	if float(state.get("waste", 0.0)) > 40.0 and _count(state, "reclaimer") < 1 + int(pop / 80.0):
+		want.append("reclaimer")
 	if float(state["morale"]) < 50.0 and _count(state, "commons") < 3 and turn > 15:
 		want.append("commons")
 	if turn > 40 and _count(state, "clinic") < 1:

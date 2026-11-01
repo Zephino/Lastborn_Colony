@@ -345,6 +345,56 @@ func _draw_structure(s: Dictionary, o: Vector2) -> void:
 		"cache":
 			draw_rect(r.grow(-ts * 0.12), Color(0.5 * dim, 0.45 * dim, 0.35 * dim, a))
 			draw_line(r.position + Vector2(ts * 0.1, ts * 0.45), r.position + Vector2(r.size.x - ts * 0.02, ts * 0.45), Color(0.3, 0.27, 0.2, a), 2.0)
+		"fusion":
+			draw_rect(r, Color(0.30 * dim, 0.32 * dim, 0.38 * dim, a))
+			draw_circle(c, ts * 0.30, Color(0.20, 0.22, 0.28, a))
+			draw_arc(c, ts * 0.24, 0, TAU, 20, Color(0.55, 0.85, 1.0, a * dim), 2.0)
+			draw_circle(c, ts * 0.12, Color(0.75, 0.95, 1.0, a * dim))
+		"catcher":
+			draw_rect(r.grow(-ts * 0.05), Color(0.25 * dim, 0.28 * dim, 0.34 * dim, a))
+			for i in 4:
+				var xx := r.position.x + ts * (0.18 + 0.2 * i)
+				draw_line(Vector2(xx, r.position.y + ts * 0.12), Vector2(xx, r.end.y - ts * 0.12), Color(0.75, 0.80, 0.90, a * dim), 2.0)
+			draw_circle(c, ts * 0.08, Color(1.0, 0.85, 0.40, a * dim))
+		"reclaimer":
+			draw_rect(r.grow(-ts * 0.1), Color(0.35 * dim, 0.42 * dim, 0.30 * dim, a))
+			draw_arc(c, ts * 0.22, 0.3, TAU - 0.6, 16, Color(0.6, 0.95, 0.5, a * dim), 3.0)
+		"fab":
+			draw_rect(r, Color(0.42 * dim, 0.42 * dim, 0.46 * dim, a))
+			for i in 3:
+				draw_rect(Rect2(r.position + Vector2(ts * (0.12 + 0.27 * i), ts * 0.55), Vector2(ts * 0.18, ts * 0.18)), Color(0.85, 0.9, 0.95, a * dim))
+			draw_line(r.position + Vector2(ts * 0.1, ts * 0.35), r.position + Vector2(r.size.x - ts * 0.1, ts * 0.35), Color(1.0, 0.72, 0.15, a * dim), 3.0)
+		"dronebay":
+			draw_rect(r.grow(-ts * 0.06), Color(0.30 * dim, 0.30 * dim, 0.34 * dim, a))
+			draw_line(c - Vector2(ts * 0.25, ts * 0.25), c + Vector2(ts * 0.25, ts * 0.25), Color(0.85, 0.85, 0.9, a), 2.0)
+			draw_line(c + Vector2(ts * 0.25, -ts * 0.25), c - Vector2(ts * 0.25, -ts * 0.25), Color(0.85, 0.85, 0.9, a), 2.0)
+			for k in 4:
+				draw_circle(c + Vector2.from_angle(PI / 4.0 + k * PI / 2.0) * ts * 0.33, ts * 0.09, Color(1.0, 0.72, 0.15, a * dim))
+		"mast":
+			draw_line(c + Vector2(0, ts * 0.4), c - Vector2(0, ts * 0.4), Color(0.8, 0.82, 0.88, a), 3.0)
+			for k in 3:
+				draw_arc(c - Vector2(0, ts * 0.32), ts * (0.12 + 0.1 * k), PI * 1.15, PI * 1.85, 8, Color(0.5, 0.9, 1.0, a * dim * (1.0 - 0.25 * k)), 1.5)
+		"rescue":
+			draw_rect(r.grow(-ts * 0.06), Color(0.85 * dim, 0.35 * dim, 0.25 * dim, a))
+			draw_rect(Rect2(c - Vector2(ts * 0.06, ts * 0.24), Vector2(ts * 0.12, ts * 0.48)), Color(1, 1, 1, a))
+			draw_rect(Rect2(c - Vector2(ts * 0.24, ts * 0.06), Vector2(ts * 0.48, ts * 0.12)), Color(1, 1, 1, a))
+		"academy":
+			draw_rect(r.grow(-ts * 0.06), Color(0.40 * dim, 0.36 * dim, 0.55 * dim, a))
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-ts * 0.3, -ts * 0.05), c + Vector2(0, -ts * 0.22), c + Vector2(ts * 0.3, -ts * 0.05), c + Vector2(0, ts * 0.1)]), Color(0.15, 0.15, 0.2, a))
+			draw_line(c + Vector2(ts * 0.22, -ts * 0.06), c + Vector2(ts * 0.22, ts * 0.2), Color(1.0, 0.8, 0.4, a * dim), 2.0)
+		"hazlab":
+			draw_rect(r, Color(0.25 * dim, 0.25 * dim, 0.28 * dim, a))
+			draw_rect(r, Color(1.0, 0.72, 0.15, a * dim), false, 3.0)
+			draw_circle(c, ts * 0.18, Color(0.75, 1.0, 0.35, a * dim))
+		"garden":
+			draw_rect(r.grow(-ts * 0.04), Color(0.20 * dim, 0.45 * dim, 0.25 * dim, a))
+			draw_circle(c + Vector2(ts * 0.12, ts * 0.12), ts * 0.14, Color(0.35, 0.65, 0.95, a * dim))
+			for p in [Vector2(-0.2, -0.18), Vector2(0.18, -0.2), Vector2(-0.22, 0.2)]:
+				draw_circle(c + p * ts, ts * 0.12, Color(0.40 * dim, 0.80 * dim, 0.40 * dim, a))
+		"lounge":
+			draw_rect(r.grow(-ts * 0.06), Color(0.30 * dim, 0.18 * dim, 0.35 * dim, a))
+			for k in 3:
+				draw_circle(r.position + Vector2(ts * (0.25 + 0.25 * k), ts * 0.5), ts * 0.08, [Color(1.0, 0.4, 0.8), Color(0.4, 0.9, 1.0), Color(1.0, 0.85, 0.3)][k] * Color(1, 1, 1, a * dim))
 		_:
 			draw_rect(r, base)
 	# Status markers.

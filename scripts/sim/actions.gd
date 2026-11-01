@@ -5,6 +5,8 @@ extends RefCounted
 const GameData = preload("res://scripts/sim/game_data.gd")
 const NewGame = preload("res://scripts/sim/new_game.gd")
 const Rng = preload("res://scripts/sim/rng.gd")
+const Research = preload("res://scripts/sim/research.gd")
+const Fleet = preload("res://scripts/sim/fleet.gd")
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
@@ -48,9 +50,41 @@ static func excavation(state: Dictionary, x: int, y: int, z: int) -> bool:
 
 static func build_cost(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> float:
 	var cost := GameData.num(GameData.building(type), "cost")
-	if excavation(state, x, y, z):
+	# While the colony owns a Borer, digging into rock costs nothing extra.
+	if excavation(state, x, y, z) and Fleet.owned(state, "borer") == 0:
 		cost += float(GameData.balance()["deep"]["excavate_cost"])
 	return cost
+
+
+## Parts a building needs on top of its alloy (from a Fab Shop).
+static func parts_cost(type: String) -> float:
+	return GameData.num(GameData.building(type), "parts_cost")
+
+
+## Whether the colony could pay for this building right now (research, alloy, parts), ignoring the tile.
+static func affordable(state: Dictionary, type: String) -> bool:
+	if has_kit(state, type):
+		return true
+	return unlocked(state, type) and float(state["stock"]["alloy"]) >= GameData.num(GameData.building(type), "cost") and float(state["stock"]["parts"]) >= parts_cost(type)
+
+
+## The price as shown in the build menu, e.g. "14" or "40 + 12 parts".
+static func price_text(state: Dictionary, type: String, units: bool = false) -> String:
+	if has_kit(state, type):
+		return "prefab ×%d" % int(state["kits"][type])
+	var def := GameData.building(type)
+	var text := str(int(GameData.num(def, "cost"))) + (" alloy" if units else "")
+	if parts_cost(type) > 0.0:
+		text += " + %d parts" % int(parts_cost(type))
+	if not unlocked(state, type):
+		text += (", needs the %s research" % GameData.topic(def["requires_research"])["name"]) if units else ", locked"
+	return text
+
+
+## Whether the research a building needs is done (or it needs none).
+static func unlocked(state: Dictionary, type: String) -> bool:
+	var need := str(GameData.building(type).get("requires_research", ""))
+	return need == "" or Research.is_done(state, need)
 
 
 static func check_place(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> Dictionary:
@@ -61,6 +95,8 @@ static func check_place(state: Dictionary, type: String, x: int, y: int, z: int 
 	var def := GameData.building(type)
 	if not def.get("buildable", true):
 		return result(false, "%s cannot be built." % def["name"])
+	if not unlocked(state, type):
+		return result(false, "%s needs the %s research first." % [def["name"], GameData.topic(def["requires_research"])["name"]])
 	if not inside(state, x, y):
 		return result(false, "Outside the map.")
 	if not structure_at(state, x, y, z).is_empty():
@@ -83,7 +119,9 @@ static func check_place(state: Dictionary, type: String, x: int, y: int, z: int 
 		return result(true)
 	var cost := build_cost(state, type, x, y, z)
 	if float(state["stock"]["alloy"]) < cost:
-		return result(false, "Needs %d alloy%s." % [int(cost), " (including digging)" if excavation(state, x, y, z) else ""])
+		return result(false, "Needs %d alloy%s." % [int(cost), " (including digging)" if excavation(state, x, y, z) and cost > GameData.num(def, "cost") else ""])
+	if float(state["stock"]["parts"]) < parts_cost(type):
+		return result(false, "Needs %d parts (made by a Fab Shop)." % int(parts_cost(type)))
 	return result(true)
 
 
@@ -100,6 +138,7 @@ static func place(state: Dictionary, type: String, x: int, y: int, z: int = 0) -
 		state["kits"][type] = int(state["kits"][type]) - 1
 	else:
 		state["stock"]["alloy"] = float(state["stock"]["alloy"]) - build_cost(state, type, x, y, z)
+		state["stock"]["parts"] = float(state["stock"]["parts"]) - parts_cost(type)
 	var id := NewGame.add_structure(state, type, x, y, false, z)
 	if excavation(state, x, y, z):
 		var def := GameData.building(type)
@@ -117,9 +156,12 @@ static func demolish(state: Dictionary, id: String) -> Dictionary:
 		return result(false, "Demolish the Shaft on the surface to close this landing.")
 	var def := GameData.building(s["type"])
 	var refund := GameData.num(def, "cost")
+	var parts_back := GameData.num(def, "parts_cost")
 	if s["built"]:
 		refund *= float(GameData.balance()["demolish_refund"])
+		parts_back *= float(GameData.balance()["demolish_refund"])
 	state["stock"]["alloy"] = float(state["stock"]["alloy"]) + floorf(refund)
+	state["stock"]["parts"] = float(state["stock"]["parts"]) + floorf(parts_back)
 	state["occupancy"].erase(NewGame.cell_key(int(s["x"]), int(s["y"]), int(s.get("z", 0))))
 	state["structures"].erase(id)
 	# Closing a shaft also removes its landing in the Deep.
@@ -128,6 +170,93 @@ static func demolish(state: Dictionary, id: String) -> Dictionary:
 		if not below.is_empty() and below["type"] == "shaft_base":
 			state["occupancy"].erase(NewGame.cell_key(int(s["x"]), int(s["y"]), 1))
 			state["structures"].erase(below["id"])
+	return result(true)
+
+
+## Can the colony pay these costs ({alloy, parts, credits})? Returns "" or what's missing.
+static func _missing(state: Dictionary, costs: Dictionary) -> String:
+	var names := {"alloy": "alloy", "parts": "parts", "credits": "marks"}
+	for k in names:
+		if float(state["stock"][k]) < float(costs.get(k, 0.0)):
+			return "Needs %d %s." % [int(costs[k]), names[k]]
+	return ""
+
+
+static func _spend(state: Dictionary, costs: Dictionary) -> void:
+	for k in ["alloy", "parts", "credits"]:
+		state["stock"][k] = float(state["stock"][k]) - float(costs.get(k, 0.0))
+
+
+static func _has_built(state: Dictionary, type: String, active: bool = false) -> bool:
+	for id in state["structures"]:
+		var s: Dictionary = state["structures"][id]
+		if s["type"] == type and s["built"] and (not active or s["active"]):
+			return true
+	return false
+
+
+## Builds a work drone at a Drone Bay.
+static func check_drone(state: Dictionary, type: String) -> Dictionary:
+	if state["ending"] != "":
+		return result(false, "The game is over.")
+	var def := Fleet.drone_def(type)
+	if def.is_empty():
+		return result(false, "Unknown drone.")
+	if not _has_built(state, "dronebay"):
+		return result(false, "Build a Drone Bay first.")
+	var missing := _missing(state, def)
+	return result(missing == "", missing)
+
+
+static func build_drone(state: Dictionary, type: String) -> Dictionary:
+	var check := check_drone(state, type)
+	if not check["ok"]:
+		return check
+	_spend(state, Fleet.drone_def(type))
+	state["drones"][type] = Fleet.owned(state, type) + 1
+	state["log"].append({"turn": int(state["turn"]), "text": "A new %s rolls out of the Drone Bay." % Fleet.drone_def(type)["name"]})
+	return result(true)
+
+
+## Launches a satellite from a Launch Rail that worked last turn.
+static func check_satellite(state: Dictionary, type: String) -> Dictionary:
+	if state["ending"] != "":
+		return result(false, "The game is over.")
+	var def := Fleet.sat_def(type)
+	if def.is_empty():
+		return result(false, "Unknown satellite.")
+	var need := str(def.get("requires_research", ""))
+	if need != "" and not Research.is_done(state, need):
+		return result(false, "Needs the %s research first." % GameData.topic(need)["name"])
+	if Fleet.sats(state, type) >= int(def["max"]):
+		return result(false, "You already have %d in orbit, the most that helps." % int(def["max"]))
+	if not _has_built(state, "rail", true):
+		return result(false, "Needs a working Launch Rail.")
+	var missing := _missing(state, def)
+	return result(missing == "", missing)
+
+
+static func launch_satellite(state: Dictionary, type: String) -> Dictionary:
+	var check := check_satellite(state, type)
+	if not check["ok"]:
+		return check
+	_spend(state, Fleet.sat_def(type))
+	state["satellites"][type] = Fleet.sats(state, type) + 1
+	state["log"].append({"turn": int(state["turn"]), "text": "The Launch Rail flings a %s into orbit." % str(Fleet.sat_def(type)["name"]).to_lower()})
+	return result(true)
+
+
+## Calls a supply pod down from the ship in orbit.
+static func call_pod(state: Dictionary) -> Dictionary:
+	if state["ending"] != "":
+		return result(false, "The game is over.")
+	if int(state["pods"]) <= 0:
+		return result(false, "No supply pods are left aboard the ship.")
+	state["pods"] = int(state["pods"]) - 1
+	var pod: Dictionary = GameData.balance()["pod"]
+	for k in pod:
+		state["stock"][k] = float(state["stock"][k]) + float(pod[k])
+	state["log"].append({"turn": int(state["turn"]), "text": "A supply pod streaks down from the ship and lands by the hull."})
 	return result(true)
 
 
@@ -226,7 +355,10 @@ static func _damage_area(state: Dictionary, radius: int) -> void:
 	if ids.size() < 2:
 		return
 	var center: Dictionary = state["structures"][Rng.pick(state, ids)]
+	radius = maxi(0, radius + Fleet.quake_radius(state))
+	var shelter := Fleet.shelter(state)
 	var hit := 0
+	var saved := 0
 	for id in ids:
 		var s: Dictionary = state["structures"][id]
 		if not s["built"] or s["type"] in ["hull", "main", "cache", "shaft_base"] or int(s.get("z", 0)) != 0:
@@ -234,9 +366,15 @@ static func _damage_area(state: Dictionary, radius: int) -> void:
 		if maxi(absi(int(s["x"]) - int(center["x"])), absi(int(s["y"]) - int(center["y"]))) > radius:
 			continue
 		if Rng.chance(state, 0.5):
+			# A working Rescue Station braces some buildings in time.
+			if shelter < 1.0 and not Rng.chance(state, shelter):
+				saved += 1
+				continue
 			s["damaged"] = maxi(int(s["damaged"]), int(GameData.balance()["repair_turns"]))
 			hit += 1
 	state["log"].append({"turn": int(state["turn"]), "text": "The icequake damaged %d buildings near (%d, %d)." % [hit, int(center["x"]), int(center["y"])]})
+	if saved > 0:
+		state["log"].append({"turn": int(state["turn"]), "text": "Rescue crews braced %d more in time." % saved})
 
 
 static func _damage_random(state: Dictionary, count: int) -> void:
@@ -249,6 +387,10 @@ static func _damage_random(state: Dictionary, count: int) -> void:
 		if candidates.is_empty():
 			return
 		var hit: String = Rng.pick(state, candidates)
+		var shelter := Fleet.shelter(state)
+		if shelter < 1.0 and not Rng.chance(state, shelter):
+			state["log"].append({"turn": int(state["turn"]), "text": "Rescue crews stopped a breakdown at the %s." % GameData.building(state["structures"][hit]["type"])["name"]})
+			continue
 		state["structures"][hit]["damaged"] = int(GameData.balance()["repair_turns"])
 		var bname: String = GameData.building(state["structures"][hit]["type"])["name"]
 		state["log"].append({"turn": int(state["turn"]), "text": "%s is down for repairs." % bname})

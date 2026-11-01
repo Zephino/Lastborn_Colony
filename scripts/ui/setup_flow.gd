@@ -232,6 +232,11 @@ func show_sites() -> void:
 	grid.add_theme_constant_override("v_separation", 12)
 	box.add_child(grid)
 	var sites: Array = GameData.balance()["landing_sites"]
+	# Survey probes (cargo) map the Deep under every site.
+	var probed := int(manifest.get("probe", 0)) > 0
+	var deep: Array = MapGen.generate_deep(game_seed, planet_id) if probed else []
+	if probed:
+		box.add_child(_label("Your survey probes have mapped the Deep: each site also lists the ore veins, aquifers and deep vents under it.", 0, MUTED, true))
 	for i in sites.size():
 		var map := MapGen.generate(game_seed, planet_id, i)
 		var cell := VBoxContainer.new()
@@ -243,7 +248,10 @@ func show_sites() -> void:
 		mini.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cell.add_child(mini)
 		mini.show_map(map)
-		var b := _button("Land at site %s  (%s)" % [char(65 + i), _site_note(map)], _finish.bind(i))
+		var note := _site_note(map)
+		if probed:
+			note += "; " + _deep_note(map, deep)
+		var b := _button("Land at site %s  (%s)" % [char(65 + i), note], _finish.bind(i))
 		_fit(b)
 		cell.add_child(b)
 		if i == 0:
@@ -263,6 +271,18 @@ func _site_note(map: Dictionary) -> String:
 			if counts.has(t) and absi(x - int(hull[0])) + absi(y - int(hull[1])) <= 6:
 				counts[t] = int(counts[t]) + 1
 	return "nearby: %d ice, %d vents, %d seams" % [counts["ice"], counts["vent"], counts["seam"]]
+
+
+## What the probes found in the Deep within 6 steps of the pad.
+func _deep_note(map: Dictionary, deep: Array) -> String:
+	var hull: Array = map["hull"]
+	var counts := {"vein": 0, "aquifer": 0, "deepvent": 0}
+	for y in deep.size():
+		for x in deep[y].size():
+			var t: String = deep[y][x]
+			if counts.has(t) and absi(x - int(hull[0])) + absi(y - int(hull[1])) <= 6:
+				counts[t] = int(counts[t]) + 1
+	return "below: %d veins, %d aquifers, %d deep vents" % [counts["vein"], counts["aquifer"], counts["deepvent"]]
 
 
 func _finish(site: int) -> void:

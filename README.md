@@ -73,6 +73,27 @@ The test script exits with code 0 if every check passes. It checks the random-nu
   - Ore veins make Seam Cutters 50% more productive, deep vents give Vent Taps 50% more heat, and aquifers let Ice Drills work underground.
   - Buildings underground need a steady, low amount of heat (factor 0.5), which helps on cold worlds. Icequakes never reach them.
   - Mirror Fields and Launch Rails need the sky, so they stay on the surface.
+- **Parts:** a **Fab Shop** machines alloy into parts. Drones, satellites and the most advanced buildings need parts as well as alloy.
+- **Drones** (Drones & orbit button): a **Drone Bay** builds and runs work drones, 4 per working bay (Drone Swarms research adds 2). Drones beyond that sit idle.
+  - **Grader:** adds a turn of progress to one surface building under construction.
+  - **Borer:** does the same for a Shaft or a Deep building, and while you own one, digging into rock costs no extra alloy.
+  - **Prospector:** brings back 2 loose ore a turn.
+  - **Hauler:** two working Seam Cutters make 25% more ore.
+- **Orbit** (Drones & orbit button): a working Launch Rail can launch satellites, paid in alloy, parts and marks.
+  - **Weather satellite:** grit fronts hurt mirrors half as much, and icequakes reach less far.
+  - **Relay satellite:** morale +3.
+  - **Power satellites** (after Power Beaming research): each beams 10 power to a **Beam Catcher**.
+  - **Supply pods** packed before landing stay aboard the ship; call one down any time for 50 alloy, 40 food and 40 oxygen.
+- **Big power:** the **Fusion Core** (after Contained Fusion research, 40 alloy and 12 parts) makes 30 power and some heat, day or night.
+- **Waste:** everyone makes waste, and some breaks down by itself. Above 40 it lowers morale, and lots of it helps plague spread. **Reclaimers** recycle it into a little ore and water.
+- **Specialists:** an **Academy** trains workers into specialists, up to 30% of adults. They make Forges, Fab Shops, Seam Cutters and labs up to 15% more productive.
+- **More civic buildings:**
+  - **Signal Mast:** small morale boost, and 1 more mark for each alloy sold (up to 3 masts).
+  - **Rescue Station:** seal failures and icequakes damage half as many buildings.
+  - **Hazard Lab:** three times a Survey Lab's research, but it lowers morale and breaks down often.
+  - **Garden Cavern:** Deep only. A park with a pond: a big morale boost and a little food.
+  - **Lounge:** a big morale boost, but it costs 3 marks a turn and raises crime.
+- **Survey probes** (cargo): the landing-site screen also shows the ore veins, aquifers and deep vents below each site.
 - **Research:** Survey Labs produce research toward the topic you pick. Finished topics boost buildings, housing or exports, or reduce breakdowns, plague and crime.
 - **People age:** children grow into adults, and adults grow into elders, who don't work and die sooner. A Clinic helps everyone live longer.
 - **Breakdowns:** machines wear out and break down now and then. A Workshop speeds up repairs.
@@ -99,11 +120,13 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/actions.gd` | Player actions. Each one returns `{ok, reason}`. |
 | `scripts/sim/turn.gd` | `end_turn(state)`. |
 | `scripts/sim/research.gd` | Research topics and their effects. |
+| `scripts/sim/fleet.gd` | Drones, satellites, supply pods, waste and specialists. |
 | `scripts/sim/text_rules.gd` | Cleaning rules for everything a player types. |
 | `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
 | `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd` | The screens before landing, and the small map previews. |
 | `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
 | `scripts/ui/menus.gd` | Research, Settings, Leaderboard and cloud-save dialogs. |
+| `scripts/ui/fleet_menu.gd` | The Drones & orbit dialog. |
 | `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |
 | `scripts/ui/main.gd` | All screens, built in code. |
 | `scripts/ui/map_view.gd` | Map drawing and mouse input. |
@@ -112,6 +135,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `leaderboard-api/` | The Cloudflare Worker behind the online features (not part of the game build). |
 | `web/update.js`, `.github/workflows/web.yml` | The web version's self-updater, and the workflow that builds and publishes it. |
 | `tests/` | Headless test runner, the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
+| `tools/` | Developer tools, not part of the game: `sprite_sheet.gd` draws the sprite sheets, `ui_shot.gd` takes screenshots of the game screens. |
 | `.cursor/rules/`, `AGENTS.md`, `CLAUDE.md` | Rules for AI assistants working on the project. |
 | `CHANGELOG.md`, `VERSION` | What changed in each version, and the current version. |
 
@@ -145,7 +169,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- All 269 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). A colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
+- All 438 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). A colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
 - Ideas: changing trade prices, difficulty settings, and sound.
 
 ## Input safety

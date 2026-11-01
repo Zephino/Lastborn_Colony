@@ -4,6 +4,7 @@
 extends RefCounted
 
 const GameData = preload("res://scripts/sim/game_data.gd")
+const Fleet = preload("res://scripts/sim/fleet.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const Turn = preload("res://scripts/sim/turn.gd")
 const Research = preload("res://scripts/sim/research.gd")
@@ -24,6 +25,7 @@ const IDLE_TEXT := {
 	"workers": "not enough free workers",
 	"power": "not enough power",
 	"heat": "not enough heat",
+	"marks": "not enough marks to pay its running cost",
 }
 
 
@@ -76,7 +78,8 @@ static func problem(state: Dictionary, s: Dictionary) -> String:
 		var why: String = reasons[s["id"]]
 		var fix := {"workers": "Free up workers (fewer buildings) or grow the colony.",
 			"power": "Build more Mirror Fields or stop other buildings.",
-			"heat": "Build a Vent Tap or a Forge (it gives off heat), or research Insulated Mains."}
+			"heat": "Build a Vent Tap or a Forge (it gives off heat), or research Insulated Mains.",
+			"marks": "Sell more alloy through a Launch Rail."}
 		return "Idle last turn: %s. %s" % [IDLE_TEXT.get(why, why), fix.get(why, "")]
 	var starved: Dictionary = state["report"].get("starved", {})
 	if starved.has(s["id"]):
@@ -145,6 +148,10 @@ static func tile(state: Dictionary, c: Vector2i, z: int = 0) -> String:
 		gives.append("housing %d" % int(GameData.num(def, "housing") + Research.add(state, "housing:" + str(s["type"]))))
 	if GameData.num(def, "storage") > 0.0:
 		gives.append("storage +%d" % int(GameData.num(def, "storage")))
+	if def.has("parts_cost"):
+		lines.append("Built with %d alloy and %d parts." % [int(GameData.num(def, "cost")), int(GameData.num(def, "parts_cost"))])
+	if GameData.num(def, "upkeep") > 0.0:
+		gives.append("costs %d marks a turn" % int(GameData.num(def, "upkeep")))
 	if GameData.num(def, "export") > 0.0:
 		gives.append("exports up to %d alloy" % int(GameData.num(def, "export") + Research.add(state, "export:" + str(s["type"]))))
 	if not gives.is_empty():
@@ -164,7 +171,7 @@ static func report(state: Dictionary) -> String:
 		int(r["workers_free"]), int(r["workers_total"])])
 	var net: Dictionary = r.get("net", {})
 	var parts := PackedStringArray()
-	for k in ["food", "oxygen", "water", "ore", "alloy", "credits"]:
+	for k in ["food", "oxygen", "water", "ore", "alloy", "parts", "credits"]:
 		var label: String = "marks" if k == "credits" else str(k)
 		parts.append("%s %s (%s)" % [label, fmt(float(state["stock"][k])), signed(float(net.get(k, 0.0)))])
 	lines.append("STOCK (change last turn): " + ", ".join(parts))
@@ -195,6 +202,7 @@ static func report(state: Dictionary) -> String:
 		for key in counts:
 			items.append("%d × %s" % [int(counts[key]), key])
 		lines.append("IDLE OR STARVED: " + ", ".join(items))
+	lines.append(fleet_line(state))
 	var f: Dictionary = state["factions"]
 	var fnotes := PackedStringArray()
 	var b2 := GameData.balance()
@@ -225,4 +233,44 @@ static func report(state: Dictionary) -> String:
 		schedule.append("turn %d: %s" % [turn + i * int(b["payment_interval"]), fmt(a)])
 		debt -= a
 	lines.append("DEBT %s marks. Next payments: %s." % [fmt(float(state["debt"])), ", ".join(schedule)])
+	return "\n\n".join(lines)
+
+
+## One line for the report: drones, satellites, waste and specialists.
+static func fleet_line(state: Dictionary) -> String:
+	var b := GameData.balance()
+	var bits := PackedStringArray()
+	var total := Fleet.drones_total(state)
+	if total > 0 or Fleet.slots(state) > 0:
+		var work: Dictionary = state["report"].get("drones_working", {})
+		var busy := 0
+		for t in work:
+			busy += int(work[t])
+		bits.append("%d drones (%d working, %d Drone Bay slots)" % [total, busy, Fleet.slots(state)])
+	var up := PackedStringArray()
+	for t in Fleet.sat_order():
+		if Fleet.sats(state, t) > 0:
+			up.append("%d %s" % [Fleet.sats(state, t), str(Fleet.sat_def(t)["name"]).to_lower()])
+	if not up.is_empty():
+		bits.append("in orbit: " + ", ".join(up))
+	var waste_note := "waste %s" % fmt(float(state["waste"]))
+	if Fleet.waste_morale(state) > 0.0:
+		waste_note += " (morale -%s; build a Reclaimer)" % fmt(Fleet.waste_morale(state))
+	bits.append(waste_note)
+	if float(state["trained"]) > 0.0:
+		bits.append("%s specialists (+%d%% industry and research)" % [fmt(float(state["trained"])), int(round((Fleet.trained_mult(state, "forge") - 1.0) * 100.0))])
+	if int(state["pods"]) > 0:
+		bits.append("%d supply pods aboard the ship" % int(state["pods"]))
+	return "COLONY SYSTEMS: " + "; ".join(bits) + "."
+
+
+## The Drones & Orbit dialog's text.
+static func fleet_summary(state: Dictionary) -> String:
+	var lines := PackedStringArray()
+	if Fleet.slots(state) > 0:
+		lines.append("Your working Drone Bays control %d drones; any more sit idle. Drones work in this order: Graders, Borers, Prospectors, Haulers." % Fleet.slots(state))
+	else:
+		lines.append("Drones need a working Drone Bay (Industry). Each one controls 4 drones.")
+	lines.append("Satellites are launched from a working Launch Rail. Parts come from a Fab Shop. You have %d alloy, %d parts and %d marks." % [int(state["stock"]["alloy"]), int(state["stock"]["parts"]), int(state["stock"]["credits"])])
+	lines.append(fleet_line(state).trim_prefix("COLONY SYSTEMS: "))
 	return "\n\n".join(lines)

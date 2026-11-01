@@ -17,6 +17,7 @@ const ScoreEntry = preload("res://scripts/net/score_entry.gd")
 const SetupFlow = preload("res://scripts/ui/setup_flow.gd")
 const ColonyText = preload("res://scripts/ui/colony_text.gd")
 const Menus = preload("res://scripts/ui/menus.gd")
+const FleetMenu = preload("res://scripts/ui/fleet_menu.gd")
 const UiUtil = preload("res://scripts/ui/ui_util.gd")
 const TextRules = preload("res://scripts/sim/text_rules.gd")
 
@@ -26,7 +27,7 @@ const BG := Color(0.06, 0.07, 0.09)
 const PANEL := Color(0.10, 0.11, 0.14)
 const ACCENT := Color(0.95, 0.62, 0.30)
 const CATEGORIES := [["core", "Network"], ["energy", "Energy"], ["life", "Life support"], ["industry", "Industry"], ["civic", "Civic"]]
-const STAT_KEYS := ["turn", "pop", "morale", "power", "heat", "workers", "food", "oxygen", "water", "ore", "alloy", "marks", "debt", "payment"]
+const STAT_KEYS := ["turn", "pop", "morale", "power", "heat", "workers", "food", "oxygen", "water", "ore", "alloy", "parts", "marks", "debt", "payment"]
 
 var state: Dictionary = {}
 var screen: Control
@@ -50,6 +51,7 @@ var toast_left := 0.0
 var player_name := ""
 var settings_open := false
 var menus: RefCounted
+var fleet_menu: RefCounted
 var signed_in_label: Label
 var narrow_game := false
 var ui_theme: Theme
@@ -78,6 +80,7 @@ func _ready() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 	menus = Menus.new(self)
+	fleet_menu = FleetMenu.new(self)
 	online = Online.new()
 	add_child(online)
 	online.board_loaded.connect(menus._on_board_loaded)
@@ -293,7 +296,7 @@ func show_game() -> void:
 		stats.add_child(l)
 		stat_labels[key] = l
 		# On phones the less urgent numbers live in the Report instead.
-		l.visible = not (narrow_game and key in ["power", "heat", "workers", "ore", "payment"])
+		l.visible = not (narrow_game and key in ["power", "heat", "workers", "ore", "parts", "payment"])
 
 	# Middle: build menu | map | inspector.
 	var middle := HBoxContainer.new()
@@ -334,6 +337,7 @@ func show_game() -> void:
 			b.text = "%s  (%d)" % [def["name"], int(GameData.num(def, "cost"))]
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			b.tooltip_text = def["desc"]
+			b.clip_text = true
 			b.pressed.connect(func() -> void: _set_build("" if map_view.build_type == id else id))
 			menu.add_child(b)
 			build_buttons[id] = b
@@ -363,6 +367,7 @@ func show_game() -> void:
 	research_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	research_button.clip_text = true
 	right_box.add_child(research_button)
+	right_box.add_child(_button("Drones & orbit", show_fleet))
 	right_box.add_child(_label("Company account", 13, ACCENT))
 	var pay_row := HBoxContainer.new()
 	right_box.add_child(pay_row)
@@ -431,6 +436,7 @@ func show_game() -> void:
 		buttons.add_child(_button("Info", show_info))
 		buttons.add_child(_button("Research", show_research))
 		buttons.add_child(_button("Company", show_company))
+		buttons.add_child(_button("Drones", show_fleet))
 	buttons.add_child(_button("Report" if narrow_game else "Colony report", show_report))
 	buttons.add_child(_button("Save", _on_save))
 	buttons.add_child(_button("Menu", _on_menu))
@@ -494,12 +500,10 @@ func show_build_menu() -> void:
 			var def := GameData.building(id)
 			if def["category"] != cat[0] or not def.get("buildable", true):
 				continue
-			var kits := int(state["kits"].get(id, 0))
-			var price := ("prefab ×%d" % kits) if kits > 0 else ("%d alloy" % int(GameData.num(def, "cost")))
-			var can := kits > 0 or float(state["stock"]["alloy"]) >= GameData.num(def, "cost")
-			options.append(["%s (%s)\n%s" % [def["name"], price, def["desc"]], _pick_build.bind(id), can and state["ending"] == ""])
+			var price := Actions.price_text(state, id, true)
+			options.append(["%s (%s)\n%s" % [def["name"], price, def["desc"]], _pick_build.bind(id), Actions.affordable(state, id) and state["ending"] == ""])
 	options.append(["Back", close_modal, true])
-	show_modal("Build", "You have %d alloy. Choose a building, then tap a tile next to the colony. Dragging the map never builds." % int(state["stock"]["alloy"]), options, true)
+	show_modal("Build", "You have %d alloy and %d parts. Choose a building, then tap a tile next to the colony. Dragging the map never builds." % [int(state["stock"]["alloy"]), int(state["stock"]["parts"])], options, true)
 
 
 func _pick_build(id: String) -> void:
@@ -694,7 +698,7 @@ func refresh() -> void:
 	stat_labels["power"].text = "Power %s/%s" % [_fmt(float(rep.get("power_free", 0.0))), _fmt(float(rep.get("power_gen", 0.0)))] if has_rep else "Power -"
 	stat_labels["heat"].text = "Heat %s/%s" % [_fmt(float(rep.get("heat_free", 0.0))), _fmt(float(rep.get("heat_gen", 0.0)))] if has_rep else "Heat -"
 	stat_labels["workers"].text = "Idle workers %d/%d" % [int(rep.get("workers_free", 0)), int(rep.get("workers_total", 0))] if has_rep else "Workers -"
-	for k in ["food", "oxygen", "water", "ore", "alloy"]:
+	for k in ["food", "oxygen", "water", "ore", "alloy", "parts"]:
 		var text := "%s %s" % [k.capitalize(), _fmt(float(stock[k]))]
 		if net.has(k):
 			text += " (%s)" % _signed(float(net[k]))
@@ -710,8 +714,8 @@ func refresh() -> void:
 	for id in build_buttons:
 		var def := GameData.building(id)
 		var kits := int(state["kits"].get(id, 0))
-		build_buttons[id].text = "%s  (%s)" % [def["name"], ("prefab ×%d" % kits) if kits > 0 else str(int(GameData.num(def, "cost")))]
-		build_buttons[id].disabled = (kits <= 0 and float(stock["alloy"]) < GameData.num(def, "cost")) or state["ending"] != ""
+		build_buttons[id].text = "%s  (%s)" % [def["name"], Actions.price_text(state, id)]
+		build_buttons[id].disabled = not Actions.affordable(state, id) or state["ending"] != ""
 	end_turn_button.disabled = state["ending"] != ""
 	run_button.disabled = state["ending"] != ""
 	reserve_label.text = "Export reserve: %d alloy" % int(state["export_reserve"])
@@ -826,6 +830,10 @@ func _refresh_log() -> void:
 
 func show_research() -> void:
 	menus.show_research()
+
+
+func show_fleet() -> void:
+	fleet_menu.show()
 
 
 func show_settings() -> void:

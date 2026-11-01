@@ -7,6 +7,7 @@ const Rng = preload("res://scripts/sim/rng.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const NewGame = preload("res://scripts/sim/new_game.gd")
 const Research = preload("res://scripts/sim/research.gd")
+const Fleet = preload("res://scripts/sim/fleet.gd")
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
@@ -58,7 +59,7 @@ static func q(x: float) -> float:
 
 
 static func _quantize(state: Dictionary) -> void:
-	for k in ["adults", "children", "elders", "morale", "debt", "export_reserve", "crime"]:
+	for k in ["adults", "children", "elders", "morale", "debt", "export_reserve", "crime", "waste", "trained"]:
 		state[k] = q(float(state[k]))
 	for k in state["factions"]:
 		state["factions"][k] = q(float(state["factions"][k]))
@@ -73,11 +74,13 @@ static func _quantize(state: Dictionary) -> void:
 # 1. Construction: each unfinished building gains one turn of progress.
 static func _construction(state: Dictionary) -> void:
 	var new_shafts: Array = []
+	# Working Graders and Borers add a turn of progress to one building each.
+	var bonus := Fleet.construction_bonus(state)
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
 		if s["built"]:
 			continue
-		s["progress"] = int(s["progress"]) + 1
+		s["progress"] = int(s["progress"]) + 1 + int(bonus.get(id, 0))
 		var def := GameData.building(s["type"])
 		# Digging into rock in the Deep takes longer (build_turns).
 		if int(s["progress"]) >= int(s.get("build_turns", GameData.num(def, "turns"))):
@@ -169,7 +172,9 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 		if s["built"] and connected.has(id) and int(s["damaged"]) == 0 and not def.get("conduit", false):
 			eligible.append(id)
 
-	# Pass 1: pure generators (no power or heat needs).
+	# Pass 1: pure generators (no power or heat needs). Beam Catchers share out
+	# the power satellites in orbit.
+	var beams_left := Fleet.sats(state, "power")
 	for pri in 10:
 		for id in eligible:
 			var s: Dictionary = state["structures"][id]
@@ -178,7 +183,7 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 				continue
 			var pg := GameData.num(def, "power_gen")
 			var hg := GameData.num(def, "heat_gen")
-			if (pg <= 0.0 and hg <= 0.0) or GameData.num(def, "power_use") > 0.0 or GameData.num(def, "heat_need") > 0.0:
+			if (pg <= 0.0 and hg <= 0.0 and not def.has("beam")) or GameData.num(def, "power_use") > 0.0 or GameData.num(def, "heat_need") > 0.0:
 				continue
 			var need := int(GameData.num(def, "workers"))
 			if workers < need:
@@ -186,13 +191,17 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 				continue
 			workers -= need
 			s["active"] = true
+			if def.has("beam"):
+				var n := mini(int(GameData.num(def, "beam_sats")), beams_left)
+				beams_left -= n
+				pg = GameData.num(def, "beam") * n
 			var boost := Research.mult(state, "out:" + str(s["type"]))
 			pg *= boost
 			hg *= boost
 			if def.get("solar", false):
 				pg *= GameData.light_at(int(s["x"]), state["planet"])
 				if int(state["storm"]) > 0:
-					var loss := (1.0 - float(b["storm_solar_factor"])) * Research.mult(state, "storm")
+					var loss := (1.0 - float(b["storm_solar_factor"])) * Research.mult(state, "storm") * Fleet.storm_mult(state)
 					pg *= 1.0 - loss
 			if s["type"] == "vent" and int(state["surge"]) > 0:
 				hg *= float(b["surge_vent_factor"])
@@ -216,10 +225,15 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 			var need := int(GameData.num(def, "workers"))
 			var pu := GameData.num(def, "power_use")
 			var hn := GameData.num(def, "heat_need") * cold_for(state, s) * heat_mult
-			if workers >= need and power >= pu and heat >= hn:
+			# Some buildings cost marks to run each turn (upkeep).
+			var upkeep := GameData.num(def, "upkeep")
+			var funded := float(state["stock"]["credits"]) >= upkeep
+			if workers >= need and power >= pu and heat >= hn and funded:
 				workers -= need
 				power -= pu
 				heat -= hn
+				if upkeep > 0.0:
+					state["stock"]["credits"] = float(state["stock"]["credits"]) - upkeep
 				var hg := GameData.num(def, "heat_gen") * Research.mult(state, "out:" + str(s["type"]))
 				heat += hg
 				heat_gen += hg
@@ -230,19 +244,27 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 					idle_reasons[id] = "workers"
 				elif power < pu:
 					idle_reasons[id] = "power"
-				else:
+				elif heat < hn:
 					idle_reasons[id] = "heat"
+				else:
+					idle_reasons[id] = "marks"
 
 	var housing := 0.0
 	var storage := float(b["base_storage"])
 	var morale_bonus := 0.0
 	var health := 1.0
+	var drone_slots := 0
+	var masts := 0
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
 		var def := GameData.building(s["type"])
 		if s["built"]:
 			storage += GameData.num(def, "storage")
 		if s["active"]:
+			if def.has("drone_slots"):
+				drone_slots += int(def["drone_slots"]) + int(Research.add(state, "slots:" + str(s["type"])))
+			if def.has("trade_bonus"):
+				masts += 1
 			if GameData.num(def, "housing") > 0.0:
 				housing += GameData.num(def, "housing") + Research.add(state, "housing:" + str(s["type"]))
 			morale_bonus += GameData.num(def, "morale")
@@ -261,6 +283,8 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 		"housing": housing,
 		"storage": storage,
 		"morale_bonus": minf(morale_bonus, float(b["morale_building_cap"])),
+		"drone_slots": drone_slots,
+		"trade_bonus": float(mini(masts, int(b["mast_max"]))),
 		"health": health,
 		"shortages": {},
 	}
@@ -278,6 +302,8 @@ static func _produce(state: Dictionary, rep: Dictionary) -> void:
 	var e := efficiency(state)
 	rep["efficiency"] = e
 	var points := 0.0
+	var work := Fleet.working(state)
+	var hauled := int(work.get("hauler", 0)) * int(Fleet.drone_def("hauler").get("cutters", 0))
 	for pri in 10:
 		for id in state["structures"]:
 			var s: Dictionary = state["structures"][id]
@@ -296,22 +322,37 @@ static func _produce(state: Dictionary, rep: Dictionary) -> void:
 				for k in inputs:
 					stock[k] = float(stock[k]) - float(inputs[k])
 				var outputs: Dictionary = def.get("outputs", {})
-				var boost := Research.mult(state, "out:" + str(s["type"]))
+				var boost := Research.mult(state, "out:" + str(s["type"])) * Fleet.trained_mult(state, s["type"])
 				# Ore veins in the Deep are richer than surface seams.
 				if s["type"] == "cutter" and int(s.get("z", 0)) == 1:
 					boost *= float(b["deep"]["vein_bonus"])
+				# Haulers keep a few Seam Cutters running flat out.
+				if s["type"] == "cutter" and hauled > 0:
+					boost *= float(Fleet.drone_def("hauler")["boost"])
+					hauled -= 1
 				for k in outputs:
 					stock[k] = float(stock[k]) + float(outputs[k]) * e * boost
 			if def.has("research"):
-				points += float(def["research"]) * e * float(b["research_per_point"])
+				points += float(def["research"]) * e * float(b["research_per_point"]) * Fleet.trained_mult(state, s["type"])
+			if def.has("recycle"):
+				var w: Dictionary = b["waste"]
+				var amount := minf(float(state["waste"]), float(def["recycle"]) * e)
+				state["waste"] = float(state["waste"]) - amount
+				for k in w["recycle_yield"]:
+					stock[k] = float(stock[k]) + amount * float(w["recycle_yield"][k])
 			if def.has("export"):
 				var cap := float(def["export"]) + Research.add(state, "export:" + str(s["type"]))
 				var amount := minf(cap, float(stock["alloy"]) - float(state["export_reserve"]))
 				if amount > 0.0:
 					stock["alloy"] = float(stock["alloy"]) - amount
-					stock["credits"] = float(stock["credits"]) + amount * float(b["alloy_price"])
+					stock["credits"] = float(stock["credits"]) + amount * (float(b["alloy_price"]) + float(rep.get("trade_bonus", 0.0)))
 					state["stats"]["exported"] = float(state["stats"]["exported"]) + amount
+	# Prospectors bring in loose ore.
+	var found := float(work.get("prospector", 0)) * float(Fleet.drone_def("prospector").get("ore", 0.0))
+	if found > 0.0:
+		stock["ore"] = float(stock["ore"]) + found
 	rep["research_points"] = points
+	rep["drones_working"] = work
 
 
 # 6. Research. During a plague, all research goes to the cure first.
@@ -366,6 +407,7 @@ static func _life_support(state: Dictionary, rep: Dictionary) -> void:
 			shortages[k] = frac
 			deaths += pop * frac * float(rule["lethality"]) * float(rep["health"])
 	rep["shortage_deaths"] = deaths
+	Fleet.make_waste(state, pop)
 
 
 # 9. Population: births, growing up, aging, deaths.
@@ -408,6 +450,7 @@ static func _population(state: Dictionary, rep: Dictionary) -> void:
 	rep["births"] = births
 	rep["deaths"] = deaths
 	rep["overcrowding"] = excess / maxf(pop, 1.0)
+	Fleet.train(state)
 	if float(rep["shortage_deaths"]) >= 0.5:
 		log_msg(state, "Shortages killed %d colonists." % int(round(float(rep["shortage_deaths"]))))
 
@@ -422,6 +465,8 @@ static func _morale(state: Dictionary, rep: Dictionary) -> void:
 	target += float(b["overcrowding_morale"]) * float(rep["overcrowding"])
 	target += float(b["morale_per_missed_payment"]) * int(state["missed_in_row"])
 	target += Research.add(state, "morale")
+	target += Fleet.sat_morale(state)
+	target -= Fleet.waste_morale(state)
 	# The Union: good relations lift morale, poor ones weigh on it.
 	target += (float(state["factions"]["union"]) - 50.0) * float(b["union_morale_per_point"])
 	if not (rep["shortages"] as Dictionary).is_empty():
@@ -490,7 +535,7 @@ static func _plague(state: Dictionary, rep: Dictionary) -> void:
 	if not plague["active"]:
 		if int(state["turn"]) < int(b["plague_start_turn"]) or pop < float(b["plague_min_pop"]):
 			return
-		if not Rng.chance(state, float(b["plague_chance"]) * Research.mult(state, "plague") * GameData.diff(state, "plague_chance")):
+		if not Rng.chance(state, float(b["plague_chance"]) * Research.mult(state, "plague") * GameData.diff(state, "plague_chance") * Fleet.waste_plague(state)):
 			return
 		var window := int(b["plague_window_clinic"]) if float(rep["health"]) < 1.0 else int(b["plague_window"])
 		plague["active"] = true

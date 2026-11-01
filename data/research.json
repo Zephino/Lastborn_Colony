@@ -11,5 +11,8 @@
   {"id": "forecasting", "name": "Grit Forecasting", "cost": 16, "requires": ["coatings"], "effects": {"storm": 0.5}, "desc": "Grit fronts cut mirror output half as much."},
   {"id": "field_medicine", "name": "Field Medicine", "cost": 20, "requires": ["kelp"], "effects": {"plague": 0.5, "elder_death": 0.8}, "desc": "Halves the chance of plague and helps elders live longer."},
   {"id": "commons_charter", "name": "Commons Charter", "cost": 20, "requires": ["kelp"], "effects": {"morale": 5, "crime": 0.7}, "desc": "A written say in colony affairs. Morale +5 and crime down 30%."},
-  {"id": "deep_vents", "name": "Deep Vent Bores", "cost": 26, "requires": ["insulation", "seals"], "effects": {"out:vent": 1.4}, "desc": "Vent Taps give 40% more heat."}
+  {"id": "deep_vents", "name": "Deep Vent Bores", "cost": 26, "requires": ["insulation", "seals"], "effects": {"out:vent": 1.4}, "desc": "Vent Taps give 40% more heat."},
+  {"id": "drone_swarms", "name": "Drone Swarms", "cost": 20, "requires": ["seals"], "effects": {"slots:dronebay": 2}, "desc": "Each Drone Bay controls 2 more drones."},
+  {"id": "beaming", "name": "Power Beaming", "cost": 30, "requires": ["coatings"], "effects": {}, "desc": "Unlocks the Beam Catcher and power satellites."},
+  {"id": "fusion", "name": "Contained Fusion", "cost": 44, "requires": ["smelting", "deep_vents"], "effects": {}, "desc": "Unlocks the Fusion Core."}
 ]

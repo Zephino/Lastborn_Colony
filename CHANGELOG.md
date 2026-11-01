@@ -2,6 +2,42 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.26
+Date: 11/01/2026
+Time: 3:05 PM
+
+### Changes
+New buildings, drones, satellites and systems. Every name and number is Lastborn's own (see `lastborn.mdc`).
+- **New resource: parts.** A **Fab Shop** turns 2 alloy into 2 parts. Drones, satellites and the advanced buildings need parts as well as alloy. The build menu shows both prices.
+- **Drones** (new **Drones & orbit** button; **Drones** on phones). A **Drone Bay** runs 4 drones; the new Drone Swarms research adds 2 more per bay. Drones beyond that sit idle.
+  - **Grader:** helps one surface building under construction each turn.
+  - **Borer:** helps a Shaft or Deep building, and makes digging into rock cost no extra alloy.
+  - **Prospector:** brings in 2 ore a turn.
+  - **Hauler:** two Seam Cutters make 25% more ore.
+- **Satellites,** launched from a working Launch Rail for alloy, parts and marks:
+  - **Weather:** grit fronts hurt mirrors half as much, and icequakes reach less far.
+  - **Relay:** morale +3.
+  - **Power:** each beams 10 power to the new **Beam Catcher** (needs the new Power Beaming research).
+- **Fusion Core:** 30 power and 6 heat, day or night. Needs the new Contained Fusion research, 40 alloy and 12 parts.
+- **Waste:** people make waste, some of which breaks down by itself. Above 40 it lowers morale; above 80 plague is more likely. The **Reclaimer** recycles it into a little ore and water.
+- **Academy:** trains specialists (up to 30% of adults), who make Forges, Fab Shops, Seam Cutters and labs up to 15% better.
+- **Civic buildings:**
+  - **Signal Mast:** morale +2, and 1 more mark per alloy sold (up to 3 masts).
+  - **Rescue Station:** disasters damage half as many buildings.
+  - **Hazard Lab:** 3 research, but morale -3 and frequent breakdowns.
+  - **Garden Cavern:** Deep only. Morale +7 and a little food.
+  - **Lounge:** morale +9, but 3 marks a turn to run and crime +4. A building that can't pay its running cost sits idle and says why.
+- **New cargo:**
+  - **Supply pod:** stays aboard the ship; call it down any time for 50 alloy, 40 food and 40 oxygen.
+  - **Survey probes:** the landing-site screen also lists the ore veins, aquifers and deep vents under each site.
+- Simple map icons for the new buildings. The Colony report has a new "colony systems" line (drones, satellites, waste, specialists, pods).
+- Saves from before this version load with no drones, satellites, parts or waste.
+- Tests: new `tests/test_fleet.gd` (52 checks) covers every new building, drone, satellite and system, and old saves. The test bot now builds Reclaimers; it still wins as before (seed 1 takes a few more turns because of waste). 438 checks pass.
+- New developer tool `tools/ui_shot.gd` takes screenshots of the game screens (not part of the game).
+
+### Reason
+The owner asked for a building or unit for every kind of job a colony game like this needs. They agreed to original buildings and units instead of copying another game's list, and said "do them all".
+
 ## Version 00.01.25
 Date: 11/01/2026
 Time: 2:14 PM

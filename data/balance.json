@@ -12,7 +12,8 @@
       "water": 40,
       "ore": 0,
       "alloy": 40,
-      "credits": 300
+      "credits": 300,
+      "parts": 0
     }
   },
   "stored_resources": [
@@ -20,7 +21,8 @@
     "oxygen",
     "water",
     "ore",
-    "alloy"
+    "alloy",
+    "parts"
   ],
   "base_storage": 300,
   "life_support": {
@@ -133,5 +135,111 @@
     "aquifers": 6,
     "deepvents": 5,
     "bedrock_walks": 5
+  },
+  "drones": {
+    "_comment": "Work drones, built at a Drone Bay. Drones work in this order while there are free Drone Bay slots.",
+    "order": [
+      "grader",
+      "borer",
+      "prospector",
+      "hauler"
+    ],
+    "types": {
+      "grader": {
+        "name": "Grader",
+        "alloy": 6,
+        "parts": 3,
+        "desc": "Clears and levels ground. Each working Grader adds a turn of progress to one surface building under construction."
+      },
+      "borer": {
+        "name": "Borer",
+        "alloy": 8,
+        "parts": 4,
+        "desc": "Bores through rock. Each working Borer adds a turn of progress to one Shaft or Deep building under construction. While you own one, digging into rock costs no extra alloy."
+      },
+      "prospector": {
+        "name": "Prospector",
+        "alloy": 5,
+        "parts": 3,
+        "ore": 2,
+        "desc": "Roams the plains and brings back loose ore: 2 ore a turn."
+      },
+      "hauler": {
+        "name": "Hauler",
+        "alloy": 7,
+        "parts": 3,
+        "cutters": 2,
+        "boost": 1.25,
+        "desc": "Carries ore away from the cutters so they never stop: two working Seam Cutters make 25% more ore."
+      }
+    }
+  },
+  "satellites": {
+    "_comment": "Launched from a working Launch Rail. Costs are alloy, parts and marks.",
+    "order": [
+      "weather",
+      "relay",
+      "power"
+    ],
+    "types": {
+      "weather": {
+        "name": "Weather satellite",
+        "alloy": 20,
+        "parts": 6,
+        "credits": 150,
+        "max": 1,
+        "storm": 0.5,
+        "quake_radius": -1,
+        "desc": "Warns of grit fronts and quakes: storms cut mirror output half as much, and icequakes reach less far."
+      },
+      "relay": {
+        "name": "Relay satellite",
+        "alloy": 15,
+        "parts": 5,
+        "credits": 120,
+        "max": 1,
+        "morale": 3,
+        "desc": "Keeps the colony in touch with home. Morale +3."
+      },
+      "power": {
+        "name": "Power satellite",
+        "alloy": 25,
+        "parts": 8,
+        "credits": 200,
+        "max": 6,
+        "requires_research": "beaming",
+        "desc": "A mirror in orbit that beams power down to a Beam Catcher."
+      }
+    }
+  },
+  "waste": {
+    "_comment": "Everyone makes waste. Some breaks down by itself; Reclaimers recycle the rest.",
+    "per_person": 0.05,
+    "decay": 0.05,
+    "free": 40,
+    "morale_per": 0.1,
+    "morale_cap": 12,
+    "plague_mult": 1.5,
+    "recycle_yield": {
+      "ore": 0.4,
+      "water": 0.4
+    }
+  },
+  "training": {
+    "cap": 0.3,
+    "bonus": 0.5,
+    "types": [
+      "forge",
+      "fab",
+      "cutter",
+      "lab",
+      "hazlab"
+    ]
+  },
+  "mast_max": 3,
+  "pod": {
+    "alloy": 50,
+    "food": 40,
+    "oxygen": 40
   }
 }
