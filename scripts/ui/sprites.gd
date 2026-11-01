@@ -783,18 +783,35 @@ static func _iso_tube(ci: CanvasItem, c: Vector2, tw: float, axis: int, a0: floa
 	while t <= hi + 0.001:
 		var edge := absf(absf(t) - 0.5) < 0.01
 		if t > lo + 0.01 or edge:
-			var base := _iso(c, tw, t, 0.0, z) if axis == 0 else _iso(c, tw, 0.0, t, z)
-			var arc := PackedVector2Array()
-			var k := 1.18 if (edge and flanges) else 1.0
-			for j in 12:
-				var th := deg_to_rad(-80.0 + j * 250.0 / 11.0)
-				arc.append(base + (across * cos(th) + up * sin(th)) * rr * k)
 			if edge and flanges:
-				ci.draw_polyline(arc, col.lightened(0.15), maxf(2.0, tw * rr * 0.30))
-				ci.draw_polyline(arc, rib, 1.0)
+				_flange(ci, c, tw, axis, t, rr, z, col)
 			else:
+				var base := _iso(c, tw, t, 0.0, z) if axis == 0 else _iso(c, tw, 0.0, t, z)
+				var arc := PackedVector2Array()
+				for j in 12:
+					var th := deg_to_rad(-80.0 + j * 250.0 / 11.0)
+					arc.append(base + (across * cos(th) + up * sin(th)) * rr)
 				ci.draw_polyline(arc, rib, 1.0)
 		t += 0.2
+
+
+## A raised ring round a tube at position t along its axis: where two tubes
+## join, or where a tube plugs into a junction.
+static func _flange(ci: CanvasItem, c: Vector2, tw: float, axis: int, t: float, rr: float, z: float, col: Color) -> void:
+	var across := Vector2(-0.5, 0.25) * tw if axis == 0 else Vector2(0.5, 0.25) * tw
+	var up := Vector2(0, -tw)
+	var base := _iso(c, tw, t, 0.0, z) if axis == 0 else _iso(c, tw, 0.0, t, z)
+	var ring := PackedVector2Array()
+	for j in 17:
+		var th := j * TAU / 16.0
+		ring.append(base + (across * cos(th) + up * sin(th)) * rr * 1.2)
+	ci.draw_colored_polygon(ring, col.darkened(0.15))
+	ci.draw_polyline(ring, col.darkened(0.45), 1.0)
+	var lit := PackedVector2Array()
+	for j in 8:
+		var th := deg_to_rad(40.0 + j * 100.0 / 7.0)
+		lit.append(base + (across * cos(th) + up * sin(th)) * rr * 1.12)
+	ci.draw_polyline(lit, col.lightened(0.35), maxf(1.0, tw * rr * 0.15))
 
 
 ## A round tube from the building's edge to the tile edge, with a neat airlock
@@ -1960,13 +1977,20 @@ static func _iso_tunnel(ci: CanvasItem, c: Vector2, tw: float, links: Array, sta
 	var front: Array = []
 	for d in links:
 		(back if (d.x < 0 or d.y < 0) else front).append(d)
+	var hub := shape == "tee" or shape == "cross"
+	# At a junction the tubes stop at the hub's wall; elsewhere they meet in the middle.
+	var start := HUB_R if hub else 0.0
 	for d in back:
-		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, 0.0, float(d.x if d.x != 0 else d.y) * 0.5, rr, z, m, stripe)
-	if shape == "tee" or shape == "cross":
-		# A junction hub: a short drum with a domed lid and an orange band.
+		var sg := float(d.x if d.x != 0 else d.y)
+		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, sg * start, sg * 0.5, rr, z, m, stripe)
+	if hub:
+		# A junction hub: a domed drum with an orange band.
 		_hub(ci, c, tw, m, a, state)
 	for d in front:
-		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, 0.0, float(d.x if d.x != 0 else d.y) * 0.5, rr, z, m, stripe)
+		var sg := float(d.x if d.x != 0 else d.y)
+		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, sg * start, sg * 0.5, rr, z, m, stripe)
+		if hub:
+			_flange(ci, c, tw, 0 if d.x != 0 else 1, sg * (start + 0.015), rr, z, m)
 	if shape == "end":
 		_iso_cap(ci, _iso(c, tw, 0, 0, z), tw, state)
 	elif shape == "corner":
@@ -1975,8 +1999,11 @@ static func _iso_tunnel(ci: CanvasItem, c: Vector2, tw: float, links: Array, sta
 
 
 ## A tunnel junction: a short drum with a domed lid, an orange band and a light.
+const HUB_R := 0.16
+
+
 static func _hub(ci: CanvasItem, c: Vector2, tw: float, m: Color, a: Color, state: Dictionary) -> void:
-	var r := 0.13
+	var r := HUB_R
 	var hgt := 0.27
 	_cyl(ci, c, tw, 0, 0, r, hgt, m, m.lightened(0.1))
 	var base := _iso(c, tw, 0, 0, 0.0)

@@ -2,6 +2,19 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.39
+Date: 11/01/2026
+Time: 7:30 PM
+
+### Changes
+- **Tunnel junctions look cleaner** (`scripts/ui/sprites.gd`):
+  - At a T-junction or crossroads, each tube now stops at the hub's wall and plugs in through a flange ring, instead of running into the middle and overlapping the hub's base.
+  - The hub drum is a little wider, so the tubes meet its sides.
+  - Flanges (`_flange`) are now one shared drawing, used both where tubes join between tiles and where they plug into a hub.
+
+### Reason
+The owner didn't like how the tubes met at the junction hub.
+
 ## Version 00.01.38
 Date: 11/01/2026
 Time: 7:15 PM
