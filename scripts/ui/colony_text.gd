@@ -11,6 +11,15 @@ const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 const RED := "#ff6a5a"
 const AMBER := "#e8b04a"
+const TERRAIN_NAMES := {"deepvent": "Deep vent", "vein": "Ore vein", "aquifer": "Aquifer"}
+const TERRAIN_HELP := {
+	"rock": "Solid rock: building here means digging (+%d alloy, +%d turns).",
+	"cavern": "An open cavern: build here at the normal price.",
+	"vein": "A rich ore vein: Seam Cutters here cut 50%% more ore.",
+	"aquifer": "Underground water: Ice Drills work here.",
+	"deepvent": "A deep vent: a Vent Tap here gives 50%% more heat.",
+	"bedrock": "Bedrock: nothing can be built here, and no shaft can reach it.",
+}
 const IDLE_TEXT := {
 	"workers": "not enough free workers",
 	"power": "not enough power",
@@ -76,13 +85,22 @@ static func problem(state: Dictionary, s: Dictionary) -> String:
 
 
 ## The inspector text for a selected tile.
-static func tile(state: Dictionary, c: Vector2i) -> String:
+static func tile(state: Dictionary, c: Vector2i, z: int = 0) -> String:
 	var planet: String = state["planet"]
 	var lines := PackedStringArray()
-	var terrain := Actions.terrain_at(state, c.x, c.y)
-	lines.append("[b]%s[/b]  (%d, %d)" % [terrain.capitalize(), c.x, c.y])
-	lines.append("Light %.2f   Heat factor %.2f" % [GameData.light_at(c.x, planet), GameData.cold_at(c.x, planet)])
-	var s := Actions.structure_at(state, c.x, c.y)
+	var terrain := Actions.terrain_at(state, c.x, c.y, z)
+	lines.append("[b]%s[/b]  (%d, %d)%s" % [TERRAIN_NAMES.get(terrain, terrain.capitalize()), c.x, c.y, "  in the Deep" if z == 1 else ""])
+	if z == 0:
+		lines.append("Light %.2f   Heat factor %.2f" % [GameData.light_at(c.x, planet), GameData.cold_at(c.x, planet)])
+	else:
+		lines.append("No light   Heat factor %.2f (steady underground)" % float(GameData.balance()["deep"]["cold"]))
+	if TERRAIN_HELP.has(terrain):
+		var help: String = TERRAIN_HELP[terrain]
+		if terrain == "rock":
+			var deep: Dictionary = GameData.balance()["deep"]
+			help = help % [int(deep["excavate_cost"]), int(deep["excavate_turns"])]
+		lines.append(help)
+	var s := Actions.structure_at(state, c.x, c.y, z)
 	if s.is_empty():
 		return "\n".join(lines)
 	var def := GameData.building(s["type"])
@@ -104,7 +122,7 @@ static func tile(state: Dictionary, c: Vector2i) -> String:
 	if GameData.num(def, "power_use") > 0.0:
 		needs.append("%s power" % GameData.num(def, "power_use"))
 	if GameData.num(def, "heat_need") > 0.0:
-		var hn := GameData.num(def, "heat_need") * GameData.cold_at(int(s["x"]), planet) * Research.mult(state, "heat_need")
+		var hn := GameData.num(def, "heat_need") * Turn.cold_for(state, s) * Research.mult(state, "heat_need")
 		needs.append("%.1f heat" % hn)
 	var inputs: Dictionary = def.get("inputs", {})
 	for k in inputs:

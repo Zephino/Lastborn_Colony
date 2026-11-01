@@ -2,6 +2,30 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.11
+Date: 11/01/2026
+Time: 8:25 AM
+
+### Changes
+- **The Deep: an underground level.** Every map now has a second level below the surface. It is made from the same seed but with its own random stream, so surface maps and every earlier result are unchanged. The Deep has solid rock, open caverns, rich ore veins, aquifers, deep vents and bedrock.
+  - **Shaft** (new building: surface, 15 alloy, 3 turns): when it's finished, it digs out a **Shaft Landing** directly below and joins the two levels. A shaft can't be dug above bedrock. Removing the Shaft also closes its landing.
+  - **Digging:** building on solid rock costs +4 alloy and takes +2 turns. Caverns cost the normal price. The hint and inspector show the digging cost.
+  - **Why go down:**
+    - Buildings underground need a steady, low heat factor (0.5), which helps on cold worlds like Hollow.
+    - Seam Cutters on ore veins cut 50% more ore.
+    - Vent Taps on deep vents give 50% more heat.
+    - Ice Drills work on aquifers.
+    - Icequakes never reach the Deep.
+  - Mirror Fields and Launch Rails need the sky and stay on the surface. Housing, life support, industry and civic buildings can go underground.
+  - **Switching levels:** Surface/Deep buttons above the build list, the Q and E keys, or the Deep/Surface button on phones. Switching to the Deep centers on the landing, or explains how to open one.
+  - Saves keep each building's level, and older saves get a Deep made from their map seed.
+- The placing bar now sits over the top of the map, so the map no longer jumps when you pick a building.
+- Connectors (heat mains, shafts, landings) no longer show the red "idle" dot.
+- **Tests:** 368 game checks pass (19 new for the Deep): shaft rules, the landing opening, digging costs, connection through the shaft, steady heat, icequake shelter, saves, demolition, and older saves. Played in a browser here: building a Shaft, ending turns until it broke through, switching to the Deep with E, and inspecting a rock tile.
+
+### Reason
+The owner chose underground levels as the third of the three next features.
+
 ## Version 00.01.10
 Date: 11/01/2026
 Time: 8:13 AM

@@ -54,6 +54,9 @@ var signed_in_label: Label
 var narrow_game := false
 var ui_theme: Theme
 var placing_bar: PanelContainer
+var surface_button: Button
+var deep_button: Button
+var level_toggle: Button
 var placing_label: Label
 
 
@@ -276,6 +279,7 @@ func show_game() -> void:
 	screen = root
 
 	narrow_game = _view_size().x < 760.0
+	level_toggle = null
 	# Top bar.
 	var top := PanelContainer.new()
 	root.add_child(top)
@@ -309,6 +313,14 @@ func show_game() -> void:
 	var menu := VBoxContainer.new()
 	menu.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_scroll.add_child(menu)
+	var level_row := HBoxContainer.new()
+	menu.add_child(level_row)
+	surface_button = _button("Surface", func() -> void: _set_level(0))
+	deep_button = _button("Deep", func() -> void: _set_level(1))
+	for b in [surface_button, deep_button]:
+		b.toggle_mode = true
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		level_row.add_child(b)
 	menu.add_child(_button("Select  (Esc)", func() -> void: _set_build("")))
 	build_buttons.clear()
 	for cat in CATEGORIES:
@@ -365,10 +377,12 @@ func show_game() -> void:
 	reserve_row.add_child(_button("-10", func() -> void: _change_reserve(-10.0)))
 	reserve_row.add_child(_button("+10", func() -> void: _change_reserve(10.0)))
 
-	# Shown while a building is chosen: what is being placed, and Cancel.
+	# Shown while a building is chosen: what is being placed, and Cancel. It sits
+	# over the top of the map, so the map doesn't jump when it appears.
 	placing_bar = PanelContainer.new()
 	placing_bar.visible = false
-	root.add_child(placing_bar)
+	map_view.add_child(placing_bar)
+	placing_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	var placing_row := HBoxContainer.new()
 	placing_bar.add_child(placing_row)
 	placing_label = _label("", 0, ACCENT)
@@ -410,6 +424,8 @@ func show_game() -> void:
 	buttons.add_child(run_button)
 	if narrow_game:
 		buttons.add_child(_button("Build", show_build_menu))
+		level_toggle = _button("Deep", func() -> void: _set_level(1 - map_view.level))
+		buttons.add_child(level_toggle)
 		buttons.add_child(_button("−", func() -> void: map_view.zoom_by(1.0 / 1.25)))
 		buttons.add_child(_button("+", func() -> void: map_view.zoom_by(1.25)))
 		buttons.add_child(_button("Info", show_info))
@@ -427,7 +443,38 @@ func show_game() -> void:
 	if narrow_game:
 		map_view.tile_size = 34.0
 	map_view.center_on(_hull_cell())
+	_update_level_buttons()
 	refresh()
+
+
+## Shows the surface (0) or the Deep (1).
+func _set_level(z: int) -> void:
+	map_view.level = z
+	map_view.selected = Vector2i(-1, -1)
+	if z == 1:
+		var landing := Vector2i(-1, -1)
+		for id in state["structures"]:
+			var st: Dictionary = state["structures"][id]
+			if st["type"] == "shaft_base":
+				landing = Vector2i(int(st["x"]), int(st["y"]))
+				break
+		if landing.x >= 0:
+			map_view.center_on(landing)
+		else:
+			_toast("The Deep: build a Shaft on the surface first. When it's finished, a landing opens down here.")
+	else:
+		map_view.center_on(_hull_cell())
+	_update_level_buttons()
+	refresh()
+
+
+func _update_level_buttons() -> void:
+	var z: int = map_view.level if map_view != null else 0
+	if surface_button != null:
+		surface_button.button_pressed = z == 0
+		deep_button.button_pressed = z == 1
+	if level_toggle != null:
+		level_toggle.text = "Surface" if z == 1 else "Deep"
 
 
 func _hull_cell() -> Vector2i:
@@ -481,7 +528,7 @@ func _on_tile_clicked(cell: Vector2i) -> void:
 		return
 	if map_view.build_type != "":
 		var placed_type: String = map_view.build_type
-		var r := Actions.place(state, placed_type, cell.x, cell.y)
+		var r := Actions.place(state, placed_type, cell.x, cell.y, map_view.level)
 		if not r["ok"]:
 			hint_label.text = r["reason"]
 			if narrow_game:
@@ -605,6 +652,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		map_view.pan_by(pan_keys[key])
 		get_viewport().set_input_as_handled()
 		return
+	if (key == KEY_Q or key == KEY_E) and modal == null and not (get_viewport().gui_get_focus_owner() is LineEdit):
+		_set_level(0 if key == KEY_Q else 1)
+		get_viewport().set_input_as_handled()
+		return
 	if (key == KEY_ENTER or key == KEY_KP_ENTER) and modal == null:
 		_run_turns(1)
 		get_viewport().set_input_as_handled()
@@ -687,11 +738,15 @@ func _refresh_hint() -> void:
 		var text := "Placing %s. %s" % [def["name"], def["desc"]]
 		var h: Vector2i = map_view.hover
 		if h.x >= 0:
-			var r := Actions.check_place(state, map_view.build_type, h.x, h.y)
+			var r := Actions.check_place(state, map_view.build_type, h.x, h.y, map_view.level)
 			if not r["ok"]:
 				text = r["reason"]
 			elif GameData.num(def, "heat_need") > 0.0:
-				text += "  Heat here: %.1f." % (GameData.num(def, "heat_need") * GameData.cold_at(h.x, state["planet"]))
+				var cold := float(GameData.balance()["deep"]["cold"]) if map_view.level == 1 else GameData.cold_at(h.x, state["planet"])
+				text += "  Heat here: %.1f." % (GameData.num(def, "heat_need") * cold)
+				var extra := Actions.build_cost(state, map_view.build_type, h.x, h.y, map_view.level) - GameData.num(def, "cost")
+				if extra > 0.0:
+					text += "  Digging through rock: +%d alloy, +%d turns." % [int(extra), int(GameData.balance()["deep"]["excavate_turns"])]
 		hint_label.text = text
 	else:
 		hint_label.text = "Tap a tile to inspect it. Tap Build to choose a building. Drag the map to move it; pinch or use − and + to zoom." if narrow_game else "Click a tile to inspect it. Choose a building on the left to place it. Drag the map to move it; wheel to zoom."
@@ -701,14 +756,14 @@ func _selected_structure() -> Dictionary:
 	var c: Vector2i = map_view.selected
 	if c.x < 0:
 		return {}
-	return Actions.structure_at(state, c.x, c.y)
+	return Actions.structure_at(state, c.x, c.y, map_view.level)
 
 
 func _refresh_inspector() -> void:
 	var c: Vector2i = map_view.selected
 	var s := _selected_structure()
 	demolish_button.visible = not s.is_empty() and s["type"] != "hull"
-	inspector.text = ColonyText.summary(state) if c.x < 0 else ColonyText.tile(state, c)
+	inspector.text = ColonyText.summary(state) if c.x < 0 else ColonyText.tile(state, c, map_view.level)
 
 
 ## Phones: the side panel's contents as dialogs.

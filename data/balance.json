@@ -120,5 +120,18 @@
   "union_drift_shortage": -2,
   "company_good": 60,
   "company_bad": 25,
-  "company_extra_immigrants": 2
+  "company_extra_immigrants": 2,
+  "deep": {
+    "_comment": "The Deep: the level under the surface, reached by a Shaft.",
+    "cold": 0.5,
+    "excavate_cost": 4,
+    "excavate_turns": 2,
+    "vein_bonus": 1.5,
+    "deepvent_bonus": 1.5,
+    "cavern": 0.3,
+    "veins": 8,
+    "aquifers": 6,
+    "deepvents": 5,
+    "bedrock_walks": 5
+  }
 }

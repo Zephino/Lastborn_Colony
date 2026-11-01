@@ -72,16 +72,28 @@ static func _quantize(state: Dictionary) -> void:
 
 # 1. Construction: each unfinished building gains one turn of progress.
 static func _construction(state: Dictionary) -> void:
+	var new_shafts: Array = []
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
 		if s["built"]:
 			continue
 		s["progress"] = int(s["progress"]) + 1
 		var def := GameData.building(s["type"])
-		if int(s["progress"]) >= int(GameData.num(def, "turns")):
+		# Digging into rock in the Deep takes longer (build_turns).
+		if int(s["progress"]) >= int(s.get("build_turns", GameData.num(def, "turns"))):
 			s["built"] = true
+			if s["type"] == "shaft":
+				new_shafts.append(s)
 			if s["type"] != "main":
 				log_msg(state, "%s is complete." % def["name"])
+	# A finished shaft opens a landing in the Deep, straight below it.
+	for s in new_shafts:
+		var x := int(s["x"])
+		var y := int(s["y"])
+		if Actions.structure_at(state, x, y, 1).is_empty():
+			state["deep"][y][x] = "cavern"
+			NewGame.add_structure(state, "shaft_base", x, y, true, 1)
+			log_msg(state, "The shaft breaks through into the Deep. Build outward from the landing.")
 
 
 # 2. Repairs count down; a damaged building stays idle until it reaches zero.
@@ -116,9 +128,18 @@ static func connectivity(state: Dictionary) -> Dictionary:
 	while head < queue.size():
 		var s: Dictionary = state["structures"][queue[head]]
 		head += 1
+		var z := int(s.get("z", 0))
+		var links: Array = []
 		for d in DIRS:
 			var n: Vector2i = Vector2i(int(s["x"]), int(s["y"])) + d
-			var other_id: String = state["occupancy"].get(NewGame.cell_key(n.x, n.y), "")
+			links.append(NewGame.cell_key(n.x, n.y, z))
+		# A shaft and its landing join the two levels.
+		if s["type"] == "shaft":
+			links.append(NewGame.cell_key(int(s["x"]), int(s["y"]), 1))
+		elif s["type"] == "shaft_base":
+			links.append(NewGame.cell_key(int(s["x"]), int(s["y"]), 0))
+		for key in links:
+			var other_id: String = state["occupancy"].get(key, "")
 			if other_id == "" or connected.has(other_id):
 				continue
 			if state["structures"][other_id]["built"]:
@@ -175,6 +196,8 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 					pg *= 1.0 - loss
 			if s["type"] == "vent" and int(state["surge"]) > 0:
 				hg *= float(b["surge_vent_factor"])
+			if s["type"] == "vent" and int(s.get("z", 0)) == 1:
+				hg *= float(b["deep"]["deepvent_bonus"])
 			power += pg
 			heat += hg
 	power_gen = power
@@ -192,7 +215,7 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 				continue
 			var need := int(GameData.num(def, "workers"))
 			var pu := GameData.num(def, "power_use")
-			var hn := GameData.num(def, "heat_need") * GameData.cold_at(int(s["x"]), state["planet"]) * heat_mult
+			var hn := GameData.num(def, "heat_need") * cold_for(state, s) * heat_mult
 			if workers >= need and power >= pu and heat >= hn:
 				workers -= need
 				power -= pu
@@ -274,6 +297,9 @@ static func _produce(state: Dictionary, rep: Dictionary) -> void:
 					stock[k] = float(stock[k]) - float(inputs[k])
 				var outputs: Dictionary = def.get("outputs", {})
 				var boost := Research.mult(state, "out:" + str(s["type"]))
+				# Ore veins in the Deep are richer than surface seams.
+				if s["type"] == "cutter" and int(s.get("z", 0)) == 1:
+					boost *= float(b["deep"]["vein_bonus"])
 				for k in outputs:
 					stock[k] = float(stock[k]) + float(outputs[k]) * e * boost
 			if def.has("research"):
@@ -559,6 +585,14 @@ static func _timers(state: Dictionary) -> void:
 
 
 # 16. Random events. Events with choices pause the game until resolved.
+## How much heat a building needs per point of heat_need: by column on the
+## surface (colder to the west), and a steady value in the Deep.
+static func cold_for(state: Dictionary, s: Dictionary) -> float:
+	if int(s.get("z", 0)) == 1:
+		return float(GameData.balance()["deep"]["cold"])
+	return GameData.cold_at(int(s["x"]), state["planet"])
+
+
 static func _shift_faction(state: Dictionary, key: String, delta: float) -> void:
 	state["factions"][key] = clampf(float(state["factions"][key]) + delta, 0.0, 100.0)
 

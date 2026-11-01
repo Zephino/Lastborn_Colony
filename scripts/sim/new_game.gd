@@ -39,6 +39,7 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 		"width": int(b["map_width"]),
 		"height": int(b["map_height"]),
 		"tiles": map["tiles"],
+		"deep": MapGen.generate_deep(game_seed, planet_id),
 		"structures": {},
 		"next_id": 1,
 		"occupancy": {},
@@ -77,7 +78,8 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 
 ## Adds a structure record. Insertion order of state["structures"] is the
 ## processing order inside a priority band, so keep ids increasing.
-static func add_structure(state: Dictionary, type: String, x: int, y: int, built: bool) -> String:
+## z is the level: 0 the surface, 1 the Deep.
+static func add_structure(state: Dictionary, type: String, x: int, y: int, built: bool, z: int = 0) -> String:
 	var id := str(int(state["next_id"]))
 	state["next_id"] = int(state["next_id"]) + 1
 	state["structures"][id] = {
@@ -85,14 +87,16 @@ static func add_structure(state: Dictionary, type: String, x: int, y: int, built
 		"type": type,
 		"x": x,
 		"y": y,
+		"z": z,
 		"progress": 0,
 		"built": built,
 		"damaged": 0,
 		"active": built,
 	}
-	state["occupancy"][cell_key(x, y)] = id
+	state["occupancy"][cell_key(x, y, z)] = id
 	return id
 
 
-static func cell_key(x: int, y: int) -> String:
-	return "%d,%d" % [x, y]
+## Surface tiles keep the plain "x,y" key; the Deep adds the level.
+static func cell_key(x: int, y: int, z: int = 0) -> String:
+	return "%d,%d" % [x, y] if z == 0 else "%d,%d,%d" % [x, y, z]

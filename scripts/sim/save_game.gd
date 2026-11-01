@@ -66,12 +66,19 @@ static func normalize(state: Dictionary) -> void:
 		state["difficulty"] = GameData.DEFAULT_DIFFICULTY
 	for k in INT_FIELDS:
 		state[k] = int(state[k])
+	# Saves from before the Deep existed: make the level from the map seed.
+	if not state.has("deep"):
+		const MapGen = preload("res://scripts/sim/map_gen.gd")
+		state["deep"] = MapGen.generate_deep(int(state["seed"]), str(state["planet"]))
 	var occupancy := {}
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
 		for k in STRUCT_INT_FIELDS:
 			s[k] = int(s[k])
-		occupancy[NewGame.cell_key(s["x"], s["y"])] = id
+		s["z"] = clampi(int(s.get("z", 0)), 0, 1)
+		if s.has("build_turns"):
+			s["build_turns"] = int(s["build_turns"])
+		occupancy[NewGame.cell_key(s["x"], s["y"], s["z"])] = id
 	state["occupancy"] = occupancy
 	state["plague"]["turns_left"] = int(state["plague"]["turns_left"])
 	for k in state["kits"]:

@@ -143,5 +143,54 @@ static func _inside(tiles: Array, c: Vector2i) -> bool:
 	return c.y >= 0 and c.y < tiles.size() and c.x >= 0 and c.x < tiles[0].size()
 
 
+## The Deep: the level under the surface. Solid rock with open caverns, ore
+## veins, aquifers (water for Ice Drills) and deep vents, walled by bedrock.
+## Uses its own random stream, so surface maps are unchanged by it.
+static func generate_deep(map_seed: int, _planet_id: String = "brume") -> Array:
+	var b := GameData.balance()
+	var deep: Dictionary = b["deep"]
+	var w: int = int(b["map_width"])
+	var h: int = int(b["map_height"])
+	var r := {"rng": (map_seed ^ 0x5EEDDEE9) & Rng.M32}
+	var tiles: Array = []
+	for y in h:
+		var row: Array = []
+		for x in w:
+			row.append("cavern" if Rng.next_float(r) < float(deep["cavern"]) else "rock")
+		tiles.append(row)
+	# Smooth the caverns into open pockets.
+	for _pass in 2:
+		var next: Array = []
+		for y in h:
+			var row: Array = []
+			for x in w:
+				var n := 0
+				for dy in range(-1, 2):
+					for dx in range(-1, 2):
+						if tiles[clampi(y + dy, 0, h - 1)][clampi(x + dx, 0, w - 1)] == "cavern":
+							n += 1
+				row.append("cavern" if n >= 5 else ("rock" if n <= 3 else tiles[y][x]))
+			next.append(row)
+		tiles = next
+	for _i in int(deep["bedrock_walks"]):
+		var p := Vector2i(Rng.rand_int(r, 3, w - 4), Rng.rand_int(r, 1, h - 2))
+		for _step in Rng.rand_int(r, 4, 9):
+			tiles[p.y][p.x] = "bedrock"
+			var d: Vector2i = Rng.pick(r, DIRS)
+			p = Vector2i(clampi(p.x + d.x, 2, w - 3), clampi(p.y + d.y, 0, h - 1))
+	for kind in [["vein", int(deep["veins"])], ["aquifer", int(deep["aquifers"])], ["deepvent", int(deep["deepvents"])]]:
+		for _i in int(kind[1]):
+			var c := Vector2i(Rng.rand_int(r, 3, w - 4), Rng.rand_int(r, 1, h - 2))
+			tiles[c.y][c.x] = kind[0]
+			if kind[0] == "vein":
+				var d: Vector2i = Rng.pick(r, DIRS)
+				tiles[c.y + d.y][c.x + d.x] = "vein"
+	for y in h:
+		for x in w:
+			if x < 2 or x >= w - 2:
+				tiles[y][x] = "bedrock"
+	return tiles
+
+
 static func is_buildable_terrain(terrain: String) -> bool:
 	return terrain in BUILDABLE

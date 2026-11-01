@@ -68,6 +68,11 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Keep people alive.** Each person uses 0.1 food, 0.1 oxygen and 0.05 water per turn. Shortages kill people, and oxygen shortages kill fastest.
 - **Morale** sets production efficiency (50–130%). Commons and the Clinic raise it. Shortages, overcrowding and missed payments lower it. Below 20, people leave.
 - **Money:** Forges turn ore into alloy, and Launch Rails sell alloy for 20 marks each. Rails never sell below your export reserve, which you set in the right panel. You can also pay the debt early from there.
+- **The Deep:** a second level under the surface. Build a **Shaft** (surface, 15 alloy, 3 turns); when it's finished, a landing opens below it. Build outward from the landing. Switch levels with the **Surface/Deep** buttons (or **Q** and **E**; on phones, the Deep/Surface button).
+  - Open caverns cost the normal price. Solid rock must be dug out: +4 alloy and +2 turns. Bedrock can't be built on.
+  - Ore veins make Seam Cutters 50% more productive, deep vents give Vent Taps 50% more heat, and aquifers let Ice Drills work underground.
+  - Buildings underground need a steady, low amount of heat (factor 0.5), which helps on cold worlds. Icequakes never reach them.
+  - Mirror Fields and Launch Rails need the sky, so they stay on the surface.
 - **Research:** Survey Labs produce research toward the topic you pick. Finished topics boost buildings, housing or exports, or reduce breakdowns, plague and crime.
 - **People age:** children grow into adults, and adults grow into elders, who don't work and die sooner. A Clinic helps everyone live longer.
 - **Breakdowns:** machines wear out and break down now and then. A Workshop speeds up repairs.
@@ -79,7 +84,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Colony report** (button by End turn) shows where power, heat and workers go, how each resource changed, which buildings are idle and why, and the next payments. Selecting a building also says why it isn't running.
 - **Settings** (title screen, or Menu in a game): fullscreen, and for the web version Install app and Update app.
 - **Placing a building:** a bar shows what you're placing, with **Cancel**. Dragging the map never places anything.
-- **Keys:** Enter ends the turn. Arrow keys or WASD move the map. Esc cancels building or closes a dialog that can be closed. Drag the map to move it and use the mouse wheel to zoom. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
+- **Keys:** Enter ends the turn. Arrow keys or WASD move the map. Q shows the surface and E the Deep. Esc cancels building or closes a dialog that can be closed. Drag the map to move it and use the mouse wheel to zoom. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
 
 ## Layout
 
@@ -141,7 +146,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 ## Status and next steps
 
 - All 269 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). A colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
-- Ideas: underground levels, changing trade prices, difficulty settings, and sound.
+- Ideas: changing trade prices, difficulty settings, and sound.
 
 ## Input safety
 

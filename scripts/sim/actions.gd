@@ -17,26 +17,43 @@ static func inside(state: Dictionary, x: int, y: int) -> bool:
 	return x >= 0 and y >= 0 and x < int(state["width"]) and y < int(state["height"])
 
 
-static func terrain_at(state: Dictionary, x: int, y: int) -> String:
-	return state["tiles"][y][x]
+const SURFACE_TERRAIN := ["regolith", "ice", "vent", "seam", "ridge", "deepice", "scorch"]
+const DEEP_TERRAIN := ["cavern", "rock", "vein", "aquifer", "deepvent", "bedrock"]
 
 
-static func structure_at(state: Dictionary, x: int, y: int) -> Dictionary:
-	var id: String = state["occupancy"].get(NewGame.cell_key(x, y), "")
+## z is the level: 0 the surface, 1 the Deep.
+static func terrain_at(state: Dictionary, x: int, y: int, z: int = 0) -> String:
+	return state["tiles"][y][x] if z == 0 else state["deep"][y][x]
+
+
+static func structure_at(state: Dictionary, x: int, y: int, z: int = 0) -> Dictionary:
+	var id: String = state["occupancy"].get(NewGame.cell_key(x, y, z), "")
 	if id == "":
 		return {}
 	return state["structures"][id]
 
 
-static func touches_colony(state: Dictionary, x: int, y: int) -> bool:
+static func touches_colony(state: Dictionary, x: int, y: int, z: int = 0) -> bool:
 	for d in DIRS:
 		var n: Vector2i = Vector2i(x, y) + d
-		if inside(state, n.x, n.y) and not structure_at(state, n.x, n.y).is_empty():
+		if inside(state, n.x, n.y) and not structure_at(state, n.x, n.y, z).is_empty():
 			return true
 	return false
 
 
-static func check_place(state: Dictionary, type: String, x: int, y: int) -> Dictionary:
+## Digging into solid rock in the Deep costs extra alloy and turns.
+static func excavation(state: Dictionary, x: int, y: int, z: int) -> bool:
+	return z == 1 and terrain_at(state, x, y, z) == "rock"
+
+
+static func build_cost(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> float:
+	var cost := GameData.num(GameData.building(type), "cost")
+	if excavation(state, x, y, z):
+		cost += float(GameData.balance()["deep"]["excavate_cost"])
+	return cost
+
+
+static func check_place(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> Dictionary:
 	if state["ending"] != "":
 		return result(false, "The game is over.")
 	if not GameData.has_building(type):
@@ -46,19 +63,27 @@ static func check_place(state: Dictionary, type: String, x: int, y: int) -> Dict
 		return result(false, "%s cannot be built." % def["name"])
 	if not inside(state, x, y):
 		return result(false, "Outside the map.")
-	if not structure_at(state, x, y).is_empty():
+	if not structure_at(state, x, y, z).is_empty():
 		return result(false, "That tile is already in use.")
-	var terrain := terrain_at(state, x, y)
+	var terrain := terrain_at(state, x, y, z)
 	if not (terrain in def["terrain"]):
-		var allowed: Array = def["terrain"]
-		return result(false, "%s must be built on %s." % [def["name"], " or ".join(PackedStringArray(allowed))])
-	if not touches_colony(state, x, y):
-		return result(false, "Must be next to the colony. Extend with heat mains.")
+		var level_terrain: Array = SURFACE_TERRAIN if z == 0 else DEEP_TERRAIN
+		var allowed := PackedStringArray()
+		for t in def["terrain"]:
+			if t in level_terrain:
+				allowed.append(t)
+		if allowed.is_empty():
+			return result(false, "%s can only be built %s." % [def["name"], "on the surface" if z == 1 else "in the Deep"])
+		return result(false, "%s must be built on %s." % [def["name"], " or ".join(allowed)])
+	if type == "shaft" and terrain_at(state, x, y, 1) == "bedrock":
+		return result(false, "Solid bedrock below: a shaft can't be dug here.")
+	if not touches_colony(state, x, y, z):
+		return result(false, "Must be next to the colony. Extend with heat mains." if z == 0 else "Must be next to the colony in the Deep. Start from a Shaft Landing.")
 	if has_kit(state, type):
 		return result(true)
-	var cost := GameData.num(def, "cost")
+	var cost := build_cost(state, type, x, y, z)
 	if float(state["stock"]["alloy"]) < cost:
-		return result(false, "Needs %d alloy." % int(cost))
+		return result(false, "Needs %d alloy%s." % [int(cost), " (including digging)" if excavation(state, x, y, z) else ""])
 	return result(true)
 
 
@@ -67,16 +92,18 @@ static func has_kit(state: Dictionary, type: String) -> bool:
 	return int(state.get("kits", {}).get(type, 0)) > 0
 
 
-static func place(state: Dictionary, type: String, x: int, y: int) -> Dictionary:
-	var check := check_place(state, type, x, y)
+static func place(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> Dictionary:
+	var check := check_place(state, type, x, y, z)
 	if not check["ok"]:
 		return check
-	var def := GameData.building(type)
 	if has_kit(state, type):
 		state["kits"][type] = int(state["kits"][type]) - 1
 	else:
-		state["stock"]["alloy"] = float(state["stock"]["alloy"]) - GameData.num(def, "cost")
-	NewGame.add_structure(state, type, x, y, false)
+		state["stock"]["alloy"] = float(state["stock"]["alloy"]) - build_cost(state, type, x, y, z)
+	var id := NewGame.add_structure(state, type, x, y, false, z)
+	if excavation(state, x, y, z):
+		var def := GameData.building(type)
+		state["structures"][id]["build_turns"] = int(GameData.num(def, "turns")) + int(GameData.balance()["deep"]["excavate_turns"])
 	return result(true)
 
 
@@ -86,13 +113,21 @@ static func demolish(state: Dictionary, id: String) -> Dictionary:
 	var s: Dictionary = state["structures"][id]
 	if s["type"] == "hull":
 		return result(false, "The hull cannot be demolished.")
+	if s["type"] == "shaft_base":
+		return result(false, "Demolish the Shaft on the surface to close this landing.")
 	var def := GameData.building(s["type"])
 	var refund := GameData.num(def, "cost")
 	if s["built"]:
 		refund *= float(GameData.balance()["demolish_refund"])
 	state["stock"]["alloy"] = float(state["stock"]["alloy"]) + floorf(refund)
-	state["occupancy"].erase(NewGame.cell_key(int(s["x"]), int(s["y"])))
+	state["occupancy"].erase(NewGame.cell_key(int(s["x"]), int(s["y"]), int(s.get("z", 0))))
 	state["structures"].erase(id)
+	# Closing a shaft also removes its landing in the Deep.
+	if s["type"] == "shaft":
+		var below := structure_at(state, int(s["x"]), int(s["y"]), 1)
+		if not below.is_empty() and below["type"] == "shaft_base":
+			state["occupancy"].erase(NewGame.cell_key(int(s["x"]), int(s["y"]), 1))
+			state["structures"].erase(below["id"])
 	return result(true)
 
 
@@ -194,7 +229,7 @@ static func _damage_area(state: Dictionary, radius: int) -> void:
 	var hit := 0
 	for id in ids:
 		var s: Dictionary = state["structures"][id]
-		if not s["built"] or s["type"] in ["hull", "main", "cache"]:
+		if not s["built"] or s["type"] in ["hull", "main", "cache", "shaft_base"] or int(s.get("z", 0)) != 0:
 			continue
 		if maxi(absi(int(s["x"]) - int(center["x"])), absi(int(s["y"]) - int(center["y"]))) > radius:
 			continue

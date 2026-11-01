@@ -16,6 +16,13 @@ const TERRAIN_COLORS := {
 	"vent": Color(0.30, 0.24, 0.23),
 	"seam": Color(0.33, 0.31, 0.29),
 	"ridge": Color(0.17, 0.17, 0.19),
+	# The Deep.
+	"rock": Color(0.24, 0.21, 0.20),
+	"cavern": Color(0.36, 0.31, 0.27),
+	"vein": Color(0.24, 0.21, 0.20),
+	"aquifer": Color(0.20, 0.30, 0.40),
+	"deepvent": Color(0.30, 0.18, 0.15),
+	"bedrock": Color(0.09, 0.08, 0.09),
 	"deepice": Color(0.80, 0.88, 0.96),
 	"scorch": Color(0.55, 0.30, 0.16),
 }
@@ -26,6 +33,8 @@ var pan := Vector2.ZERO
 var selected := Vector2i(-1, -1)
 var hover := Vector2i(-1, -1)
 var build_type := ""
+## Which level is shown: 0 the surface, 1 the Deep.
+var level := 0
 var _dragging := false
 ## A left press becomes a pan once it moves this far; otherwise it is a click.
 const DRAG_THRESHOLD := 10.0
@@ -183,12 +192,12 @@ func _draw() -> void:
 	var ts := tile_size
 	for y in h:
 		for x in w:
-			var t: String = state["tiles"][y][x]
+			var t: String = Actions.terrain_at(state, x, y, level)
 			var r := Rect2(o + Vector2(x, y) * ts, Vector2(ts, ts))
 			draw_rect(r, _terrain_color(t, x))
 			_draw_terrain_detail(t, r, x, y)
-	# Climate shading: cool blue on the night side, warm on the day side.
-	for x in w:
+	# Climate shading on the surface: cool blue on the night side, warm on the day side.
+	for x in (w if level == 0 else 0):
 		var l := GameData.light_at(x, state["planet"])
 		var tint := Color(0.2, 0.35, 0.8, 0.22 * clampf(1.0 - l, 0.0, 1.0)) if l < 1.0 else Color(1.0, 0.6, 0.2, 0.18 * clampf(l - 1.0, 0.0, 1.0))
 		draw_rect(Rect2(o + Vector2(x * ts, 0), Vector2(ts, h * ts)), tint)
@@ -201,17 +210,17 @@ func _draw() -> void:
 	# Conduits first so buildings draw over them.
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
-		if s["type"] == "main":
+		if s["type"] == "main" and int(s.get("z", 0)) == level:
 			_draw_main(s, o)
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
-		if s["type"] != "main":
+		if s["type"] != "main" and int(s.get("z", 0)) == level:
 			_draw_structure(s, o)
 	# Hover and selection.
 	if hover.x >= 0:
 		var hr := Rect2(o + Vector2(hover) * ts, Vector2(ts, ts))
 		if build_type != "":
-			var ok: bool = Actions.check_place(state, build_type, hover.x, hover.y)["ok"]
+			var ok: bool = Actions.check_place(state, build_type, hover.x, hover.y, level)["ok"]
 			draw_rect(hr, Color(0.3, 1.0, 0.5, 0.35) if ok else Color(1.0, 0.3, 0.3, 0.35))
 		draw_rect(hr, Color(1, 1, 1, 0.7), false, 1.5)
 	if selected.x >= 0:
@@ -242,6 +251,21 @@ func _draw_terrain_detail(t: String, r: Rect2, x: int, y: int) -> void:
 		"ridge":
 			var pts := PackedVector2Array([r.position + Vector2(ts * 0.1, ts * 0.85), c + Vector2(0, -ts * 0.35), r.position + Vector2(ts * 0.9, ts * 0.85)])
 			draw_colored_polygon(pts, Color(0.28, 0.28, 0.31))
+		"vein":
+			var vein_col := Color(0.35, 0.80, 0.75)
+			draw_line(r.position + Vector2(ts * 0.1, ts * 0.4), r.position + Vector2(ts * 0.9, ts * 0.6), vein_col, 3.0)
+			draw_line(r.position + Vector2(ts * 0.3, ts * 0.85), r.position + Vector2(ts * 0.75, ts * 0.2), vein_col, 2.0)
+		"aquifer":
+			draw_circle(c, ts * 0.2, Color(0.45, 0.70, 0.95, 0.8))
+		"deepvent":
+			draw_circle(c, ts * 0.26, Color(1.0, 0.40, 0.10, 0.9))
+			draw_circle(c, ts * 0.13, Color(1.0, 0.90, 0.50))
+		"bedrock":
+			draw_line(r.position + Vector2(ts * 0.1, ts * 0.9), r.position + Vector2(ts * 0.9, ts * 0.1), Color(0, 0, 0, 0.5), 1.0)
+		"rock":
+			var rh := (x * 19349663) ^ (y * 83492791)
+			if rh % 3 == 0:
+				draw_circle(r.position + Vector2(ts * 0.6, ts * 0.4), ts * 0.08, Color(0, 0, 0, 0.3))
 		"regolith":
 			# Deterministic speckle so the ground has texture.
 			var hsh := (x * 73856093) ^ (y * 19349663)
@@ -256,7 +280,7 @@ func _draw_main(s: Dictionary, o: Vector2) -> void:
 	draw_circle(c, ts * 0.12, col)
 	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 		var n: Vector2i = Vector2i(int(s["x"]), int(s["y"])) + d
-		if Actions.inside(state, n.x, n.y) and not Actions.structure_at(state, n.x, n.y).is_empty():
+		if Actions.inside(state, n.x, n.y) and not Actions.structure_at(state, n.x, n.y, level).is_empty():
 			draw_line(c, c + Vector2(d) * ts * 0.5, col, maxf(2.0, ts * 0.14))
 
 
@@ -268,6 +292,12 @@ func _draw_structure(s: Dictionary, o: Vector2) -> void:
 	var dim := 1.0 if (s["active"] or not s["built"]) else 0.55
 	var base := Color(0.62 * dim, 0.66 * dim, 0.70 * dim, a)
 	match s["type"]:
+		"shaft", "shaft_base":
+			draw_rect(r, Color(0.20 * dim, 0.20 * dim, 0.24 * dim, a))
+			draw_rect(r.grow(-ts * 0.18), Color(0.04, 0.04, 0.06, a))
+			for i in 3:
+				var yy := r.position.y + r.size.y * (0.3 + 0.2 * i)
+				draw_line(Vector2(r.position.x + ts * 0.3, yy), Vector2(r.end.x - ts * 0.3, yy), Color(0.95, 0.62, 0.30, a), 2.0)
 		"hull":
 			draw_rect(r.grow(ts * 0.04), Color(0.55, 0.58, 0.62, a))
 			draw_circle(c, ts * 0.32, Color(0.80, 0.82, 0.86, a))
@@ -326,5 +356,5 @@ func _draw_structure(s: Dictionary, o: Vector2) -> void:
 	elif int(s["damaged"]) > 0:
 		draw_line(r.position, r.end, Color(1.0, 0.85, 0.2), 2.0)
 		draw_line(Vector2(r.position.x, r.end.y), Vector2(r.end.x, r.position.y), Color(1.0, 0.85, 0.2), 2.0)
-	elif not s["active"]:
+	elif not s["active"] and not GameData.building(s["type"]).get("conduit", false):
 		draw_circle(r.position + Vector2(r.size.x - 4, 4), 3.5, Color(1.0, 0.3, 0.3))

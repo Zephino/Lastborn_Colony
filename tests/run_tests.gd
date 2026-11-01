@@ -37,6 +37,7 @@ func _init() -> void:
 	test_manifest()
 	test_difficulty()
 	test_story()
+	test_deep()
 	test_colony_text()
 	test_planets_and_sites()
 	test_research()
@@ -84,7 +85,7 @@ func test_rng() -> void:
 
 func test_data() -> void:
 	print("Data")
-	check(GameData.building_ids().size() == 17, "17 buildings loaded")
+	check(GameData.building_ids().size() == 19, "19 buildings loaded")
 	check(GameData.events().size() == 10, "10 events loaded")
 	check(GameData.research_topics().size() == 13, "13 research topics loaded")
 	for t in GameData.research_topics():
@@ -326,6 +327,80 @@ func test_story() -> void:
 		old.erase(k)
 	var loaded: Dictionary = SaveGame.from_text(JSON.stringify(old))
 	check(float(loaded["factions"]["union"]) == 50.0 and loaded["story_done"].is_empty(), "a save from before the story loads with neutral factions")
+
+
+func test_deep() -> void:
+	print("The Deep")
+	var s := NewGame.create(3, "Margin")
+	check(s["deep"].size() == int(s["height"]) and s["deep"][0].size() == int(s["width"]), "the Deep is as big as the surface")
+	var again := NewGame.create(3, "Margin")
+	check(JSON.stringify(s["deep"]) == JSON.stringify(again["deep"]), "the Deep is the same for the same seed")
+	s["stock"]["alloy"] = 500.0
+	var hx := int(s["structures"]["1"]["x"])
+	var hy := int(s["structures"]["1"]["y"])
+	# Find a spot next to the hull with no bedrock below it.
+	var spot := Vector2i(-1, -1)
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var c: Vector2i = Vector2i(hx, hy) + d
+		if Actions.check_place(s, "shaft", c.x, c.y)["ok"]:
+			spot = c
+			break
+	check(spot.x >= 0, "a shaft can be placed next to the hull")
+	if spot.x < 0:
+		return
+	check(not Actions.check_place(s, "bunk", spot.x + 1, spot.y, 1)["ok"], "nothing can be built in the Deep before a shaft opens")
+	Actions.place(s, "shaft", spot.x, spot.y)
+	for _i in 3:
+		if s["pending_event"] != "":
+			Actions.resolve_event(s, 0)
+		Turn.end_turn(s)
+	var base := Actions.structure_at(s, spot.x, spot.y, 1)
+	check(not base.is_empty() and base["type"] == "shaft_base", "a finished shaft opens a landing in the Deep")
+	check(Actions.terrain_at(s, spot.x, spot.y, 1) == "cavern", "the landing is dug out")
+	check(not Actions.check_place(s, "mirror", spot.x + 1, spot.y, 1)["ok"], "Mirror Fields can't go underground")
+	# Build a bunkhouse next to the landing; rock costs more and takes longer.
+	var dig := Vector2i(-1, -1)
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var c: Vector2i = spot + d
+		if Actions.inside(s, c.x, c.y) and Actions.check_place(s, "bunk", c.x, c.y, 1)["ok"]:
+			dig = c
+			break
+	check(dig.x >= 0, "a bunkhouse can be placed next to the landing")
+	if dig.x < 0:
+		return
+	var rock := Actions.terrain_at(s, dig.x, dig.y, 1) == "rock"
+	var alloy := float(s["stock"]["alloy"])
+	Actions.place(s, "bunk", dig.x, dig.y, 1)
+	var cost := alloy - float(s["stock"]["alloy"])
+	check(cost == (12.0 if rock else 8.0), "digging into rock adds 4 alloy (paid %d)" % int(cost))
+	var rock_cell := Vector2i(-1, -1)
+	for y in int(s["height"]):
+		for x in int(s["width"]):
+			if rock_cell.x < 0 and Actions.terrain_at(s, x, y, 1) == "rock":
+				rock_cell = Vector2i(x, y)
+	check(Actions.build_cost(s, "bunk", rock_cell.x, rock_cell.y, 1) == 12.0 and Actions.build_cost(s, "bunk", rock_cell.x, rock_cell.y, 0) == 8.0, "a bunkhouse in rock costs 12 alloy instead of 8")
+	var bunk := Actions.structure_at(s, dig.x, dig.y, 1)
+	for _i in 6:
+		if s["pending_event"] != "":
+			Actions.resolve_event(s, 0)
+		Turn.end_turn(s)
+	check(bunk["built"], "the underground bunkhouse gets built")
+	check(Turn.connectivity(s).has(bunk["id"]), "the Deep is joined to the hull through the shaft")
+	check(Turn.cold_for(s, bunk) == float(GameData.balance()["deep"]["cold"]), "the Deep has a steady heat factor")
+	# Icequakes don't reach underground.
+	for _i in 10:
+		Actions.apply_effects(s, {"damage_area": 30})
+	check(int(bunk["damaged"]) == 0, "icequakes never damage the Deep")
+	var loaded: Dictionary = SaveGame.from_text(SaveGame.to_text(s))
+	check(not Actions.structure_at(loaded, dig.x, dig.y, 1).is_empty() and Actions.structure_at(loaded, dig.x, dig.y).is_empty() == Actions.structure_at(s, dig.x, dig.y).is_empty(), "levels survive a save")
+	check(Actions.demolish(s, base["id"])["ok"] == false, "the landing can't be demolished on its own")
+	var shaft := Actions.structure_at(s, spot.x, spot.y)
+	Actions.demolish(s, shaft["id"])
+	check(Actions.structure_at(s, spot.x, spot.y, 1).is_empty(), "removing the shaft closes its landing")
+	var old: Dictionary = JSON.parse_string(SaveGame.to_text(NewGame.create(5, "Margin")))
+	old.erase("deep")
+	var upgraded: Dictionary = SaveGame.from_text(JSON.stringify(old))
+	check(upgraded.has("deep") and upgraded["deep"].size() == int(upgraded["height"]), "a save from before the Deep gets one")
 
 
 func test_manifest() -> void:
