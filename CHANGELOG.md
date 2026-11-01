@@ -2,6 +2,16 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.35
+Date: 11/01/2026
+Time: 6:20 PM
+
+### Changes
+- **Landing Hull:** each of the pad's four doors is now a small airlock building on the pad's edge, so tunnels run into a building instead of the bare pad (sprite concept, top-down and angled). Each one is a metal block with a small glass roof bubble and an orange band round its foot, and carries the door ring.
+
+### Reason
+The owner said that around the Landing Hull's doors there should be a building for the tubes to go into.
+
 ## Version 00.01.34
 Date: 11/01/2026
 Time: 6:05 PM

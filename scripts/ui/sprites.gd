@@ -577,9 +577,10 @@ static func _top_pad(ci: CanvasItem, c: Vector2, s: float, rad: float, links: Ar
 	# Landing lights around the edge.
 	for i in 12:
 		_glow(ci, c + Vector2.from_angle(i * TAU / 12.0) * rad * 0.80, s * 0.018, orange, state)
-	# Ports on every side (open where a tunnel joins).
+	# A small airlock building at each door, on the pad's edge; tunnels run into it.
 	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links), d)
+		_top_gatehouse(ci, c, s, rad, d, state)
+		_top_port(ci, c + Vector2(d) * (rad * 0.89 + s * 0.07), s, state, not (d in links), d)
 	# The control dome at the back-left corner.
 	_top_dome(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.12, orange, Color(0.30, 0.26, 0.22), state)
 	_glow(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.025, orange, state)
@@ -1053,12 +1054,62 @@ static func _iso_pad(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Arr
 	for i in 12:
 		var q := Vector2.from_angle(i * TAU / 12.0) * r * 0.80
 		_glow(ci, _iso(c, tw, q.x, q.y, top), tw * 0.014, orange, state)
+	# A small airlock building at each door, back ones first; tunnels run into them.
+	for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, 1)]:
+		_iso_gatehouse(ci, c, tw, r, d, state)
 	for d in links:
 		if d.x > 0 or d.y > 0:
 			_iso_link(ci, c, tw, d, r, state)
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.97, d.y * r * 0.97, 0.03), tw, state, true, d)
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.11), tw, state, true, d)
+
+
+## The landing pad's airlock building on side d, seen from above: a small
+## block with a glass roof bubble and an orange band on its outer wall.
+static func _top_gatehouse(ci: CanvasItem, c: Vector2, s: float, rad: float, d: Vector2i, state: Dictionary) -> void:
+	var dir := Vector2(d)
+	var side := dir.orthogonal()
+	var p := c + dir * rad * 0.89
+	var half_along := s * 0.07
+	var half_across := s * 0.10
+	var corners := PackedVector2Array([p - dir * half_along - side * half_across, p + dir * half_along - side * half_across, p + dir * half_along + side * half_across, p - dir * half_along + side * half_across])
+	ci.draw_colored_polygon(corners, _fade(METAL_DARK, state))
+	var inner := PackedVector2Array()
+	for q in corners:
+		inner.append(p + (q - p) * 0.8)
+	ci.draw_colored_polygon(inner, _fade(METAL, state))
+	ci.draw_line(corners[1], corners[2], _fade(ORANGE, state), 2.0)
+	ci.draw_circle(p, s * 0.04, _fade(GLASS, state).lightened(0.3))
+
+
+## The same airlock building at an angle: a block standing on the pad's rim,
+## with a rounded glass roof, a window and an orange band by the door.
+static func _iso_gatehouse(ci: CanvasItem, c: Vector2, tw: float, r: float, d: Vector2i, state: Dictionary) -> void:
+	var m := _fade(METAL, state)
+	var along0 := r * 0.80
+	var along1 := r * 0.98
+	var across := 0.09
+	var u0: float
+	var u1: float
+	var v0: float
+	var v1: float
+	if d.x != 0:
+		u0 = minf(d.x * along0, d.x * along1)
+		u1 = maxf(d.x * along0, d.x * along1)
+		v0 = -across
+		v1 = across
+	else:
+		v0 = minf(d.y * along0, d.y * along1)
+		v1 = maxf(d.y * along0, d.y * along1)
+		u0 = -across
+		u1 = across
+	_box(ci, c, tw, u0, v0, u1, v1, 0.13, m, m.lightened(0.15), 0.05)
+	var mid := Vector2((u0 + u1) * 0.5, (v0 + v1) * 0.5)
+	_iso_dome(ci, _iso(c, tw, mid.x, mid.y, 0.18) - _iso(c, tw, 0, 0, 0) + c, tw, 0.065, 0.05, ORANGE, Color(0.30, 0.26, 0.22), state)
+	# An orange band round the foot of the visible walls.
+	ci.draw_line(_iso(c, tw, u1, v0, 0.07), _iso(c, tw, u1, v1, 0.07), _fade(ORANGE, state), 2.0)
+	ci.draw_line(_iso(c, tw, u0, v1, 0.07), _iso(c, tw, u1, v1, 0.07), _fade(ORANGE, state), 2.0)
 
 
 ## The Shaft at an angle: a round hole in the ground. You see the far inside
