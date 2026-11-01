@@ -88,6 +88,146 @@ static func cap_sides(type: String, links: Array) -> Array:
 			spare -= 1
 	return out
 
+## Not every building is a dome: some are rounded halls (a barrel vault, like
+## an arched hangar), a tall tank, or a tower. All are sealed and rounded.
+const SHAPE := {
+	"workshop": "vault", "fab": "vault", "dronebay": "vault", "cache": "vault", "rescue": "vault", "reclaimer": "vault",
+	"splitter": "silo", "warden": "tower",
+}
+
+
+## A vault's half-length (along u) and half-width (across), in tile units, from its size.
+static func _vault_dims(r: float) -> Vector2:
+	return Vector2(r * 1.3, r * 0.82)
+
+
+## How far the hull reaches from the centre toward side d (tile units): where its doors are.
+static func _ext(type: String, d: Vector2i, r: float) -> float:
+	match SHAPE.get(type, "dome"):
+		"vault":
+			var dims := _vault_dims(r)
+			return dims.x if d.x != 0 else dims.y
+		"silo":
+			return r * 0.78
+	return r
+
+
+## The hull's height (tile units), used for things placed on top.
+static func _hull_height(type: String, r: float) -> float:
+	match SHAPE.get(type, "dome"):
+		"vault":
+			return _vault_dims(r).y + 0.03
+		"silo":
+			return r * 1.9
+		"tower":
+			return 0.62
+	return r * 0.75
+
+
+static func _top_hull(ci: CanvasItem, type: String, c: Vector2, rad: float, acc: Color, inside: Color, state: Dictionary) -> void:
+	match SHAPE.get(type, "dome"):
+		"vault":
+			var dims := _vault_dims(rad)
+			var box := Rect2(c - dims, dims * 2.0)
+			ci.draw_rect(Rect2(box.position + Vector2(rad * 0.08, rad * 0.12), box.size), Color(0, 0, 0, 0.28 * _fade(Color.WHITE, state).a))
+			ci.draw_rect(box, _fade(METAL_DARK, state))
+			ci.draw_rect(box.grow(-rad * 0.10), _fade(inside, state))
+			ci.draw_rect(box.grow(-rad * 0.05), _fade(acc, state), false, maxf(1.5, rad * 0.06))
+			var glass := _fade(GLASS, state)
+			ci.draw_rect(box.grow(-rad * 0.10), Color(glass.r, glass.g, glass.b, glass.a * 0.55))
+			for k in 5:
+				var x := box.position.x + box.size.x * (k + 1) / 6.0
+				ci.draw_line(Vector2(x, box.position.y + rad * 0.1), Vector2(x, box.end.y - rad * 0.1), _fade(Color(0.75, 0.82, 0.90, 0.35), state), 1.0)
+			ci.draw_line(Vector2(box.position.x + rad * 0.1, c.y - dims.y * 0.35), Vector2(box.end.x - rad * 0.1, c.y - dims.y * 0.35), Color(1, 1, 1, 0.45 * glass.a / GLASS.a), 2.0)
+		"silo":
+			var r2 := rad * 0.78
+			ci.draw_circle(c, r2 * 1.12, _fade(METAL_DARK, state))
+			ci.draw_arc(c, r2 * 1.05, 0, TAU, 36, _fade(acc, state), maxf(1.5, rad * 0.06))
+			_top_dome(ci, c, r2, acc, inside, state)
+		"tower":
+			ci.draw_circle(c + Vector2(rad * 0.1, rad * 0.14), rad * 1.04, Color(0, 0, 0, 0.28 * _fade(Color.WHITE, state).a))
+			ci.draw_circle(c, rad, _fade(METAL_DARK, state))
+			ci.draw_circle(c, rad * 0.88, _fade(METAL, state).darkened(0.1))
+			ci.draw_arc(c, rad * 0.94, 0, TAU, 40, _fade(acc, state), maxf(1.5, rad * 0.08))
+		_:
+			_top_dome(ci, c, rad, acc, inside, state)
+
+
+static func _iso_hull(ci: CanvasItem, type: String, c: Vector2, tw: float, r: float, h: float, acc: Color, inside: Color, state: Dictionary) -> void:
+	match SHAPE.get(type, "dome"):
+		"vault":
+			_iso_vault(ci, c, tw, _vault_dims(r), acc, inside, state)
+		"silo":
+			# A tall banded tank with a glass cap.
+			var r2 := r * 0.78
+			var body_h := h - r2 * 0.6 - 0.05
+			var m := _fade(METAL, state)
+			_cyl(ci, c, tw, 0, 0, r2 * 1.08, 0.04, _fade(METAL_DARK, state), _fade(METAL_DARK, state))
+			_cyl(ci, c, tw, 0, 0, r2, body_h, m, m, 0.04)
+			var base := _iso(c, tw, 0, 0, 0.04)
+			var rx := r2 * tw * 0.72
+			for k in 3:
+				var z := 0.04 + body_h * (0.25 + k * 0.25)
+				ci.draw_polyline(_ellipse(base - Vector2(0, (z - 0.04) * tw), rx, rx * 0.5, 0, 180, 16), _fade(acc, state) if k == 1 else m.darkened(0.25), 2.5 if k == 1 else 1.5)
+			ci.draw_colored_polygon(PackedVector2Array([base + Vector2(rx * 0.55, rx * 0.2), base + Vector2(rx * 0.75, rx * 0.12), base + Vector2(rx * 0.75, rx * 0.12) - Vector2(0, body_h * tw * 0.9), base + Vector2(rx * 0.55, rx * 0.2) - Vector2(0, body_h * tw * 0.9)]), m.lightened(0.15))
+			_iso_dome(ci, c - Vector2(0, (body_h + 0.02) * tw), tw, r2, r2 * 0.6, acc, inside, state)
+		"tower":
+			# A watchtower: a low drum, a tall column and a glass lookout cab.
+			var md := _fade(METAL_DARK, state)
+			var m := _fade(METAL, state)
+			# The drum is as tall as the airlocks, so tunnels meet a real wall.
+			_cyl(ci, c, tw, 0, 0, r, 0.24, md.lightened(0.1), m)
+			ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.02), r * tw * 0.72, r * tw * 0.36, 0, 180, 18), _fade(acc, state), 2.0)
+			ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.22), r * tw * 0.72, r * tw * 0.36, 0, 180, 18), md, 1.5)
+			for k in 3:
+				var ang := deg_to_rad(60.0 + k * 30.0)
+				var wp := _iso(c, tw, 0, 0, 0.16) + Vector2(cos(ang) * r * tw * 0.72, sin(ang) * r * tw * 0.36)
+				ci.draw_rect(Rect2(wp - Vector2(tw * 0.012, tw * 0.015), Vector2(tw * 0.024, tw * 0.025)), _fade(Color(1.0, 0.82, 0.45), state))
+			_cyl(ci, c, tw, 0, 0, 0.07, 0.24, m.darkened(0.1), m, 0.24)
+			for k in 2:
+				var z := 0.30 + k * 0.08
+				ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, z), 0.07 * tw * 0.72, 0.07 * tw * 0.36, 0, 180, 10), md, 1.5)
+			_cyl(ci, c, tw, 0, 0, 0.15, 0.03, md, md, 0.48)
+			_cyl(ci, c, tw, 0, 0, 0.13, 0.08, _fade(GLASS, state).lightened(0.2), md.lightened(0.2), 0.51)
+			_cyl(ci, c, tw, 0, 0, 0.15, 0.02, md, m, 0.59)
+			_glow(ci, _iso(c, tw, 0, 0, 0.55), tw * 0.04, _fade(acc, state), state)
+			if _lit(state):
+				var src := _iso(c, tw, 0.1, 0.06, 0.55)
+				ci.draw_colored_polygon(PackedVector2Array([src, src + Vector2(tw * 0.40, tw * 0.16), src + Vector2(tw * 0.34, tw * 0.28)]), Color(acc.r, acc.g, acc.b, 0.18))
+		_:
+			_iso_dome(ci, c, tw, r, h, acc, inside, state)
+
+
+## A barrel vault at an angle: an arched glass hall lying along u, with metal
+## ribs, a glazed end and a coloured band round its foot.
+static func _iso_vault(ci: CanvasItem, c: Vector2, tw: float, dims: Vector2, acc: Color, inside: Color, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var hl := dims.x
+	var hw := dims.y
+	var z0 := 0.03
+	_box(ci, c, tw, -hl - 0.01, -hw - 0.01, hl + 0.01, hw + 0.01, z0, md, md.lightened(0.1))
+	var shell := PackedVector2Array()
+	for t in [-hl, hl]:
+		for k in 13:
+			var a := PI * k / 12.0
+			shell.append(_iso(c, tw, t, hw * cos(a), z0 + hw * sin(a)))
+	var hull := Geometry2D.convex_hull(shell)
+	ci.draw_colored_polygon(hull, _fade(inside, state))
+	var glass := _fade(GLASS, state)
+	ci.draw_colored_polygon(hull, Color(glass.r, glass.g, glass.b, glass.a * 0.6))
+	var rib := _fade(Color(0.80, 0.86, 0.94, 0.45), state)
+	for k in 6:
+		var t := -hl + 2.0 * hl * k / 5.0
+		var arc := PackedVector2Array()
+		for j in 13:
+			var a := PI * j / 12.0
+			arc.append(_iso(c, tw, t, hw * cos(a), z0 + hw * sin(a)))
+		ci.draw_polyline(arc, rib if k < 5 else md.lightened(0.2), 1.0 if k < 5 else 2.5)
+	ci.draw_line(_iso(c, tw, -hl, hw * cos(1.2), z0 + hw * sin(1.2)), _iso(c, tw, hl, hw * cos(1.2), z0 + hw * sin(1.2)), Color(1, 1, 1, 0.5 * glass.a / GLASS.a), 2.0)
+	ci.draw_line(_iso(c, tw, -hl, hw, z0), _iso(c, tw, hl, hw, z0), _fade(acc, state), maxf(1.5, tw * 0.012))
+	ci.draw_line(_iso(c, tw, hl, -hw, z0), _iso(c, tw, hl, hw, z0), _fade(acc, state), maxf(1.5, tw * 0.012))
+
+
 ## The newer buildings' fittings, drones and satellites live in sprites_more.gd.
 ## It is loaded on first use (it preloads this script, so this can't preload it).
 static var _more_script: Script = null
@@ -219,7 +359,7 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 		return
 	var rad: float = float(DOME_SIZE.get(type, 0.38)) * s
 	for d in links:
-		_top_link(ci, c, s, d, rad, state)
+		_top_link(ci, c, s, d, _ext(type, d, rad / s) * s, state)
 	if type == "hull":
 		_top_pad(ci, c, s, rad, links, state)
 		return
@@ -299,13 +439,13 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			ci.draw_rect(Rect2(rover.position + Vector2(s * 0.02, s * 0.02), Vector2(s * 0.05, s * 0.07)), _fade(CYAN, state).darkened(0.3))
 			ci.draw_rect(Rect2(rover.position + Vector2(s * 0.09, s * 0.015), Vector2(s * 0.06, s * 0.08)), md)
 	more().top_pre(ci, type, c, s, rad, state)
-	_top_dome(ci, c, rad, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
+	_top_hull(ci, type, c, rad, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
 	# Every side without a tunnel still has a capped orange port, ready for one.
 	for d in DIRS:
 		if not (d in links):
-			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, true, d)
+			_top_port(ci, c + Vector2(d) * _ext(type, d, rad / s) * s * 0.92, s, state, true, d)
 		else:
-			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, false, d)
+			_top_port(ci, c + Vector2(d) * _ext(type, d, rad / s) * s * 0.92, s, state, false, d)
 	# What shows through the glass, or on top.
 	match type:
 		"hull":
@@ -364,8 +504,11 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			ci.draw_rect(Rect2(c - Vector2(rad * 0.14, rad * 0.5), Vector2(rad * 0.28, rad * 1.0)), a)
 			ci.draw_rect(Rect2(c - Vector2(rad * 0.5, rad * 0.14), Vector2(rad * 1.0, rad * 0.28)), a)
 		"cache":
-			for i in 4:
-				ci.draw_rect(Rect2(c + Vector2((i % 2) * rad * 0.5 - rad * 0.48, (i / 2) * rad * 0.5 - rad * 0.48), Vector2(rad * 0.44, rad * 0.44)), md.lightened(0.2))
+			# Crates and barrels stacked in the warehouse hall.
+			for i in 6:
+				var box := Rect2(c + Vector2(-rad * 0.95 + (i % 3) * rad * 0.66, -rad * 0.45 + (i / 3) * rad * 0.5), Vector2(rad * 0.5, rad * 0.38))
+				ci.draw_rect(box, _fade(Color(0.62, 0.50, 0.34), state) if i % 2 == 0 else _fade(Color(0.40, 0.52, 0.62), state))
+				ci.draw_rect(box, md, false, 1.0)
 		"workshop":
 			# A tool wall at the back, and a drone (a rover missing a wheel) up on a yellow lift.
 			ci.draw_rect(Rect2(c + Vector2(-rad * 0.50, -rad * 0.80), Vector2(rad * 1.0, rad * 0.16)), _fade(Color(0.45, 0.34, 0.22), state))
@@ -388,8 +531,11 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 				for k in 6:
 					ci.draw_circle(tip + Vector2.from_angle(k * 1.05) * s * (0.04 + (k % 2) * 0.03), 1.4, Color(1.0, 0.85, 0.4, 0.9))
 		"warden":
-			ci.draw_circle(c, rad * 0.45, md)
-			_glow(ci, c, rad * 0.30, a, state)
+			# The lookout cab on top of the tower, with its searchlight.
+			ci.draw_circle(c, rad * 0.50, md)
+			ci.draw_circle(c, rad * 0.42, _fade(GLASS, state).lightened(0.2))
+			ci.draw_circle(c, rad * 0.30, m)
+			_glow(ci, c, rad * 0.20, a, state)
 			ci.draw_line(c, c + Vector2(s * 0.42, -s * 0.18), Color(a.r, a.g, a.b, 0.45 * a.a), s * 0.08)
 		"shaft":
 			ci.draw_rect(Rect2(c - Vector2(rad * 0.55, rad * 0.55), Vector2(rad * 1.1, rad * 1.1)), Color(0.02, 0.02, 0.04, a.a))
@@ -401,7 +547,11 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 				_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.62, s * 0.03, a, state)
 	more().top_post(ci, type, c, s, rad, state)
 	if not state.get("built", true):
-		ci.draw_arc(c, rad, 0, TAU, 32, Color(acc.r, acc.g, acc.b, 0.8), 1.5)
+		if SHAPE.get(type, "dome") == "vault":
+			var dims := _vault_dims(rad)
+			ci.draw_rect(Rect2(c - dims, dims * 2.0), Color(acc.r, acc.g, acc.b, 0.8), false, 1.5)
+		else:
+			ci.draw_arc(c, rad, 0, TAU, 32, Color(acc.r, acc.g, acc.b, 0.8), 1.5)
 
 
 ## The Landing Hull as a landing pad, like a helipad: a round platform with a
@@ -651,7 +801,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 		_iso_tunnel(ci, c, tw, links, state)
 		return
 	var r: float = float(DOME_SIZE.get(type, 0.38))
-	var h := r * 0.75
+	var h := _hull_height(type, r)
 	if type == "hull":
 		_iso_pad(ci, c, tw, r, links, state)
 		return
@@ -676,7 +826,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	# Tunnels toward the back go behind the dome; toward the front, in front of it.
 	for d in links:
 		if d.x < 0 or d.y < 0:
-			_iso_link(ci, c, tw, d, r, state)
+			_iso_link(ci, c, tw, d, _ext(type, d, r), state)
 	# Fittings behind or beside the dome.
 	match type:
 		"mirror":
@@ -723,7 +873,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			ci.draw_line(jib, _iso(c, tw, 0.36, -0.10, 0.24), m, 1.0)
 			_box(ci, c, tw, 0.31, -0.15, 0.41, -0.05, 0.07, _fade(Color(0.55, 0.58, 0.62), state), Color(0, 0, 0, 0), 0.17)
 	more().iso_pre(ci, type, c, tw, r, h, state)
-	_iso_dome(ci, c, tw, r, h, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
+	_iso_hull(ci, type, c, tw, r, h, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
 	var apex := _iso(c, tw, 0, 0, 0.05 + h)
 	# Features on or through the dome.
 	match type:
@@ -792,8 +942,14 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			ci.draw_rect(Rect2(mid - Vector2(tw * 0.025, tw * 0.07), Vector2(tw * 0.05, tw * 0.14)), a)
 			ci.draw_rect(Rect2(mid - Vector2(tw * 0.07, tw * 0.025), Vector2(tw * 0.14, tw * 0.05)), a)
 		"cache":
-			ci.draw_rect(Rect2(_iso(c, tw, 0.05, 0.20, 0.10) - Vector2(tw * 0.06, tw * 0.04), Vector2(tw * 0.12, tw * 0.08)), md.lightened(0.2))
-			ci.draw_rect(Rect2(_iso(c, tw, 0.05, 0.20, 0.10) - Vector2(tw * 0.06, tw * 0.04), Vector2(tw * 0.12, tw * 0.08)), a, false, 1.5)
+			# Stacks of crates and barrels inside the warehouse hall.
+			var crate := _fade(Color(0.62, 0.50, 0.34), state)
+			for k in 6:
+				var u := -0.30 + (k % 3) * 0.20
+				var v := -0.10 + (k / 3) * 0.10
+				_box(ci, c, tw, u, v, u + 0.12, v + 0.08, 0.08, crate if k % 2 == 0 else _fade(Color(0.40, 0.52, 0.62), state), Color(0, 0, 0, 0), 0.03)
+			_box(ci, c, tw, -0.30, -0.10, -0.18, -0.02, 0.07, crate.darkened(0.1), Color(0, 0, 0, 0), 0.11)
+			_box(ci, c, tw, 0.10, -0.10, 0.22, -0.02, 0.07, crate.darkened(0.1), Color(0, 0, 0, 0), 0.11)
 		"workshop":
 			# A tool wall at the back, and a drone (a rover missing a wheel) up on a yellow scissor lift.
 			var wood := _fade(Color(0.45, 0.34, 0.22), state)
@@ -836,8 +992,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 				for k in 6:
 					ci.draw_circle(joints[2] + Vector2(cos(k * 1.05) * tw * (0.03 + (k % 2) * 0.03), -absf(sin(k * 1.05)) * tw * 0.05), 1.5, Color(1.0, 0.85, 0.4, 0.9))
 		"warden":
-			_cyl(ci, c, tw, 0, 0, 0.09, 0.32, md, m, h)
-			_glow(ci, _iso(c, tw, 0, 0, h + 0.36), tw * 0.05, a, state)
+			pass
 		"shaft":
 			for corner in [Vector2(-0.22, -0.22), Vector2(0.22, -0.22), Vector2(0.22, 0.22), Vector2(-0.22, 0.22)]:
 				ci.draw_line(_iso(c, tw, corner.x, corner.y, 0.05), _iso(c, tw, corner.x * 0.4, corner.y * 0.4, h + 0.25), m, tw * 0.018)
@@ -849,12 +1004,12 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	more().iso_post(ci, type, c, tw, r, h, state)
 	for d in links:
 		if d.x > 0 or d.y > 0:
-			_iso_link(ci, c, tw, d, r, state)
+			_iso_link(ci, c, tw, d, _ext(type, d, r), state)
 	# The two sides facing the viewer show their orange ports: a capped one where
 	# there's no tunnel, an open ring where a tunnel's airlock joins.
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.86, d.y * r * 0.86, 0.12), tw, state, true, d)
+			_iso_port(ci, _iso(c, tw, d.x * _ext(type, d, r) * 0.86, d.y * _ext(type, d, r) * 0.86, 0.12), tw, state, true, d)
 
 
 ## A port on the dome's side, seen at an angle: an orange ring, capped or open.

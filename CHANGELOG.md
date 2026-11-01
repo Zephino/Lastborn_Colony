@@ -2,6 +2,26 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.34
+Date: 11/01/2026
+Time: 6:05 PM
+
+### Changes
+**Not every building is a dome now**, only dome-like: sealed and rounded, but shaped for its job (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game). New hull shapes (`SHAPE`):
+- **Rounded halls** (arched glass halls with metal ribs, like a hangar):
+  - **Workshop:** the lift and rover inside, the arm and crane outside.
+  - **Fab Shop:** beside its sawtooth factory hall.
+  - **Drone Bay:** beside its garage and parking lot.
+  - **Cache:** a warehouse full of crates and barrels.
+  - **Rescue Station** and **Reclaimer.**
+- **Tall banded tank** with a glass cap: **Splitter**, which holds water and oxygen.
+- **Watchtower:** **Warden Post** has a base drum with lit windows, a column, and a glass lookout cab with a searchlight. The drum is as tall as the airlocks, so its tunnels join a real wall instead of appearing out of nowhere.
+- Domes stay where they fit: homes, the Clinic, the Commons, parks, the Lounge and the Academy. Buildings with their own shapes are unchanged.
+- Tunnels and doors meet each hull at its real edge: the ends and sides of a hall, or the edge of a tank. The outline shown while a building is under construction follows its shape.
+
+### Reason
+The owner said buildings don't all have to be domes, just dome-like, and should look more like what they are. They also asked for the Warden Post's door to look cleaner.
+
 ## Version 00.01.33
 Date: 11/01/2026
 Time: 5:35 PM
