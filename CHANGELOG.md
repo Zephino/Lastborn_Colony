@@ -2,6 +2,26 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.45
+Date: 11/01/2026
+Time: 9:55 PM
+
+### Changes
+- **Colonists in space suits** (new `scripts/ui/people.gd`): white suits with a gold visor, a backpack, boots and a coloured stripe by job (orange workers, teal scientists, violet wardens). They stand or walk mid-stride.
+  - **On the map** (`scripts/ui/map_view.gd`), colonists stand and walk on open ground next to the colony. There's about one for every eight people, up to 16 (half as many in the Deep), and they move to new spots every turn.
+  - Some are scientists if you have a lab, and some are wardens if you have a Warden Post.
+- **Resource icons** beside every number in the top bar (new `scripts/ui/stat_icon.gd`, drawn in `people.gd`):
+  - a helmet for people and a smiley for morale;
+  - a lightning bolt for power and a flame for heat;
+  - a helmet with a work stripe for idle workers;
+  - kelp for food, an O2 bottle for oxygen and a drop for water;
+  - a rock with a teal vein for ore, stacked ingots for alloy and a hex nut for parts;
+  - a coin for marks, a bill for the debt, and calendars for the turn and the next payment.
+- The units page of the sprite sheet now also shows the three colonists and all the icons.
+
+### Reason
+The owner asked for resource icons and for colonists, in space suits.
+
 ## Version 00.01.44
 Date: 11/01/2026
 Time: 9:30 PM

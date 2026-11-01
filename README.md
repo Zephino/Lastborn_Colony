@@ -127,6 +127,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
 | `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd` | The screens before landing, and the small map previews. |
 | `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
+| `scripts/ui/people.gd`, `scripts/ui/stat_icon.gd` | Colonists in space suits, and the resource icons in the top bar. |
 | `scripts/ui/sprite_icon.gd` | A small picture of one building, for the build list, Build menu and Info panel. |
 | `scripts/ui/menus.gd` | Research, Settings, Leaderboard and cloud-save dialogs. |
 | `scripts/ui/fleet_menu.gd` | The Drones & orbit dialog. |

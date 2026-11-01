@@ -164,6 +164,18 @@ func _units() -> void:
 		var c := o + Vector2(cw * 0.5 - 6, 260)
 		Sprites.terrain_iso(self, "regolith", c, 360.0)
 		more.draw_unit(self, t, c, 360.0)
+	# Colonists in space suits, by job, and the resource icons.
+	const People = preload("res://scripts/ui/people.gd")
+	var po := Vector2(20 + 3 * cw, 510)
+	draw_rect(Rect2(po, Vector2(cw - 12, 440)), Color(0.10, 0.11, 0.14))
+	_text("Colonists and resource icons", po + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
+	var jobs := ["worker", "scientist", "warden"]
+	for k in 3:
+		People.draw_colonist(self, po + Vector2(90 + k * 130, 250), 150.0, jobs[k], 1.0 if k != 1 else -1.0, k == 1)
+		_text(jobs[k], po + Vector2(55 + k * 130, 285), 16, Color(0.75, 0.78, 0.84))
+	var keys := ["pop", "morale", "power", "heat", "workers", "food", "oxygen", "water", "ore", "alloy", "parts", "marks", "debt", "payment", "turn"]
+	for k in keys.size():
+		People.draw_icon(self, keys[k], po + Vector2(40 + (k % 8) * 52, 330 + (k / 8) * 60), 40.0)
 	for i in 3:
 		var t: String = Fleet.sat_order()[i]
 		var o := Vector2(20 + i * cw, 510)

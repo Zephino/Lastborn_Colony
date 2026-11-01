@@ -19,6 +19,7 @@ const ColonyText = preload("res://scripts/ui/colony_text.gd")
 const Menus = preload("res://scripts/ui/menus.gd")
 const FleetMenu = preload("res://scripts/ui/fleet_menu.gd")
 const SpriteIcon = preload("res://scripts/ui/sprite_icon.gd")
+const StatIcon = preload("res://scripts/ui/stat_icon.gd")
 const UiUtil = preload("res://scripts/ui/ui_util.gd")
 const TextRules = preload("res://scripts/sim/text_rules.gd")
 
@@ -296,11 +297,18 @@ func show_game() -> void:
 	stat_labels.clear()
 	stats.add_theme_constant_override("h_separation", 12 if narrow_game else 18)
 	for key in STAT_KEYS:
+		# Each number has its icon beside it.
+		var item := HBoxContainer.new()
+		item.add_theme_constant_override("separation", 4)
+		var icon := StatIcon.new(key, 18.0)
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		item.add_child(icon)
 		var l := _label("")
-		stats.add_child(l)
+		item.add_child(l)
+		stats.add_child(item)
 		stat_labels[key] = l
 		# On phones the less urgent numbers live in the Report instead.
-		l.visible = not (narrow_game and key in ["power", "heat", "workers", "ore", "parts", "payment"])
+		item.visible = not (narrow_game and key in ["power", "heat", "workers", "ore", "parts", "payment"])
 
 	# Middle: build menu | map | inspector.
 	var middle := HBoxContainer.new()

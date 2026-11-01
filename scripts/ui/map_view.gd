@@ -16,6 +16,8 @@ const GameData = preload("res://scripts/sim/game_data.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const Sprites = preload("res://scripts/ui/sprites.gd")
 const Fleet = preload("res://scripts/sim/fleet.gd")
+const People = preload("res://scripts/ui/people.gd")
+const Turn = preload("res://scripts/sim/turn.gd")
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const MIN_TILE := 36.0
@@ -229,12 +231,13 @@ func _draw() -> void:
 	# Buildings, tunnels and working drones, back to front so nearer ones cover
 	# farther ones.
 	var drones := _drone_spots()
+	var people := _colonist_spots()
 	for sum in w + h - 1:
 		for x in range(maxi(0, sum - h + 1), mini(w, sum + 1)):
 			var y := sum - x
 			var cell := Vector2i(x, y)
 			var s := Actions.structure_at(state, x, y, level)
-			if s.is_empty() and not drones.has(cell):
+			if s.is_empty() and not drones.has(cell) and not people.has(cell):
 				continue
 			var c := cell_center(cell)
 			if not view.has_point(c):
@@ -244,6 +247,8 @@ func _draw() -> void:
 			for type in drones.get(cell, []):
 				# Each drone sits at the tile's front corner, at half a tile's scale.
 				Sprites.more().draw_unit(self, type, c + _proj(Vector2(0.26, 0.26)), tile_size * 0.62)
+			for p in people.get(cell, []):
+				People.draw_colonist(self, c + _proj(p["at"]), tile_size * 0.22, p["job"], p["facing"], p["stride"])
 	if level == 0:
 		_draw_orbit()
 	# The selected tile's outline again, faintly, so it shows through tall buildings.
@@ -372,3 +377,47 @@ func _draw_orbit() -> void:
 		if at.x > strip.end.x:
 			break
 		Sprites.more().draw_unit(self, sats[k], at, icon * 0.75)
+
+
+## Colonists out on the ground in their space suits, a few more as the colony
+## grows: about one for every eight people, up to 16 (half as many in the Deep).
+## They stand or walk on open ground next to the colony and move every turn.
+## Most are workers (orange stripe); some are scientists (teal) if there is a lab,
+## and wardens (violet) if there is a Warden Post.
+func _colonist_spots() -> Dictionary:
+	var out := {}
+	var pop := Turn.population(state)
+	var count := clampi(int(pop / 8.0), 1, 16)
+	if level == 1:
+		count /= 2
+	var walk := ["regolith", "ice", "seam"] if level == 0 else ["cavern", "aquifer"]
+	var open: Array = []
+	var has_lab := false
+	var has_warden := false
+	for id in state["structures"]:
+		var t: String = state["structures"][id]["type"]
+		has_lab = has_lab or t == "lab" or t == "hazlab"
+		has_warden = has_warden or t == "warden"
+	for y in int(state["height"]):
+		for x in int(state["width"]):
+			if Actions.structure_at(state, x, y, level).is_empty() and Actions.touches_colony(state, x, y, level) and Actions.terrain_at(state, x, y, level) in walk:
+				open.append(Vector2i(x, y))
+	if open.is_empty():
+		return out
+	var turn := int(state["turn"])
+	for k in count:
+		var cell: Vector2i = open[(turn * 11 + k * 17 + k * k * 3) % open.size()]
+		var ou := float((k * 37 + turn * 13) % 7) / 7.0 - 0.45
+		var ov := float((k * 23 + turn * 5) % 7) / 7.0 - 0.45
+		var job := "worker"
+		if has_lab and k % 5 == 1:
+			job = "scientist"
+		elif has_warden and k % 7 == 3:
+			job = "warden"
+		if not out.has(cell):
+			out[cell] = []
+		(out[cell] as Array).append({"at": Vector2(ou, ov) * 0.7, "job": job, "facing": 1.0 if (k + turn) % 2 == 0 else -1.0, "stride": (k + turn) % 3 != 0})
+	# Back to front inside a tile too.
+	for cell in out:
+		(out[cell] as Array).sort_custom(func(a, b): return a["at"].x + a["at"].y < b["at"].x + b["at"].y)
+	return out
