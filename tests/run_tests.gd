@@ -571,6 +571,15 @@ func test_bot_colonies() -> void:
 		var pop := float(s["adults"]) + float(s["children"])
 		print("    seed %d: turn %d, ending '%s', population %d, debt %d, structures %d" % [seed_value, int(s["turn"]), s["ending"], int(pop), int(s["debt"]), s["structures"].size()])
 		check(s["ending"] == "free", "seed %d: the bot buys out the charter" % seed_value)
+	# The bot that also uses the newer content (drones, satellites, Fab Shop,
+	# Academy, Masts...) must still win; tools/balance.gd compares the two.
+	Bot.advanced = true
+	for seed_value in [1, 2, 3]:
+		var s := NewGame.create(seed_value, "Margin")
+		play(s, 300, true)
+		print("    advanced seed %d: turn %d, ending '%s'" % [seed_value, int(s["turn"]), s["ending"]])
+		check(s["ending"] == "free", "seed %d: the bot using the newer content also buys out the charter" % seed_value)
+	Bot.advanced = false
 	for diff_id in ["easy", "hard"]:
 		var dwins := 0
 		for seed_value in [1, 2, 3]:

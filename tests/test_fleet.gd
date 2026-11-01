@@ -78,12 +78,17 @@ static func _data(check: Callable) -> void:
 
 static func _parts_and_research(check: Callable) -> void:
 	var s := _colony()
+	s["stock"]["parts"] = 0.0
 	var fab := _put(s, "fab")
 	for _i in 3:
 		_put(s, "mirror")
 	_turn(s)
 	check.call(s["structures"][fab]["active"], "a Fab Shop runs")
 	check.call(float(s["report"]["net"]["parts"]) > 0.0, "a Fab Shop makes parts (%s)" % s["report"]["net"]["parts"])
+	s["stock"]["parts"] = 40.0
+	var alloy_before := float(s["stock"]["alloy"])
+	_turn(s)
+	check.call(float(s["stock"]["parts"]) == 40.0 and float(s["stock"]["alloy"]) >= alloy_before - 0.001 and s["report"]["holding"].has(fab), "a Fab Shop pauses (using no alloy) while the colony holds 40 parts")
 	var spot := Vector2i(-1, -1)
 	for y in int(s["height"]):
 		for x in int(s["width"]):

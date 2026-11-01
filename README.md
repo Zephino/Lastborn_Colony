@@ -139,7 +139,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `leaderboard-api/` | The Cloudflare Worker behind the online features (not part of the game build). |
 | `web/update.js`, `.github/workflows/web.yml` | The web version's self-updater, and the workflow that builds and publishes it. |
 | `tests/` | Headless test runner, the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
-| `tools/` | Developer tools, not part of the game: `sprite_sheet.gd` draws the sprite sheets, `ui_shot.gd` takes screenshots of the game screens. |
+| `tools/` | Developer tools, not part of the game: `sprite_sheet.gd` draws the sprite sheets, `ui_shot.gd` takes screenshots of the game screens, `balance.gd` compares bot games with and without the newer content. |
 | `.cursor/rules/`, `AGENTS.md`, `CLAUDE.md` | Rules for AI assistants working on the project. |
 | `CHANGELOG.md`, `VERSION` | What changed in each version, and the current version. |
 
@@ -173,7 +173,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- All 438 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). A colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
+- All 447 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 120 turns on Brume, 114 on Cinder and 168 on Hollow. A colony that builds nothing dies out. `tools/balance.gd` replays the bot with and without the newer content (drones, satellites, Fab Shop, Academy, Signal Masts and so on) to compare. Headless tests are not playtesting: play it to judge how it feels.
 - Ideas: changing trade prices, difficulty settings, and sound.
 
 ## Input safety

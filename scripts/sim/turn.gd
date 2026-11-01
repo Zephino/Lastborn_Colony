@@ -280,6 +280,7 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 		"idle": idle,
 		"idle_reasons": idle_reasons,
 		"starved": {},
+		"holding": {},
 		"housing": housing,
 		"storage": storage,
 		"morale_bonus": minf(morale_bonus, float(b["morale_building_cap"])),
@@ -314,6 +315,16 @@ static func _produce(state: Dictionary, rep: Dictionary) -> void:
 				continue
 			var inputs: Dictionary = def.get("inputs", {})
 			var ok := true
+			# A building with max_stock pauses (using nothing) while its output is
+			# already stocked up to that amount.
+			if def.has("max_stock"):
+				var full := true
+				for k in def.get("outputs", {}):
+					if float(stock[k]) < float(def["max_stock"]):
+						full = false
+				if full:
+					rep["holding"][id] = true
+					continue
 			for k in inputs:
 				if float(stock[k]) < float(inputs[k]):
 					ok = false

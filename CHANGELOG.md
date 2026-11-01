@@ -2,6 +2,30 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.44
+Date: 11/01/2026
+Time: 9:30 PM
+
+### Changes
+**Balance check of the newer content.**
+- The test bot has an optional advanced mode (`Bot.advanced` in `tests/bot.gd`). It also builds a Fab Shop, a Drone Bay with Prospector, Hauler and Grader drones, Signal Masts, an Academy, a Rescue Station, a Fusion Core (once researched) and a Lounge, and launches a relay satellite.
+- The new `tools/balance.gd` plays 10 games per planet both ways. Results, as turns to buy out the charter:
+
+| Planet | Basic bot | Advanced bot |
+|---|---|---|
+| Brume | 120 turns, 10/10 wins | 151 turns, 10/10 wins |
+| Cinder | 114 turns, 9/10 wins | 134 turns, 9/10 wins |
+| Hollow | 168 turns, 10/10 wins | 183 turns, 10/10 wins |
+
+- Advanced colonies end up 12–19% bigger. Testing one item at a time over 30 games, the Signal Masts account for most of the slowdown. About half of that comes from the bot letting a happier colony grow and spending its alloy on homes and food instead of exports. Worked out by hand, the Mast is still worth its 8 alloy: three masts add roughly 1,000 marks of sales over a game. The bot doesn't play it well, so its numbers were left alone.
+- The new content makes the game neither broken nor easier for the bot. No item is an easy win.
+- **Fix found by the check:** the Fab Shop kept turning 2 alloy into parts every turn even with a full store of parts, quietly wasting alloy. It now pauses while the colony holds 40 parts (new building field `max_stock`), and says so when selected: "Paused: the colony already holds 40 parts".
+- The Fusion Core is never reached by the bot: its research needs four earlier topics, so it's a late-game building.
+- New tests: the Fab Shop pauses at 40 parts and uses no alloy while paused, and the advanced bot buys out the charter on seeds 1–3. 447 checks pass.
+
+### Reason
+The owner asked for a balance check of the new buildings.
+
 ## Version 00.01.43
 Date: 11/01/2026
 Time: 8:45 PM

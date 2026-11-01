@@ -8,6 +8,14 @@ const Actions = preload("res://scripts/sim/actions.gd")
 const NewGame = preload("res://scripts/sim/new_game.gd")
 const Research = preload("res://scripts/sim/research.gd")
 const Turn = preload("res://scripts/sim/turn.gd")
+const Fleet = preload("res://scripts/sim/fleet.gd")
+
+## When true, the bot also uses the newer content (parts, drones, satellites,
+## Fusion Core, Academy, Signal Mast, Rescue Station, Lounge), for balance checks.
+static var advanced := false
+## In advanced mode, which extras to use (all by default); the balance tool tries them one at a time.
+static var only := ""
+const ADVANCED_TOPICS := ["drone_swarms", "beaming", "fusion"]
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const MUST_AFFORD := ["mirror", "splitter", "drill", "vat", "rail"]
@@ -39,7 +47,10 @@ static func act(state: Dictionary) -> void:
 		var options := Research.available(state)
 		if not options.is_empty():
 			var pick: String = options[0]["id"]
-			for id in TOPIC_ORDER:
+			var order: Array = TOPIC_ORDER.duplicate()
+			if advanced:
+				order.append_array(ADVANCED_TOPICS)
+			for id in order:
 				if Research.is_available(state, id):
 					pick = id
 					break
@@ -47,6 +58,8 @@ static func act(state: Dictionary) -> void:
 	var credits := float(state["stock"]["credits"])
 	if credits > CASH_BUFFER:
 		Actions.pay_extra(state, credits - CASH_BUFFER)
+	if advanced:
+		_advanced_extras(state)
 	# Try the wanted buildings in order until one can actually be placed.
 	for choice in _choose(state):
 		if _build(state, choice):
@@ -120,6 +133,8 @@ static func _choose(state: Dictionary) -> Array:
 		if float(state["stock"][k]) > cap * 0.9 and _count(state, "cache") < 4:
 			want.append("cache")
 			break
+	if advanced:
+		_advanced_wants(state, want, turn, pop)
 	var saving := _saving(state)
 	for w in want:
 		if saving and not (w in ESSENTIAL):
@@ -206,3 +221,40 @@ static func _open(state: Dictionary, x: int, y: int) -> bool:
 		return false
 	var t := Actions.terrain_at(state, x, y)
 	return t == "regolith" or t == "ice"
+
+
+## Advanced mode: which of the newer buildings the bot wants this turn.
+static func _advanced_wants(state: Dictionary, want: Array, turn: int, pop: float) -> void:
+	if turn > 35 and _count(state, "fab") < 1:
+		if only == "" or only == "fab" or (only == "drones" and "fab" in ["fab", "dronebay"]):
+			want.append("fab")
+	if turn > 40 and _count(state, "dronebay") < 1:
+		if only == "" or only == "dronebay" or (only == "drones" and "dronebay" in ["fab", "dronebay"]):
+			want.append("dronebay")
+	if turn > 50 and _count(state, "mast") < mini(3, 1 + int(pop / 60.0)):
+		if only == "" or only == "mast" or (only == "drones" and "mast" in ["fab", "dronebay"]):
+			want.append("mast")
+	if turn > 60 and _count(state, "academy") < 1:
+		if only == "" or only == "academy" or (only == "drones" and "academy" in ["fab", "dronebay"]):
+			want.append("academy")
+	if turn > 60 and _count(state, "rescue") < 1:
+		if only == "" or only == "rescue" or (only == "drones" and "rescue" in ["fab", "dronebay"]):
+			want.append("rescue")
+	if Actions.unlocked(state, "fusion") and _count(state, "fusion") < 1 + int(pop / 120.0):
+		if only == "" or only == "fusion" or (only == "drones" and "fusion" in ["fab", "dronebay"]):
+			want.append("fusion")
+	if float(state["morale"]) < 45.0 and _count(state, "lounge") < 1 and float(state["stock"]["credits"]) > 400.0:
+		if only == "" or only == "lounge" or (only == "drones" and "lounge" in ["fab", "dronebay"]):
+			want.append("lounge")
+
+
+## Advanced mode: drones, satellites and supply pods, bought when affordable.
+static func _advanced_extras(state: Dictionary) -> void:
+	var slots := Fleet.slots(state)
+	if (only == "" or only == "drones") and Fleet.drones_total(state) < slots:
+		for t in ["prospector", "hauler", "grader"]:
+			if Actions.check_drone(state, t)["ok"] and Fleet.owned(state, t) < 2:
+				Actions.build_drone(state, t)
+				break
+	if (only == "" or only == "relay") and float(state["stock"]["credits"]) > CASH_BUFFER * 0.8 and Actions.check_satellite(state, "relay")["ok"]:
+		Actions.launch_satellite(state, "relay")

@@ -81,6 +81,8 @@ static func problem(state: Dictionary, s: Dictionary) -> String:
 			"heat": "Build a Vent Tap or a Forge (it gives off heat), or research Insulated Mains.",
 			"marks": "Sell more alloy through a Launch Rail."}
 		return "Idle last turn: %s. %s" % [IDLE_TEXT.get(why, why), fix.get(why, "")]
+	if state["report"].get("holding", {}).has(s["id"]):
+		return "Paused: the colony already holds %d parts. It starts again when parts are used." % int(GameData.num(GameData.building(s["type"]), "max_stock"))
 	var starved: Dictionary = state["report"].get("starved", {})
 	if starved.has(s["id"]):
 		return "Running, but out of %s last turn, so it made nothing." % starved[s["id"]]
