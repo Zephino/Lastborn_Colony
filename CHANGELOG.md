@@ -2,6 +2,27 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.40
+Date: 11/01/2026
+Time: 7:55 PM
+
+### Changes
+- **Working drones are shown on the map** (`scripts/ui/map_view.gd`), at the front corner of the tile they're working on:
+  - **Graders** stand by the surface buildings they're helping to build.
+  - **Borers** stand by Shafts and buildings in the Deep.
+  - **Haulers** stand by the Seam Cutters they serve.
+  - **Prospectors** roam the open ground at the colony's edge, at a new spot each turn.
+  - Idle drones (beyond what the Drone Bays can run) aren't shown.
+- **Satellites in orbit** show in an "In orbit" strip of night sky at the top of the surface map, one picture per satellite.
+- **The Deep looks like a cave** (`terrain_iso` in `scripts/ui/sprites.gd`):
+  - Solid rock stands up as rough raised blocks of slightly varied shades, with open cavern floor (with pebbles) between them.
+  - Ore veins glow teal in the rock, aquifers are blue pools, and deep vents are glowing cracks.
+  - Rock that has a building on it is drawn dug out, flat.
+- `tools/ui_shot.gd` now also places drones, satellites and a small Deep colony, and takes a screenshot of the Deep.
+
+### Reason
+The owner asked to see drones and satellites on the map, and for the Deep to be checked.
+
 ## Version 00.01.39
 Date: 11/01/2026
 Time: 7:30 PM

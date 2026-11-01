@@ -2065,11 +2065,49 @@ static func terrain_top(ci: CanvasItem, t: String, r: Rect2) -> void:
 	_terrain_marks(ci, t, r.get_center(), r.size.x)
 
 
-static func terrain_iso(ci: CanvasItem, t: String, c: Vector2, tw: float) -> void:
+static func terrain_iso(ci: CanvasItem, t: String, c: Vector2, tw: float, raised: bool = true) -> void:
 	var col: Color = TERRAIN.get(t, Color.MAGENTA)
 	var diamond := PackedVector2Array([_iso(c, tw, -0.5, -0.5), _iso(c, tw, 0.5, -0.5), _iso(c, tw, 0.5, 0.5), _iso(c, tw, -0.5, 0.5)])
+	# Solid rock in the Deep stands up as rough blocks (you dig into them to
+	# build); open cavern is the floor between them. Built-on rock is dug out.
+	if raised and (t == "rock" or t == "vein"):
+		ci.draw_colored_polygon(diamond, TERRAIN["cavern"].darkened(0.35))
+		var rh := (int(c.x * 7.0) ^ int(c.y * 13.0)) & 7
+		var hgt := 0.10 + 0.03 * float(rh & 3) / 3.0
+		var stone := col.lightened(0.04 + 0.025 * float(rh))
+		_box(ci, c, tw, -0.5, -0.5, 0.5, 0.5, hgt, stone, stone.lightened(0.08))
+		var top := PackedVector2Array([_iso(c, tw, -0.5, -0.5, hgt), _iso(c, tw, 0.5, -0.5, hgt), _iso(c, tw, 0.5, 0.5, hgt), _iso(c, tw, -0.5, 0.5, hgt)])
+		ci.draw_polyline(PackedVector2Array([top[0], top[1], top[2], top[3], top[0]]), col.darkened(0.35), 1.0)
+		ci.draw_line(_iso(c, tw, -0.3, -0.1, hgt), _iso(c, tw, 0.1, 0.2, hgt), col.darkened(0.25), 1.0)
+		if t == "vein":
+			var glow := Color(0.30, 0.85, 0.80)
+			ci.draw_line(_iso(c, tw, -0.35, 0.1, hgt), _iso(c, tw, 0.3, -0.15, hgt), glow, maxf(2.0, tw * 0.025))
+			ci.draw_line(_iso(c, tw, 0.5, -0.3, hgt * 0.4), _iso(c, tw, 0.5, 0.2, hgt * 0.7), glow, maxf(1.5, tw * 0.015))
+			ci.draw_line(_iso(c, tw, -0.2, 0.5, hgt * 0.3), _iso(c, tw, 0.25, 0.5, hgt * 0.6), glow, maxf(1.5, tw * 0.015))
+		return
+	if t == "rock":
+		col = TERRAIN["cavern"].darkened(0.1)
 	ci.draw_colored_polygon(diamond, col)
 	ci.draw_polyline(PackedVector2Array([diamond[0], diamond[1], diamond[2], diamond[3], diamond[0]]), Color(0, 0, 0, 0.18), 1.0)
 	if t == "ridge" or t == "bedrock":
-		_box(ci, c, tw, -0.30, -0.30, 0.30, 0.30, 0.22, Color(0.30, 0.30, 0.33))
+		_box(ci, c, tw, -0.30, -0.30, 0.30, 0.30, 0.22, Color(0.30, 0.30, 0.33) if t == "ridge" else Color(0.14, 0.13, 0.14))
+	if t == "cavern":
+		# Pebbles on the cave floor.
+		var hsh := int(c.x * 3.0) ^ int(c.y * 5.0)
+		for k in 3:
+			var q := Vector2(float((hsh >> (k * 3)) & 7) / 7.0 - 0.5, float((hsh >> (k * 3 + 1)) & 7) / 7.0 - 0.5) * 0.7
+			ci.draw_circle(_iso(c, tw, q.x, q.y), maxf(1.0, tw * 0.012), col.darkened(0.3))
+		return
+	if t == "aquifer":
+		ci.draw_colored_polygon(_ellipse(c, tw * 0.28, tw * 0.13), Color(0.25, 0.50, 0.85, 0.9))
+		ci.draw_arc(c - Vector2(tw * 0.05, tw * 0.02), tw * 0.10, deg_to_rad(200), deg_to_rad(300), 6, Color(1, 1, 1, 0.4), 1.5)
+		return
+	if t == "deepvent":
+		ci.draw_line(c + Vector2(-tw * 0.22, tw * 0.03), c + Vector2(tw * 0.2, -tw * 0.04), Color(1.0, 0.45, 0.15), maxf(2.0, tw * 0.03))
+		ci.draw_circle(c, tw * 0.07, Color(1.0, 0.55, 0.20, 0.9))
+		ci.draw_circle(c, tw * 0.035, Color(1.0, 0.9, 0.5))
+		return
+	if t == "vein":
+		ci.draw_line(_iso(c, tw, -0.35, 0.1), _iso(c, tw, 0.3, -0.15), Color(0.30, 0.85, 0.80), maxf(2.0, tw * 0.025))
+		return
 	_terrain_marks(ci, t, c, tw * 0.6)

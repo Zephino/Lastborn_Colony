@@ -15,6 +15,7 @@ signal tile_hovered(cell: Vector2i)
 const GameData = preload("res://scripts/sim/game_data.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const Sprites = preload("res://scripts/ui/sprites.gd")
+const Fleet = preload("res://scripts/sim/fleet.gd")
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const MIN_TILE := 36.0
@@ -210,7 +211,8 @@ func _draw() -> void:
 			var c := cell_center(Vector2i(x, y))
 			if not view.has_point(c):
 				continue
-			Sprites.terrain_iso(self, Actions.terrain_at(state, x, y, level), c, tw)
+			# Rock with a building on it has been dug out, so it isn't drawn raised.
+			Sprites.terrain_iso(self, Actions.terrain_at(state, x, y, level), c, tw, Actions.structure_at(state, x, y, level).is_empty())
 			if level == 0:
 				var l := GameData.light_at(x, state["planet"])
 				var tint := Color(0.2, 0.35, 0.8, 0.22 * clampf(1.0 - l, 0.0, 1.0)) if l < 1.0 else Color(1.0, 0.6, 0.2, 0.18 * clampf(l - 1.0, 0.0, 1.0))
@@ -224,17 +226,26 @@ func _draw() -> void:
 		draw_polyline(_diamond_loop(hc, 1.0), Color(1, 1, 1, 0.75), 1.5)
 	if selected.x >= 0:
 		draw_polyline(_diamond_loop(cell_center(selected), 1.0), Color(1.0, 0.85, 0.3), 2.5)
-	# Buildings and tunnels, back to front so nearer ones cover farther ones.
+	# Buildings, tunnels and working drones, back to front so nearer ones cover
+	# farther ones.
+	var drones := _drone_spots()
 	for sum in w + h - 1:
 		for x in range(maxi(0, sum - h + 1), mini(w, sum + 1)):
 			var y := sum - x
+			var cell := Vector2i(x, y)
 			var s := Actions.structure_at(state, x, y, level)
-			if s.is_empty():
+			if s.is_empty() and not drones.has(cell):
 				continue
-			var c := cell_center(Vector2i(x, y))
+			var c := cell_center(cell)
 			if not view.has_point(c):
 				continue
-			_draw_structure(s, c)
+			if not s.is_empty():
+				_draw_structure(s, c)
+			for type in drones.get(cell, []):
+				# Each drone sits at the tile's front corner, at half a tile's scale.
+				Sprites.more().draw_unit(self, type, c + _proj(Vector2(0.26, 0.26)), tile_size * 0.62)
+	if level == 0:
+		_draw_orbit()
 	# The selected tile's outline again, faintly, so it shows through tall buildings.
 	if selected.x >= 0:
 		draw_polyline(_diamond_loop(cell_center(selected), 1.0), Color(1.0, 0.85, 0.3, 0.45), 1.5)
@@ -288,3 +299,76 @@ func _draw_structure(s: Dictionary, c: Vector2) -> void:
 	elif not s["active"] and not conduit:
 		draw_circle(mark, maxf(4.0, tw * 0.05), Color(0, 0, 0, 0.6))
 		draw_circle(mark, maxf(3.0, tw * 0.035), Color(1.0, 0.3, 0.3))
+
+
+## Where each working drone is shown this turn: {cell: [drone types]}.
+## Graders stand by the surface buildings they're helping to build, Borers by
+## Shafts and Deep buildings, Haulers by the Seam Cutters they serve, and
+## Prospectors roam the empty ground at the colony's edge (a new spot each turn).
+func _drone_spots() -> Dictionary:
+	var out := {}
+	if not state.has("drones") or Fleet.drones_total(state) == 0:
+		return out
+	var work := Fleet.working(state)
+	var help := Fleet.construction_bonus(state)
+	var graders := int(work.get("grader", 0))
+	var borers := int(work.get("borer", 0))
+	for id in help:
+		var s: Dictionary = state["structures"][id]
+		var digging: bool = s["type"] == "shaft" or int(s.get("z", 0)) == 1
+		if int(s.get("z", 0)) != level and not (s["type"] == "shaft" and level == 0):
+			continue
+		var type := "borer" if digging else "grader"
+		if (type == "borer" and borers <= 0) or (type == "grader" and graders <= 0):
+			continue
+		_add_spot(out, Vector2i(int(s["x"]), int(s["y"])), type)
+	var haulers := int(work.get("hauler", 0))
+	for id in state["structures"]:
+		if haulers <= 0:
+			break
+		var s: Dictionary = state["structures"][id]
+		if s["type"] == "cutter" and s["active"] and int(s.get("z", 0)) == level:
+			_add_spot(out, Vector2i(int(s["x"]), int(s["y"])), "hauler")
+			haulers -= 1
+	var prospectors := int(work.get("prospector", 0))
+	if prospectors > 0 and level == 0:
+		var edge: Array = []
+		for y in int(state["height"]):
+			for x in int(state["width"]):
+				if Actions.structure_at(state, x, y).is_empty() and Actions.touches_colony(state, x, y) and Actions.terrain_at(state, x, y) in ["regolith", "ice", "seam"]:
+					edge.append(Vector2i(x, y))
+		var turn := int(state["turn"])
+		for k in mini(prospectors, edge.size()):
+			# A fixed shuffle that changes each turn, so they seem to roam.
+			var pick: Vector2i = edge[(turn * 7 + k * 13 + k * k * 5) % edge.size()]
+			_add_spot(out, pick, "prospector")
+	return out
+
+
+func _add_spot(out: Dictionary, cell: Vector2i, type: String) -> void:
+	if not out.has(cell):
+		out[cell] = []
+	(out[cell] as Array).append(type)
+
+
+## Satellites in orbit, drawn small along the top of the map like a strip of sky.
+func _draw_orbit() -> void:
+	if not state.has("satellites"):
+		return
+	var sats: Array = []
+	for t in Fleet.sat_order():
+		for _i in Fleet.sats(state, t):
+			sats.append(t)
+	if sats.is_empty():
+		return
+	var icon := clampf(tile_size * 0.6, 48.0, 84.0)
+	var strip := Rect2(Vector2(8, 8), Vector2(minf(size.x - 16.0, 12.0 + sats.size() * icon * 0.9), icon * 0.8))
+	draw_rect(strip, Color(0.02, 0.03, 0.06, 0.75))
+	for k in 12:
+		draw_circle(strip.position + Vector2(fmod(k * 37.0, strip.size.x), fmod(k * 23.0, strip.size.y)), 1.0, Color(1, 1, 1, 0.5))
+	draw_string(ThemeDB.fallback_font, strip.position + Vector2(6, 14), "In orbit", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.75, 0.8, 0.9))
+	for k in sats.size():
+		var at := strip.position + Vector2(6.0 + icon * 0.45 + k * icon * 0.9, icon * 0.62)
+		if at.x > strip.end.x:
+			break
+		Sprites.more().draw_unit(self, sats[k], at, icon * 0.75)

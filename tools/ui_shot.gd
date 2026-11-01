@@ -36,10 +36,42 @@ func _run() -> void:
 						if absi(x - int(hull["x"])) + absi(y - int(hull["y"])) <= radius:
 							NewGame.add_structure(st, type, x, y, type != "lab")
 							placed = true
+	# Something under construction, drones at work and satellites in orbit.
+	for y in int(st["height"]):
+		var done := false
+		for x in int(st["width"]):
+			if Actions.structure_at(st, x, y).is_empty() and Actions.touches_colony(st, x, y) and Actions.terrain_at(st, x, y) == "regolith":
+				NewGame.add_structure(st, "academy", x, y, false)
+				done = true
+				break
+		if done:
+			break
+	st["drones"] = {"grader": 1, "prospector": 2, "hauler": 1}
+	st["satellites"] = {"weather": 1, "relay": 1, "power": 2}
+	st["report"] = {"drone_slots": 8}
 	main.refresh()
 	for _i in 4:
 		await process_frame
 	root.get_viewport().get_texture().get_image().save_png(out + "/game.png")
+	# The Deep: a shaft landing with a few buildings round it.
+	var hull: Dictionary = st["structures"]["1"]
+	var hx := int(hull["x"]) + 1
+	var hy := int(hull["y"]) + 2
+	for dy in range(-2, 3):
+		for dx in range(-3, 4):
+			if Actions.inside(st, hx + dx, hy + dy):
+				st["deep"][hy + dy][hx + dx] = "cavern" if absi(dx) + absi(dy) < 4 else "rock"
+	st["deep"][hy][hx + 2] = "vein"
+	NewGame.add_structure(st, "shaft_base", hx, hy, true, 1)
+	var deep_types := [["main", 1, 0], ["cutter", 2, 0], ["main", -1, 0], ["bunk", -2, 0], ["garden", 0, 1], ["lounge", 0, -1], ["main", 1, 1], ["lab", 1, -1]]
+	for d in deep_types:
+		NewGame.add_structure(st, d[0], hx + int(d[1]), hy + int(d[2]), true, 1)
+	main._set_level(1)
+	main.map_view.center_on(Vector2i(hx, hy))
+	for _i in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(out + "/deep.png")
+	main._set_level(0)
 	main.show_fleet()
 	for _i in 4:
 		await process_frame
