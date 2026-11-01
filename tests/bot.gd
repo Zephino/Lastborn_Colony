@@ -6,6 +6,7 @@ extends RefCounted
 const GameData = preload("res://scripts/sim/game_data.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const NewGame = preload("res://scripts/sim/new_game.gd")
+const Research = preload("res://scripts/sim/research.gd")
 const Turn = preload("res://scripts/sim/turn.gd")
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
@@ -13,7 +14,9 @@ const MUST_AFFORD := ["mirror", "splitter", "drill", "vat", "rail"]
 const CASH_BUFFER := 1200.0
 const BUILD_RESERVE := 40.0
 const SAVING_RESERVE := 0.0
-const ESSENTIAL := ["mirror", "vent", "splitter", "drill", "vat", "bunk", "cutter", "forge", "rail"]
+const ESSENTIAL := ["mirror", "vent", "splitter", "drill", "vat", "bunk", "cutter", "forge", "rail", "lab", "warden"]
+## Research order the bot prefers; anything else available comes after.
+const TOPIC_ORDER := ["seals", "seam_mapping", "smelting", "mag_rail", "insulation", "coatings", "kelp", "field_medicine", "commons_charter"]
 
 
 ## Plays one turn's worth of decisions (does not end the turn).
@@ -29,6 +32,15 @@ static func act(state: Dictionary) -> void:
 	# keep the reserve low so alloy is sold, and build only essentials.
 	var saving := _saving(state)
 	Actions.set_export_reserve(state, SAVING_RESERVE if saving else BUILD_RESERVE)
+	if state["research"]["current"] == "":
+		var options := Research.available(state)
+		if not options.is_empty():
+			var pick: String = options[0]["id"]
+			for id in TOPIC_ORDER:
+				if Research.is_available(state, id):
+					pick = id
+					break
+			Actions.set_research(state, pick)
 	var credits := float(state["stock"]["credits"])
 	if credits > CASH_BUFFER:
 		Actions.pay_extra(state, credits - CASH_BUFFER)
@@ -59,7 +71,7 @@ static func _choose(state: Dictionary) -> Array:
 	if alloy < 1.0:
 		return picks
 	var turn := int(state["turn"])
-	var pop := float(state["adults"]) + float(state["children"])
+	var pop := Turn.population(state)
 	var rep: Dictionary = state["report"]
 	var want: Array = []
 	if float(rep.get("power_free", 0.0)) < 3.0 or (int(rep.get("idle", 0)) > 0 and float(rep.get("power_free", 0.0)) < 6.0):
@@ -74,7 +86,7 @@ static func _choose(state: Dictionary) -> Array:
 		want.append("drill")
 	if _count(state, "vat") < vats:
 		want.append("vat")
-	if pop > 40.0 + 12.0 * _count(state, "bunk") - 6.0:
+	if pop > float(rep.get("housing", 40.0)) - 6.0 and _count(state, "bunk") * 12 + 40 < pop + 30.0:
 		want.append("bunk")
 	var forges := mini(10, 1 + int(pop / 20.0))
 	# Ore and a forge first: a rail with no alloy to sell earns nothing.
@@ -88,6 +100,12 @@ static func _choose(state: Dictionary) -> Array:
 		want.append("cutter")
 	if _count(state, "forge") < forges:
 		want.append("forge")
+	if float(state["crime"]) > 8.0 and _count(state, "warden") < 1 + int(pop / 60.0):
+		want.append("warden")
+	if (state["plague"]["active"] or turn > 30) and _count(state, "lab") < 1 + int(pop / 100.0):
+		want.append("lab")
+	if turn > 40 and _count(state, "workshop") < 1:
+		want.append("workshop")
 	if float(state["morale"]) < 50.0 and _count(state, "commons") < 3 and turn > 15:
 		want.append("commons")
 	if turn > 40 and _count(state, "clinic") < 1:

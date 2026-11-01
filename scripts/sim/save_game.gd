@@ -40,6 +40,7 @@ static func normalize(state: Dictionary) -> void:
 			s[k] = int(s[k])
 		occupancy[NewGame.cell_key(s["x"], s["y"])] = id
 	state["occupancy"] = occupancy
+	state["plague"]["turns_left"] = int(state["plague"]["turns_left"])
 	for entry in state["log"]:
 		entry["turn"] = int(entry["turn"])
 

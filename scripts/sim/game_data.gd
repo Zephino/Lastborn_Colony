@@ -7,6 +7,7 @@ static var _buildings: Dictionary = {}
 static var _building_order: Array = []
 static var _events: Array = []
 static var _story: Dictionary = {}
+static var _research: Array = []
 
 
 static func _load_json(path: String) -> Variant:
@@ -27,6 +28,7 @@ static func ensure_loaded() -> void:
 		_building_order.append(b["id"])
 	_events = _load_json("res://data/events.json")
 	_story = _load_json("res://data/story.json")
+	_research = _load_json("res://data/research.json")
 
 
 static func balance() -> Dictionary:
@@ -59,6 +61,18 @@ static func event(id: String) -> Dictionary:
 	for e in events():
 		if e["id"] == id:
 			return e
+	return {}
+
+
+static func research_topics() -> Array:
+	ensure_loaded()
+	return _research
+
+
+static func topic(id: String) -> Dictionary:
+	for t in research_topics():
+		if t["id"] == id:
+			return t
 	return {}
 
 

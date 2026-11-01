@@ -10,6 +10,7 @@ const Actions = preload("res://scripts/sim/actions.gd")
 const Turn = preload("res://scripts/sim/turn.gd")
 const SaveGame = preload("res://scripts/sim/save_game.gd")
 const Bot = preload("res://tests/bot.gd")
+const Research = preload("res://scripts/sim/research.gd")
 
 var checks := 0
 var failures := 0
@@ -22,6 +23,11 @@ func _init() -> void:
 	test_placement()
 	test_determinism()
 	test_save_round_trip()
+	test_research()
+	test_life_stages()
+	test_crime()
+	test_breakdowns_and_repairs()
+	test_plague()
 	test_idle_colony_fails()
 	test_bot_colonies()
 	print("\n%d checks, %d failed" % [checks, failures])
@@ -60,8 +66,12 @@ func test_rng() -> void:
 
 func test_data() -> void:
 	print("Data")
-	check(GameData.building_ids().size() == 14, "14 buildings loaded")
-	check(GameData.events().size() == 9, "9 events loaded")
+	check(GameData.building_ids().size() == 17, "17 buildings loaded")
+	check(GameData.events().size() == 10, "10 events loaded")
+	check(GameData.research_topics().size() == 13, "13 research topics loaded")
+	for t in GameData.research_topics():
+		for req in t["requires"]:
+			check(not GameData.topic(req).is_empty(), "%s requires a real topic (%s)" % [t["id"], req])
 	check(GameData.light_at(0) < GameData.light_at(31), "light rises toward the day side")
 	check(GameData.cold_at(0) > GameData.cold_at(31), "heat need falls toward the day side")
 	for id in GameData.building_ids():
@@ -102,7 +112,8 @@ func test_placement() -> void:
 	Turn.end_turn(s)
 	Turn.end_turn(s)
 	check(s["structures"]["2"]["built"], "mirror finished after 2 turns")
-	check(Actions.demolish(s, "2")["ok"] and float(s["stock"]["alloy"]) == before - 3.0, "demolishing refunds half")
+	var before_demolish := float(s["stock"]["alloy"])
+	check(Actions.demolish(s, "2")["ok"] and float(s["stock"]["alloy"]) == before_demolish + 3.0, "demolishing refunds half")
 
 
 func test_determinism() -> void:
@@ -127,6 +138,104 @@ func test_save_round_trip() -> void:
 	play(b, 30, true)
 	check(SaveGame.to_text(a) == SaveGame.to_text(b), "a loaded game plays on identically")
 	check(typeof(SaveGame.from_text("{}")) == TYPE_STRING, "junk is rejected")
+
+
+## Builds a lab and power next to the hull and finishes construction.
+func _colony_with(types: Array) -> Dictionary:
+	var s := NewGame.create(3, "Margin")
+	s["stock"]["alloy"] = 500.0
+	var hx := int(s["structures"]["1"]["x"])
+	var hy := int(s["structures"]["1"]["y"])
+	var spots := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1)]
+	var i := 0
+	for t in types:
+		while i < spots.size() and not Actions.place(s, t, hx + spots[i].x, hy + spots[i].y)["ok"]:
+			i += 1
+		i += 1
+	for id in s["structures"]:
+		s["structures"][id]["built"] = true
+	return s
+
+
+func test_research() -> void:
+	print("Research")
+	var s := _colony_with(["mirror", "mirror", "lab"])
+	check(not Actions.set_research(s, "smelting")["ok"], "a topic with unmet prerequisites is refused")
+	check(Actions.set_research(s, "coatings")["ok"], "an available topic can be chosen")
+	check(Research.mult(s, "out:mirror") == 1.0, "no bonus before the topic is finished")
+	for _i in 40:
+		if Research.is_done(s, "coatings"):
+			break
+		Turn.end_turn(s)
+	check(Research.is_done(s, "coatings"), "the lab finishes the topic")
+	check(absf(Research.mult(s, "out:mirror") - 1.25) < 1e-9, "the finished topic boosts mirrors by 25%")
+	check(Research.is_available(s, "forecasting"), "finishing a topic unlocks the next one")
+
+
+func test_life_stages() -> void:
+	print("Life stages")
+	var s := NewGame.create(1, "Margin")
+	for _i in 30:
+		if s["pending_event"] != "":
+			Actions.resolve_event(s, 0)
+		Turn.end_turn(s)
+	check(float(s["elders"]) > 0.0, "adults age into elders (%.2f)" % float(s["elders"]))
+	check(Turn.population(s) == float(s["adults"]) + float(s["children"]) + float(s["elders"]), "population counts all three groups")
+
+
+func test_crime() -> void:
+	print("Crime")
+	var s := NewGame.create(1, "Margin")
+	s["adults"] = 120.0
+	s["morale"] = 20.0
+	for _i in 10:
+		if s["pending_event"] != "":
+			Actions.resolve_event(s, 0)
+		Turn.end_turn(s)
+	check(float(s["crime"]) > 10.0, "crowding and low morale raise crime (%.1f)" % float(s["crime"]))
+	var w := _colony_with(["mirror", "mirror", "warden", "warden"])
+	w["adults"] = 60.0
+	for _i in 10:
+		Turn.end_turn(w)
+	check(float(w["crime"]) < 5.0, "warden posts hold crime down (%.1f)" % float(w["crime"]))
+
+
+func test_breakdowns_and_repairs() -> void:
+	print("Breakdowns")
+	var s := _colony_with(["mirror", "mirror", "workshop", "drill"])
+	Turn.end_turn(s)
+	var target := ""
+	for id in s["structures"]:
+		if s["structures"][id]["type"] == "mirror":
+			target = id
+			break
+	s["structures"][target]["damaged"] = 3
+	Turn.end_turn(s)
+	check(int(s["structures"][target]["damaged"]) == 1, "a workshop speeds repairs (3 -> 1 in one turn)")
+	Actions.apply_effects(s, {"damage_area": 3})
+	var hit := 0
+	for id in s["structures"]:
+		if int(s["structures"][id]["damaged"]) > 0:
+			hit += 1
+	check(hit >= 1, "an icequake damages nearby buildings (%d)" % hit)
+
+
+func test_plague() -> void:
+	print("Plague")
+	var s := _colony_with(["mirror", "mirror", "lab", "lab"])
+	s["plague"] = {"active": true, "turns_left": 15, "cure": 0.0, "need": 5.0}
+	Actions.set_research(s, "coatings")
+	for _i in 8:
+		Turn.end_turn(s)
+	check(not s["plague"]["active"], "labs cure the plague before it runs its course")
+	var u := NewGame.create(1, "Margin")
+	u["plague"] = {"active": true, "turns_left": 3, "cure": 0.0, "need": 10.0}
+	var before := Turn.population(u)
+	for _i in 4:
+		if u["pending_event"] != "":
+			Actions.resolve_event(u, 0)
+		Turn.end_turn(u)
+	check(not u["plague"]["active"] and Turn.population(u) < before * 0.92, "an uncured plague kills about a tenth of the colony")
 
 
 func test_idle_colony_fails() -> void:

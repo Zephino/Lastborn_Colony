@@ -6,14 +6,40 @@
     "children": 8,
     "morale": 55,
     "debt": 6000,
-    "stock": { "food": 150, "oxygen": 150, "water": 100, "ore": 0, "alloy": 80, "credits": 300 }
+    "stock": {
+      "food": 150,
+      "oxygen": 150,
+      "water": 100,
+      "ore": 0,
+      "alloy": 80,
+      "credits": 300
+    },
+    "elders": 0
   },
-  "stored_resources": ["food", "oxygen", "water", "ore", "alloy"],
+  "stored_resources": [
+    "food",
+    "oxygen",
+    "water",
+    "ore",
+    "alloy"
+  ],
   "base_storage": 300,
   "life_support": {
-    "food":   { "per_person": 0.10, "lethality": 0.15, "morale": -15 },
-    "oxygen": { "per_person": 0.10, "lethality": 0.30, "morale": -20 },
-    "water":  { "per_person": 0.05, "lethality": 0.05, "morale": -8 }
+    "food": {
+      "per_person": 0.1,
+      "lethality": 0.15,
+      "morale": -15
+    },
+    "oxygen": {
+      "per_person": 0.1,
+      "lethality": 0.3,
+      "morale": -20
+    },
+    "water": {
+      "per_person": 0.05,
+      "lethality": 0.05,
+      "morale": -8
+    }
   },
   "birth_rate": 0.012,
   "child_turns": 20,
@@ -50,5 +76,23 @@
   "demolish_refund": 0.5,
   "repair_turns": 3,
   "autosave_every": 10,
-  "log_limit": 200
+  "log_limit": 200,
+  "aging_rate": 0.006,
+  "elder_death_rate": 0.03,
+  "research_per_point": 1.0,
+  "wear_scale": 1.0,
+  "crime_per_person": 0.033,
+  "crime_overcrowding": 25,
+  "crime_drift": 0.2,
+  "crime_theft": 0.001,
+  "crime_morale": -0.25,
+  "plague_start_turn": 40,
+  "plague_min_pop": 25,
+  "plague_chance": 0.004,
+  "plague_window": 15,
+  "plague_window_clinic": 25,
+  "plague_cure_points": 10,
+  "plague_death_rate": 0.004,
+  "plague_final_deaths": 0.1,
+  "plague_morale": -15
 }

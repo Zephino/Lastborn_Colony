@@ -102,6 +102,16 @@ static func set_export_reserve(state: Dictionary, amount: float) -> void:
 	state["export_reserve"] = maxf(0.0, amount)
 
 
+static func set_research(state: Dictionary, id: String) -> Dictionary:
+	const Research = preload("res://scripts/sim/research.gd")
+	if id != "" and not Research.is_available(state, id):
+		return result(false, "That topic is not available yet.")
+	if id != state["research"]["current"]:
+		state["research"]["current"] = id
+		state["research"]["progress"] = 0.0
+	return result(true)
+
+
 static func choice_allowed(state: Dictionary, choice: Dictionary) -> bool:
 	var req: Dictionary = choice.get("requires", {})
 	for key in req:
@@ -145,9 +155,30 @@ static func apply_effects(state: Dictionary, effects: Dictionary) -> void:
 				state[key] = maxi(int(state[key]), int(v))
 			"damage":
 				_damage_random(state, int(v))
+			"damage_area":
+				_damage_area(state, int(v))
 			_:
 				if state["stock"].has(key):
 					state["stock"][key] = maxf(0.0, float(state["stock"][key]) + v)
+
+
+## Damages buildings within a radius of a random building in the colony.
+static func _damage_area(state: Dictionary, radius: int) -> void:
+	var ids: Array = state["structures"].keys()
+	if ids.size() < 2:
+		return
+	var center: Dictionary = state["structures"][Rng.pick(state, ids)]
+	var hit := 0
+	for id in ids:
+		var s: Dictionary = state["structures"][id]
+		if not s["built"] or s["type"] in ["hull", "main", "cache"]:
+			continue
+		if maxi(absi(int(s["x"]) - int(center["x"])), absi(int(s["y"]) - int(center["y"]))) > radius:
+			continue
+		if Rng.chance(state, 0.5):
+			s["damaged"] = maxi(int(s["damaged"]), int(GameData.balance()["repair_turns"]))
+			hit += 1
+	state["log"].append({"turn": int(state["turn"]), "text": "The icequake damaged %d buildings near (%d, %d)." % [hit, int(center["x"]), int(center["y"])]})
 
 
 static func _damage_random(state: Dictionary, count: int) -> void:
