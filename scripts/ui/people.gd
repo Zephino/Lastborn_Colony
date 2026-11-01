@@ -6,6 +6,7 @@ const SUIT := Color(0.90, 0.91, 0.93)
 const SUIT_SHADE := Color(0.70, 0.72, 0.76)
 const VISOR := Color(0.95, 0.72, 0.25)
 const PACK := Color(0.45, 0.48, 0.54)
+const WARDEN_SUIT := Color(0.30, 0.36, 0.50)
 ## Stripe colour by job.
 const JOBS := {"worker": Color(1.0, 0.55, 0.20), "scientist": Color(0.30, 0.82, 0.76), "warden": Color(0.72, 0.56, 1.0)}
 
@@ -15,6 +16,9 @@ const JOBS := {"worker": Color(1.0, 0.55, 0.20), "scientist": Color(0.30, 0.82, 
 static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String = "worker", facing: float = 1.0, stride: bool = false) -> void:
 	var u := hgt / 10.0
 	var stripe: Color = JOBS.get(job, JOBS["worker"])
+	# Wardens wear dark navy security suits; everyone else white.
+	var suit := WARDEN_SUIT if job == "warden" else SUIT
+	var shade := WARDEN_SUIT.darkened(0.3) if job == "warden" else SUIT_SHADE
 	ci.draw_colored_polygon(_oval(feet, u * 2.4, u * 0.8), Color(0, 0, 0, 0.30))
 	# Backpack (behind the body, on the side away from where they face).
 	var pack := feet + Vector2(-facing * u * 2.2, -u * 5.1)
@@ -24,25 +28,34 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 	_pack_front(ci, pack, u, job, facing)
 	# Legs, one forward when walking.
 	var step := u * 0.9 if stride else 0.0
-	ci.draw_line(feet + Vector2(-u * 0.6, -u * 3.2), feet + Vector2(-u * 0.6 - step * facing, -u * 0.4), SUIT_SHADE, u * 1.3)
-	ci.draw_line(feet + Vector2(u * 0.6, -u * 3.2), feet + Vector2(u * 0.6 + step * facing, -u * 0.4), SUIT, u * 1.3)
+	ci.draw_line(feet + Vector2(-u * 0.6, -u * 3.2), feet + Vector2(-u * 0.6 - step * facing, -u * 0.4), shade, u * 1.3)
+	ci.draw_line(feet + Vector2(u * 0.6, -u * 3.2), feet + Vector2(u * 0.6 + step * facing, -u * 0.4), suit, u * 1.3)
 	for x in [-u * 0.6 - step * facing, u * 0.6 + step * facing]:
 		ci.draw_rect(Rect2(feet + Vector2(x - u * 0.7, -u * 0.6), Vector2(u * 1.4, u * 0.6)), Color(0.25, 0.26, 0.30))
 	# Body with its job stripe.
-	ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 6.8), Vector2(u * 3.0, u * 3.8)), SUIT)
-	ci.draw_rect(Rect2(feet + Vector2(u * 0.6, -u * 6.8), Vector2(u * 0.9, u * 3.8)), SUIT_SHADE)
+	ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 6.8), Vector2(u * 3.0, u * 3.8)), suit)
+	ci.draw_rect(Rect2(feet + Vector2(u * 0.6, -u * 6.8), Vector2(u * 0.9, u * 3.8)), shade)
 	ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 5.2), Vector2(u * 3.0, u * 0.7)), stripe)
 	# Arms, swinging a little when walking.
 	var swing := u * 0.8 if stride else 0.2 * u
-	ci.draw_line(feet + Vector2(-u * 1.6, -u * 6.4), feet + Vector2(-u * 1.9 + swing * facing, -u * 4.0), SUIT_SHADE, u * 1.0)
-	ci.draw_line(feet + Vector2(u * 1.6, -u * 6.4), feet + Vector2(u * 1.9 - swing * facing, -u * 4.0), SUIT, u * 1.0)
+	ci.draw_line(feet + Vector2(-u * 1.6, -u * 6.4), feet + Vector2(-u * 1.9 + swing * facing, -u * 4.0), shade, u * 1.0)
+	ci.draw_line(feet + Vector2(u * 1.6, -u * 6.4), feet + Vector2(u * 1.9 - swing * facing, -u * 4.0), suit, u * 1.0)
+	if job == "warden":
+		# A gold badge on the chest, and a torch in the forward hand shining ahead.
+		var badge := feet + Vector2(-facing * u * 0.6, -u * 6.1)
+		ci.draw_colored_polygon(PackedVector2Array([badge + Vector2(-u * 0.5, -u * 0.5), badge + Vector2(u * 0.5, -u * 0.5), badge + Vector2(u * 0.5, u * 0.1), badge + Vector2(0, u * 0.6), badge + Vector2(-u * 0.5, u * 0.1)]), Color(1.0, 0.80, 0.30))
+		var hand := feet + Vector2(facing * (u * 1.9 - swing), -u * 4.0)
+		ci.draw_line(hand, hand + Vector2(facing * u * 1.2, -u * 0.2), Color(0.20, 0.20, 0.24), u * 0.7)
+		var lens := hand + Vector2(facing * u * 1.3, -u * 0.2)
+		ci.draw_colored_polygon(PackedVector2Array([lens, lens + Vector2(facing * u * 4.5, -u * 1.4), lens + Vector2(facing * u * 4.5, u * 1.6)]), Color(1.0, 0.95, 0.7, 0.25))
+		ci.draw_circle(lens, u * 0.35, Color(1.0, 0.95, 0.75))
 	# Helmet with its visor.
 	var head := feet + Vector2(0, -u * 8.2)
-	ci.draw_circle(head, u * 1.75, SUIT)
-	ci.draw_circle(head + Vector2(u * 0.35, u * 0.25), u * 1.4, SUIT_SHADE.darkened(0.05))
+	ci.draw_circle(head, u * 1.75, suit)
+	ci.draw_circle(head + Vector2(u * 0.35, u * 0.25), u * 1.4, shade.darkened(0.05))
 	ci.draw_colored_polygon(_oval(head + Vector2(facing * u * 0.45, u * 0.05), u * 1.05, u * 0.75), VISOR)
 	ci.draw_circle(head + Vector2(facing * u * 0.15 - u * 0.25, -u * 0.25), u * 0.28, Color(1, 1, 1, 0.75))
-	ci.draw_line(head + Vector2(-u * 1.75, -u * 0.2), head + Vector2(-u * 1.95, -u * 1.6), SUIT_SHADE, maxf(1.0, u * 0.3))
+	ci.draw_line(head + Vector2(-u * 1.75, -u * 0.2), head + Vector2(-u * 1.95, -u * 1.6), shade, maxf(1.0, u * 0.3))
 
 
 ## Gear that sticks up behind the backpack, by job (drawn before the pack).
@@ -62,14 +75,12 @@ static func _back_gear(ci: CanvasItem, pack: Vector2, u: float, job: String, fac
 			ci.draw_line(pack + Vector2(facing * u * 0.3, -u * 1.4), dish, Color(0.55, 0.58, 0.64), maxf(1.0, u * 0.3))
 			ci.draw_colored_polygon(_oval(dish + Vector2(-facing * u * 0.2, -u * 0.3), u * 0.9, u * 0.5), Color(0.88, 0.90, 0.94))
 		"warden":
-			# A radio aerial and a warning beacon on top of the pack.
-			var tip := pack + Vector2(-facing * u * 0.6, -u * 5.8)
-			ci.draw_line(pack + Vector2(-facing * u * 0.6, -u * 1.4), tip, Color(0.40, 0.42, 0.48), maxf(1.0, u * 0.25))
-			ci.draw_circle(tip, u * 0.25, Color(0.40, 0.42, 0.48))
-			ci.draw_rect(Rect2(pack + Vector2(-u * 0.5, -u * 2.3), Vector2(u * 1.0, u * 0.8)), Color(0.30, 0.30, 0.34))
-			var lamp := pack + Vector2(0, -u * 2.5)
-			ci.draw_circle(lamp, u * 1.1, Color(JOBS["warden"].r, JOBS["warden"].g, JOBS["warden"].b, 0.25))
-			ci.draw_circle(lamp, u * 0.55, JOBS["warden"])
+			# A short radio aerial and a small red-and-blue light bar on top of the pack.
+			var tip := pack + Vector2(-facing * u * 0.7, -u * 4.4)
+			ci.draw_line(pack + Vector2(-facing * u * 0.7, -u * 1.4), tip, Color(0.25, 0.26, 0.30), maxf(1.0, u * 0.25))
+			ci.draw_rect(Rect2(pack + Vector2(-u * 0.9, -u * 2.0), Vector2(u * 1.8, u * 0.55)), Color(0.20, 0.20, 0.24))
+			ci.draw_rect(Rect2(pack + Vector2(-u * 0.8, -u * 1.95), Vector2(u * 0.75, u * 0.45)), Color(1.0, 0.30, 0.30))
+			ci.draw_rect(Rect2(pack + Vector2(u * 0.05, -u * 1.95), Vector2(u * 0.75, u * 0.45)), Color(0.35, 0.55, 1.0))
 
 
 ## Things strapped on the side of the backpack, by job (drawn over the pack).
@@ -86,7 +97,7 @@ static func _pack_front(ci: CanvasItem, pack: Vector2, u: float, job: String, fa
 				ci.draw_rect(Rect2(Vector2(x - u * 0.2, pack.y - u * 0.2), Vector2(u * 0.4, u * 1.4)), cols[k])
 			ci.draw_rect(Rect2(pack + Vector2(-u * 0.9, u * 0.9), Vector2(u * 1.8, u * 0.4)), Color(0.30, 0.32, 0.36))
 		"warden":
-			# Violet reflective stripes on the pack.
+			# Reflective stripes on the pack.
 			ci.draw_line(pack + Vector2(-u * 0.9, u * 0.2), pack + Vector2(u * 0.9, u * 0.2), JOBS["warden"], maxf(1.0, u * 0.35))
 			ci.draw_line(pack + Vector2(-u * 0.9, u * 0.9), pack + Vector2(u * 0.9, u * 0.9), JOBS["warden"], maxf(1.0, u * 0.35))
 

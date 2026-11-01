@@ -2,6 +2,20 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.47
+Date: 11/01/2026
+Time: 10:15 PM
+
+### Changes
+- **Wardens look like security officers** (`scripts/ui/people.gd`):
+  - a dark navy suit instead of white, so they stand out from the crews;
+  - a gold shield badge on the chest;
+  - a torch in the forward hand, shining a beam ahead.
+  - On the back, the big violet beacon is gone. They have a short radio aerial and a small red-and-blue light bar, with reflective stripes on the pack.
+
+### Reason
+The owner said the Warden needed to be changed.
+
 ## Version 00.01.46
 Date: 11/01/2026
 Time: 10:05 PM
