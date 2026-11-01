@@ -1,0 +1,86 @@
+# Builds the playable web version on every push to main and publishes it to
+# GitHub Pages: https://zephino.github.io/Lastborn_Colony/
+# The game's tests run first; if any fail, nothing is published, so the live
+# game is never replaced by a broken build.
+#
+# One-time setting: GitHub → this repo → Settings → Pages → Build and
+# deployment → Source = "GitHub Actions". With "Deploy from a branch", GitHub
+# publishes the README instead of the game.
+name: Web build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.3"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot and web export templates
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -sSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          curl -sSL -o sums.txt "$base/SHA512-SUMS.txt"
+          grep "Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" sums.txt | sed "s#  .*#  godot.zip#" | sha512sum -c -
+          grep "Godot_v${GODOT_VERSION}-stable_export_templates.tpz" sums.txt | sed "s#  .*#  templates.tpz#" | sha512sum -c -
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          templates="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$templates"
+          unzip -q -j templates.tpz "templates/web_*" "templates/version.txt" -d "$templates"
+          rm -f godot.zip templates.tpz sums.txt
+          ls "$templates"
+
+      - name: Import project
+        run: godot --headless --import --path . || true
+
+      - name: Run game tests
+        run: godot --headless --path . --script res://tests/run_tests.gd
+
+      - name: Test the online service
+        if: hashFiles('leaderboard-api/package.json') != ''
+        working-directory: leaderboard-api
+        run: node --test test/*.test.js
+
+      - name: Export web build
+        run: |
+          mkdir -p build/web
+          godot --headless --path . --export-release "Web" build/web/index.html
+          test -f build/web/index.html
+          # Stamp the version into the page and add the updater (web/update.js),
+          # so browsers always load matching files and pick up new versions.
+          v=$(tr -d '[:space:]' < VERSION)
+          cp web/update.js build/web/update.js
+          sed -i "s/__LASTBORN_VERSION__/$v/g; s|src=\"index.js\"|src=\"index.js?v=$v\"|" build/web/index.html
+          grep -q "LASTBORN_VERSION=\"$v\"" build/web/index.html
+          grep -q "index.js?v=$v" build/web/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

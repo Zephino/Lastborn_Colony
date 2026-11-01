@@ -9,6 +9,8 @@ const Actions = preload("res://scripts/sim/actions.gd")
 const Turn = preload("res://scripts/sim/turn.gd")
 const SaveGame = preload("res://scripts/sim/save_game.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
+const AppActions = preload("res://scripts/ui/app_actions.gd")
+const Research = preload("res://scripts/sim/research.gd")
 
 const BG := Color(0.06, 0.07, 0.09)
 const PANEL := Color(0.10, 0.11, 0.14)
@@ -24,11 +26,13 @@ var build_buttons := {}
 var inspector: RichTextLabel
 var demolish_button: Button
 var reserve_label: Label
+var research_button: Button
 var log_view: RichTextLabel
 var end_turn_button: Button
 var run_button: Button
 var hint_label: Label
 var modal: Control
+var modal_can_cancel := false
 var busy := false
 
 
@@ -110,7 +114,9 @@ func show_title() -> void:
 		if SaveGame.exists(slot):
 			var label := "Load saved game" if slot == "manual" else "Load autosave"
 			box.add_child(_button(label, func() -> void: _load(slot)))
-	box.add_child(_button("Quit", func() -> void: get_tree().quit()))
+	box.add_child(_button("Settings", show_settings))
+	if not AppActions.is_web():
+		box.add_child(_button("Quit", func() -> void: get_tree().quit()))
 	var version := _label("v" + str(ProjectSettings.get_setting("application/config/version", "")), 13, Color(0.55, 0.6, 0.66))
 	root.add_child(version)
 	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 12)
@@ -127,7 +133,7 @@ func _start_new(seed_value: int, colony: String) -> void:
 	state = NewGame.create(seed_value, colony)
 	show_game()
 	var paragraphs: Array = GameData.story()["intro"]
-	show_modal("Briefing", "\n\n".join(PackedStringArray(paragraphs)), [["Begin", close_modal, true]])
+	show_modal("Briefing", "\n\n".join(PackedStringArray(paragraphs)), [["Begin", close_modal, true]], true)
 
 
 func _load(slot: String) -> void:
@@ -212,6 +218,11 @@ func show_game() -> void:
 	demolish_button = _button("Demolish", _on_demolish)
 	right_box.add_child(demolish_button)
 	right_box.add_child(HSeparator.new())
+	right_box.add_child(_label("Research", 13, ACCENT))
+	research_button = _button("", show_research)
+	research_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	research_button.clip_text = true
+	right_box.add_child(research_button)
 	right_box.add_child(_label("Company account", 13, ACCENT))
 	var pay_row := HBoxContainer.new()
 	right_box.add_child(pay_row)
@@ -311,8 +322,9 @@ func _on_menu() -> void:
 	show_modal("Menu", "Unsaved progress since your last save or autosave will be lost.", [
 		["Save and quit to title", _save_and_quit, true],
 		["Quit to title without saving", show_title, true],
+		["Settings", show_settings, true],
 		["Back to the colony", close_modal, true],
-	])
+	], true)
 
 
 func _save_and_quit() -> void:
@@ -367,7 +379,13 @@ func _show_ending() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not (event is InputEventKey) or not event.is_pressed() or event.is_echo() or map_view == null:
+	if not (event is InputEventKey) or not event.is_pressed() or event.is_echo():
+		return
+	if (event as InputEventKey).keycode == KEY_ESCAPE and modal != null and modal_can_cancel:
+		close_modal()
+		get_viewport().set_input_as_handled()
+		return
+	if map_view == null:
 		return
 	var key := (event as InputEventKey).keycode
 	if (key == KEY_ENTER or key == KEY_KP_ENTER) and modal == null:
@@ -428,6 +446,14 @@ func refresh() -> void:
 	end_turn_button.disabled = state["ending"] != ""
 	run_button.disabled = state["ending"] != ""
 	reserve_label.text = "Export reserve: %d alloy" % int(state["export_reserve"])
+	var r: Dictionary = state["research"]
+	if state["plague"]["active"]:
+		research_button.text = "Plague cure: %d / %d" % [int(state["plague"]["cure"]), int(state["plague"]["need"])]
+	elif r["current"] == "":
+		research_button.text = "Choose a topic…"
+	else:
+		var t := GameData.topic(r["current"])
+		research_button.text = "%s: %d / %d" % [t["name"], int(r["progress"]), int(t["cost"])]
 
 	_refresh_inspector()
 	_refresh_log()
@@ -467,7 +493,10 @@ func _refresh_inspector() -> void:
 	demolish_button.visible = not s.is_empty() and s["type"] != "hull"
 	if c.x < 0:
 		lines.append("[b]%s[/b]" % state["colony_name"])
-		lines.append("Adults %s, children %s." % [_fmt(float(state["adults"])), _fmt(float(state["children"]))])
+		lines.append("Adults %s, children %s, elders %s." % [_fmt(float(state["adults"])), _fmt(float(state["children"])), _fmt(float(state["elders"]))])
+		lines.append("Crime %s." % _fmt(float(state["crime"])))
+		if state["plague"]["active"]:
+			lines.append("[color=#ff6a5a]Plague! Cure %d of %d, %d turns left.[/color]" % [int(state["plague"]["cure"]), int(state["plague"]["need"]), int(state["plague"]["turns_left"])])
 		lines.append("Production efficiency %d%% (from morale)." % int(round(Turn.efficiency(state) * 100.0)))
 		lines.append("Storage %s per resource." % _fmt(float(state["report"].get("storage", GameData.balance()["base_storage"]))))
 		lines.append("Payments made %d. Missed in a row: %d of %d." % [int(state["payments_made"]), int(state["missed_in_row"]), int(GameData.balance()["max_missed"])])
@@ -543,11 +572,84 @@ func _refresh_log() -> void:
 	log_view.text = "\n".join(lines)
 
 
+# ---------------------------------------------------------------- Research
+
+func show_research() -> void:
+	var options: Array = []
+	for t in Research.available(state):
+		var label := "%s (%d): %s" % [t["name"], int(t["cost"]), t["desc"]]
+		options.append([label, _choose_research.bind(t["id"]), true])
+	var done := PackedStringArray()
+	for id in Research.done(state):
+		done.append(GameData.topic(id)["name"])
+	var body := "Survey Labs produce research toward one topic at a time. Changing topic loses progress on the old one."
+	if state["plague"]["active"]:
+		body += "\n\nDuring the plague, all research goes to the cure first."
+	body += "\n\nFinished: " + (", ".join(done) if not done.is_empty() else "none yet") + "."
+	if options.is_empty():
+		body += "\n\nEverything has been researched."
+	options.append(["Back", close_modal, true])
+	show_modal("Research", body, options, true)
+
+
+func _choose_research(id: String) -> void:
+	Actions.set_research(state, id)
+	close_modal()
+	refresh()
+
+
+# ---------------------------------------------------------------- Settings
+
+func show_settings() -> void:
+	var notes := PackedStringArray()
+	var options: Array = []
+	if AppActions.can_fullscreen():
+		options.append(["Fullscreen: %s" % ("On" if AppActions.is_fullscreen() else "Off"), _on_fullscreen, true])
+	if AppActions.is_web():
+		var install := AppActions.install_state()
+		match install:
+			"installed":
+				options.append(["Installed as an app", _on_install, false])
+			"ios":
+				options.append(["Install app", _on_install, true])
+				notes.append("On iPhone or iPad: tap Share, then Add to Home Screen.")
+			"ready":
+				options.append(["Install app", _on_install, true])
+			_:
+				options.append(["Install app", _on_install, false])
+				notes.append("Install app works in Chrome and Edge (and on phones) once the page has loaded.")
+		options.append(["Update app", _on_update, true])
+		notes.append("Update app reloads the newest version from the internet. Your saved games are kept.")
+	options.append(["Back", close_modal, true])
+	var body := "Lastborn Colony v%s" % str(ProjectSettings.get_setting("application/config/version", ""))
+	if not notes.is_empty():
+		body += "\n\n" + "\n".join(notes)
+	show_modal("Settings", body, options, true)
+
+
+func _on_fullscreen() -> void:
+	AppActions.toggle_fullscreen()
+	show_settings.call_deferred()
+
+
+func _on_install() -> void:
+	if AppActions.install_state() == "ready":
+		AppActions.install()
+	show_settings.call_deferred()
+
+
+func _on_update() -> void:
+	if state.size() > 0 and state.get("ending", "") == "":
+		SaveGame.save(state, "autosave")
+	AppActions.update_now()
+
+
 # ---------------------------------------------------------------- Modal dialogs
 
 ## options: Array of [label, Callable, enabled].
-func show_modal(title: String, body: String, options: Array) -> void:
+func show_modal(title: String, body: String, options: Array, can_cancel: bool = false) -> void:
 	close_modal()
+	modal_can_cancel = can_cancel
 	var layer := Control.new()
 	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(layer)
@@ -571,10 +673,16 @@ func show_modal(title: String, body: String, options: Array) -> void:
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text.custom_minimum_size = Vector2(540, 0)
 	box.add_child(text)
+	var first: Button = null
 	for opt in options:
 		var b := _button(opt[0], opt[1])
 		b.disabled = not opt[2]
+		b.custom_minimum_size = Vector2(0, 44)
 		box.add_child(b)
+		if first == null and not b.disabled:
+			first = b
+	if first != null:
+		first.grab_focus.call_deferred()
 
 
 func close_modal() -> void:

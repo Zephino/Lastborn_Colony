@@ -6,6 +6,25 @@ The colonists owe the Harrow & Vell Charter Company 6,000 marks for their passag
 
 The code is built around one plain state object, rule functions that take that state, and a single `end_turn`. The setting, buildings, economy, numbers, story and art are all original. All art is drawn in code, and there are no image or sound assets.
 
+## Play online
+
+**https://zephino.github.io/Lastborn_Colony/**
+
+The web version is rebuilt and published automatically every time something is pushed to `main` (`.github/workflows/web.yml`). The game's tests run first; if any fail, the old version stays online.
+
+- It runs in any modern browser on a computer, and on phones and tablets (a mouse or touch screen is needed for the map).
+- Saved games are kept in your browser on that device.
+- **Install app** (Settings) installs it like an app in Chrome and Edge, or on Android. On iPhone or iPad: tap **Share**, then **Add to Home Screen**.
+- **Updates:** for 30 seconds after the game opens, it checks for a newer version and switches to it. **Update app** (Settings) does the same at any time. Your saves are kept.
+
+### One-time GitHub Pages setting (owner)
+
+1. Open https://github.com/Zephino/Lastborn_Colony/settings/pages
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**. (With "Deploy from a branch", GitHub shows this README instead of the game.)
+3. Open the **Actions** tab, click **Web build** on the left, then **Run workflow** → **Run workflow**. After 2–4 minutes the game is live at the link above.
+
+If a build fails, open it in the **Actions** tab: the red step shows what went wrong (usually a failing test).
+
 ## Running it
 
 1. Install [Godot 4.3](https://godotengine.org/download) or newer (the standard build; .NET is not needed).
@@ -34,7 +53,8 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Crime** grows with population, crowding and low morale. It steals alloy and marks and lowers morale. Warden Posts hold it down.
 - **Plague** can break out in a larger colony. Survey Labs must research a cure before time runs out, or about a tenth of the colony dies.
 - **Events** happen at random: grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
-- **Keys:** Enter ends the turn and Esc cancels building. Right-drag pans the map and the mouse wheel zooms. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
+- **Settings** (title screen, or Menu in a game): fullscreen, and for the web version Install app and Update app.
+- **Keys:** Enter ends the turn. Esc cancels building or closes a dialog that can be closed. Right-drag pans the map and the mouse wheel zooms. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
 
 ## Layout
 
