@@ -13,6 +13,7 @@ const SECTIONS = [
     "<b>Sign in with Google:</b> Google's account id for you, stored scrambled (hashed). Your Google email is passed straight to your own device so the game can show which account you're signed in with; the server doesn't keep it. Lastborn Colony never asks Google for your real name.",
     "<b>Cloud save:</b> your saved colony, stored under your account's private sync code, so you can carry it between devices.",
     "<b>Leaderboard:</b> only if you choose to send a score: the player name you type, your colony's name, the planet, how the game ended, turns played, marks paid, population and the game version. It is shown publicly.",
+    "<b>Suggestions:</b> only if you send one: the category, title and text you type, plus the game version, whether you play in a browser or the app, the kind of device (desktop, phone or tablet), the operating system family and the browser family. It is posted publicly as an issue on the game's GitHub repository, without your name or account. To limit spam, a scrambled (hashed) form of your internet address is counted for one day, then forgotten; the address itself is never stored.",
   ]],
   ["What it doesn't do", [
     "No ads, no tracking, no analytics, and nothing is sold or shared with anyone.",

@@ -5,6 +5,7 @@
  *   POST /leaderboard                send one score; it is checked, then saved:
  *                                    { accepted, rank, planet, entries }
  *   GET/PUT /cloud/save              cloud saves, by private sync code (see cloud.js)
+ *   GET/POST /suggestions            anonymous player suggestions → GitHub Issues (see suggestions.js)
  *   /auth/*                          Sign in with Google (see accounts.js)
  *   GET  /privacy                    the privacy policy (see privacy.js)
  *
@@ -16,7 +17,13 @@
  *
  * Binding:  LEADERBOARD_KV (Workers KV), SAVE_VAULT and ACCOUNTS (Durable Objects)
  * Secrets:  GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, optional GITHUB_TOKEN
- *           (fine-grained token: Contents read/write on Zephino/Lastborn_Colony only)
+ *           (fine-grained token on Zephino/Lastborn_Colony only: Issues read/write
+ *           for suggestions; Contents read/write only for the optional board copy)
+ *
+ * Input safety: every value from a player's device is checked here, whatever
+ * the game checked (see safety.js and README "Input safety"). No SQL is used:
+ * storage is Workers KV and the Durable Object key/value API. Any future SQL
+ * must pass player values as bound parameters, never inside the query text.
  * Vars:     GITHUB_OWNER, GITHUB_REPO, GITHUB_PATH, GITHUB_BRANCH (see wrangler.toml)
  */
 
@@ -25,6 +32,8 @@ import { handleCloud } from "./cloud.js";
 import { handleAuth } from "./accounts.js";
 import { corsHeaders } from "./cors.js";
 import { privacyPage } from "./privacy.js";
+import { handleSuggestionPost, suggestionStatus } from "./suggestions.js";
+import { parseJson, readBody } from "./safety.js";
 
 export { SaveVault } from "./cloud.js";
 export { AccountVault } from "./accounts.js";
@@ -61,6 +70,7 @@ function settings(env) {
  */
 async function underLimit(env, kind, ip, max) {
   if (!env.LEADERBOARD_KV) return true;
+  // Storage note: KV keys and values only, no SQL. Any future SQL must use bound parameters.
   const key = `rl:${kind}:${ip}`;
   const now = Date.now();
   let data = { t: now, n: 0 };
@@ -145,18 +155,10 @@ async function handleGet(request, env, url) {
 }
 
 async function handlePost(request, env, ip) {
-  const declared = parseInt(request.headers.get("content-length") || "0", 10);
-  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
-    return jsonResponse(request, { error: "payload too large" }, 413);
-  }
-  const text = await request.text();
-  if (text.length > MAX_BODY_BYTES) return jsonResponse(request, { error: "payload too large" }, 413);
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    return jsonResponse(request, { error: "invalid json" }, 400);
-  }
+  const read = await readBody(request, MAX_BODY_BYTES);
+  if (read.tooLarge) return jsonResponse(request, { error: "payload too large" }, 413);
+  const body = parseJson(read.text);
+  if (body === undefined) return jsonResponse(request, { error: "invalid json" }, 400);
   const checked = validateScore(body);
   if (checked.error) return jsonResponse(request, { error: checked.error }, 400);
   if (!(await underLimit(env, "post", ip, SUBMIT_LIMIT_MAX))) {
@@ -183,10 +185,16 @@ export default {
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders(request) });
       }
+      // Set by Cloudflare itself; cut short so it can't make an oversized KV key.
+      const ip = (request.headers.get("CF-Connecting-IP") || "unknown").slice(0, 64);
+      if (url.pathname === "/suggestions") {
+        if (request.method === "GET") return suggestionStatus(request, env);
+        if (request.method === "POST") return await handleSuggestionPost(request, env, ip);
+        return jsonResponse(request, { error: "method not allowed" }, 405);
+      }
       if (url.pathname !== "/leaderboard" && url.pathname !== "/") {
         return jsonResponse(request, { error: "not found" }, 404);
       }
-      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
       if (request.method === "GET") return await handleGet(request, env, url);
       if (request.method === "POST") {
         // Only sending is rate limited: reading the board writes nothing to KV.

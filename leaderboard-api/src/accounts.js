@@ -27,6 +27,12 @@
 
 import { CODE_ALPHABET, CODE_LENGTH, normalizeCode } from "./cloud.js";
 import { corsHeaders } from "./cors.js";
+import { isPlainObject, parseJson, readBody } from "./safety.js";
+
+/** POST /auth/start only carries an optional 12-letter code. */
+const MAX_START_BYTES = 1000;
+/** Google's one-time codes are a few hundred characters; anything longer isn't one. */
+const MAX_GOOGLE_CODE = 2048;
 
 /** How long a sign-in may take, from opening the page to finishing. */
 export const LOGIN_TTL_MS = 10 * 60_000;
@@ -134,10 +140,11 @@ async function route(request, env) {
 
 async function start(request, env, url) {
   if (request.method !== "POST") return json({ error: "method not allowed" }, 405);
-  let body = {};
-  try {
-    body = JSON.parse((await request.text()) || "{}");
-  } catch {}
+  const read = await readBody(request, MAX_START_BYTES);
+  if (read.tooLarge) return json({ error: "payload too large" }, 413);
+  // Anything that isn't {code: "<valid code>"} just means "no code" (a fresh account).
+  const parsed = parseJson(read.text || "{}");
+  const body = isPlainObject(parsed) ? parsed : {};
   const login = randomHex(16);
   // The device's own cloud save, if it has one: a new account keeps it.
   const created = Date.now();
@@ -169,7 +176,7 @@ async function callback(env, url) {
     return page("Sign-in expired", "Go back to Lastborn Colony and press Sign in with Google again.", 400, false);
   }
   const code = url.searchParams.get("code");
-  if (!code) {
+  if (!code || code.length > MAX_GOOGLE_CODE) {
     await store(env, "login:" + login, { ...ticket, state: "cancelled" }, ticket.created + LOGIN_TTL_MS);
     return page("Sign-in cancelled", "Going back to Lastborn Colony…");
   }
@@ -211,7 +218,12 @@ async function poll(env, url) {
   return json({ state: "done", code: ticket.code, email: ticket.email || "" });
 }
 
-/** One account, or one sign-in in progress: a small stored value. */
+/**
+ * One account, or one sign-in in progress: a small stored value. Only this
+ * Worker can reach it (Durable Objects have no public address). Storage is the
+ * key/value API (get/put/deleteAll), never SQL; any future SQL here must use
+ * bound parameters (sql.exec("... = ?", value)), never values in the query text.
+ */
 export class AccountVault {
   constructor(state) {
     this.storage = state.storage;

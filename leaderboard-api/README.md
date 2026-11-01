@@ -6,6 +6,8 @@ the game's online features:
 - **Leaderboard:** how far each colony got, on which planet.
 - **Sign in with Google:** so a player's cloud save can follow them between devices.
 - **Cloud save:** one saved colony per Google account.
+- **Suggestions:** players send an idea or bug report from inside the game; it
+  arrives as a GitHub Issue in `Zephino/Lastborn_Colony`, with no player account.
 - **Privacy policy page**, which Google's sign-in screen links to.
 
 ```
@@ -13,6 +15,7 @@ Game ──POST score──▶ Worker (checks it) ──▶ Workers KV (the boar
                                         └─▶ GitHub data branch (optional copy)
 Game ◀──GET board── Worker
 Game ──sign in / cloud save──▶ Worker ──▶ Durable Objects (accounts, saves)
+Game ──POST suggestion──▶ Worker (checks, escapes, daily limits) ──▶ GitHub Issues
 ```
 
 Addresses:
@@ -23,6 +26,7 @@ Addresses:
 | The board (all planets) | https://lastborn-colony.thebotcoder.workers.dev/leaderboard |
 | Brume's board | https://lastborn-colony.thebotcoder.workers.dev/leaderboard?planet=brume |
 | Privacy policy | https://lastborn-colony.thebotcoder.workers.dev/privacy |
+| Suggestions on/off | https://lastborn-colony.thebotcoder.workers.dev/suggestions |
 | Google redirect URI | https://lastborn-colony.thebotcoder.workers.dev/auth/callback |
 | The web game | https://zephino.github.io/Lastborn_Colony/ |
 
@@ -32,8 +36,8 @@ always works offline; online features just show a short message when they
 can't reach the Worker.
 
 **Secrets never go in the repository or in a chat.** They live only in
-Cloudflare: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and (optional)
-`GITHUB_TOKEN`. The KV namespace id in `wrangler.toml` is public and safe to
+Cloudflare: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GITHUB_TOKEN`
+(needed for suggestions, and for the optional board copy). The KV namespace id in `wrangler.toml` is public and safe to
 keep there.
 
 ---
@@ -176,6 +180,75 @@ From the next score on, the Worker also commits `leaderboard.json` to the
 `data` branch (never to `main`). If the token expires, make a new one and
 replace the secret; nothing in the game changes.
 
+If you also use suggestions (Part 4), use **one** token for both: give it
+**Contents: Read and write** *and* **Issues: Read and write**.
+
+---
+
+## Part 4: Player suggestions (about 5 minutes)
+
+Players can send a suggestion from inside the game: a category (Gameplay,
+Balance, Interface, Bug, Online or Other), a short title and a description.
+The Worker turns each one into a GitHub Issue titled
+`[Player suggestion] ...` in `Zephino/Lastborn_Colony`. Players don't need a
+GitHub account or an email address. Until the token below is set, the game
+says "Suggestions aren't set up on the server yet." and nothing breaks.
+
+### 4a. Make a GitHub token
+
+1. Open https://github.com/settings/personal-access-tokens/new (a
+   **fine-grained** token, not a "classic" one).
+2. **Token name:** `lastborn-suggestions`; **Expiration:** 1 year (set a reminder).
+3. **Resource owner:** `Zephino`.
+4. **Repository access:** **Only select repositories** → `Zephino/Lastborn_Colony`.
+5. **Repository permissions:**
+   - **Issues:** **Read and write** (needed for suggestions).
+   - **Contents:** **Read and write** *only* if you also use the board copy
+     from Part 3. Otherwise leave it at **No access**.
+   - Leave everything else at **No access**.
+6. Click **Generate token** and copy it. **Never paste it into a chat or a file
+   in the repository.**
+
+### 4b. Store it in Cloudflare (either way works)
+
+- **Dashboard:** Cloudflare → **Workers & Pages** → **lastborn-colony** →
+  **Settings** → **Variables and Secrets** → **Add** → **Type:** Secret,
+  **Variable name:** `GITHUB_TOKEN`, **Value:** the token → **Save** (click
+  **Deploy** if it asks). If `GITHUB_TOKEN` already exists (from Part 3), click
+  its **Edit** button and paste the new token instead.
+- **Command line:** in this `leaderboard-api` folder run
+  `npx wrangler secret put GITHUB_TOKEN`, paste the token when it asks, and
+  press Enter.
+
+The Worker reads the token only on the server. The game never sees it.
+
+Note: if the token has only Issues permission, the optional board copy
+(Part 3) can't be written. The Worker then logs a 403 for that copy after each
+accepted score and carries on; the board itself still works from Cloudflare.
+
+### 4c. Test it
+
+1. Open https://lastborn-colony.thebotcoder.workers.dev/suggestions. You
+   should see `{"accepting":true}`. (`false` means the token isn't set yet.)
+   This shows the token is *there*, not that its permissions are right.
+2. In the game, send a short test suggestion. The game should say
+   "Thanks! Your suggestion was sent to the developer."
+3. Open https://github.com/Zephino/Lastborn_Colony/issues. The new
+   **[Player suggestion]** issue should be there. Close it when you're done.
+4. If the game shows a reason instead, it says what to fix: "token is invalid
+   or expired (401)" → make a new token and replace the secret; "(403)" → the
+   token needs **Issues: Read and write**; "(404)" or "(410)" → check the
+   token's repository is `Zephino/Lastborn_Colony` and that Issues are turned
+   on (repository **Settings** → **General** → **Features** → tick **Issues**).
+5. To get an email for each suggestion: on the repository page click
+   **Watch** → **Custom** → tick **Issues** → **Apply**.
+
+**Limits:** 3 suggestions per player address per day, 40 per day in total.
+The address is never stored: it is mixed with the date and a secret, then
+scrambled (hashed), and the counter expires after a day. These limits use
+Cloudflare KV, so they are close, not exact. Issues are public, so players are
+asked not to include personal information.
+
 ---
 
 ## How the leaderboard works
@@ -216,6 +289,51 @@ could fake a believable one. To remove a bad score, ask Claude.
 - Free plan: about 100,000 Durable Object requests a day, which covers a lot of
   players.
 
+## Input safety
+
+Everything the game sends is treated as untrusted. The Worker checks it
+again itself, whatever the game already checked, and refuses (with a 4xx
+answer) or tidies anything that doesn't fit:
+
+- **Types:** text fields must be JSON strings and numbers must be JSON whole
+  numbers. `"64"`, `[64]`, `{}`, `null` and `true` are refused. A body that
+  isn't a JSON object, or isn't JSON at all, gets 400.
+- **Sizes:** request bodies are read only up to a byte limit (score 4,000
+  bytes, suggestion 10,000, sign-in start 1,000, cloud save 1,000,000) and a
+  bigger one gets 413 without being read in full. Names: 16 characters,
+  colonies 24, planet ids 24, suggestion titles 5–100 characters,
+  descriptions 20–2,000, at most 2 links.
+- **Allowed characters and values:** player and colony names keep only
+  A–Z, a–z, 0–9, space, `_` and `-` (anything with `'` `"` `;` `--` `/*` `*/` `\` `` ` `` `<` `>`
+  or a control character is refused). Planet ids are `a-z 0-9 _`. Endings,
+  suggestion categories and device details come from fixed lists. Sync codes
+  and sign-in ids must match their exact format. Turns, marks and population
+  have fixed ranges.
+- **Invisible characters:** control characters, bidirectional overrides,
+  zero-width characters, the BOM and Unicode tag characters are removed from
+  suggestions (and can't appear in names at all).
+- **GitHub Markdown:** suggestion text is escaped before it goes into an
+  issue, so it can't add headings, lists, links, images, HTML, tables or math.
+  `@` and `#` become full-width look-alikes (＠ ＃), so no one is mentioned and
+  no issue is linked, and web addresses aren't clickable. Titles are one line.
+- **Cloud saves** are stored as the exact text the game sent, only for the
+  matching sync code, and are only ever sent back as JSON data to the game,
+  never shown as a web page.
+- **No SQL is used anywhere in this Worker.** Storage is Workers KV and the
+  Durable Objects' key/value API (`storage.get` / `storage.put`). The Durable
+  Objects are SQLite-backed, but the code never calls `ctx.storage.sql` or
+  `sql.exec`. If SQL is ever added, every player value must be passed as a
+  bound parameter (`sql.exec("SELECT ... WHERE id = ?", id)`), never pasted
+  into the query text. Comments in `src/safety.js`, `src/cloud.js`,
+  `src/accounts.js` and `src/index.js` repeat this rule where storage is used.
+- **CORS:** browsers may call the Worker only from `https://zephino.github.io`
+  and `localhost` / `127.0.0.1` (`src/cors.js`).
+
+`test/hostile.test.js` sends hostile input to every route (SQL-looking text,
+HTML and script tags, BBCode, Markdown, control / bidirectional / zero-width
+characters, over-long text, wrong types, huge bodies, broken JSON) and checks
+each is refused or made harmless.
+
 ## For developers
 
 | File | What it does |
@@ -226,7 +344,9 @@ could fake a believable one. To remove a bad score, ask Claude.
 | `src/cloud.js` | Cloud saves (`/cloud/save`, the `SaveVault` Durable Object). |
 | `src/cors.js` | Which web pages may call the Worker (the web game's address). |
 | `src/privacy.js` | The privacy policy page (`/privacy`). |
-| `test/*.test.js` | Tests with pretend storage: `node --test test/*.test.js` (or `npm test`). |
+| `src/suggestions.js` | Player suggestions (`/suggestions`) → GitHub Issues. |
+| `src/safety.js` | Shared input checks: body size limit, invisible-character removal, Markdown escaping. |
+| `test/*.test.js` | Tests with pretend storage and a pretend GitHub: `node --test test/*.test.js` (or `npm test`). `test/helpers.js` holds shared test helpers. |
 | `.gdignore` | Keeps Godot from importing this folder. |
 
 - API: `GET /leaderboard?planet=brume` → `{planet, updated, entries}`;
@@ -235,6 +355,12 @@ could fake a believable one. To remove a bad score, ask Claude.
 - Cloud: `GET /cloud/save` → `{save: "<save file text>" | null, updated}`;
   `PUT /cloud/save` with the save file's text. Both need
   `Authorization: Bearer <code>`.
+- Suggestions: `GET /suggestions` → `{accepting: true|false}`;
+  `POST /suggestions` with `{category, title, description, website: "", client}`
+  → 201 `{accepted: true, issue_number}`, or `{error}` with 400 (refused),
+  413 (too big), 429 (daily limit), 502 (GitHub said no; the reason says why)
+  or 503 (no `GITHUB_TOKEN`). `client` holds only `game_version`, `runtime`,
+  `device_type`, `platform` and `browser`, each from a fixed list.
 - To host the web game at another address, add it to `ALLOWED_ORIGINS` in
   `src/cors.js` (PC and phone builds don't need this).
 - Test the game against a Worker on your own computer: `npx wrangler dev` in
@@ -242,4 +368,5 @@ could fake a believable one. To remove a bad score, ask Claude.
   `-- --api=` (empty) turns the online features off.
 - The game's side is `scripts/net/` (`online.gd`, `online_config.gd`,
   `score_entry.gd`) with its text in `data/online.json`; those rules mirror
-  `src/board.js`, so change both together.
+  `src/board.js` and `src/suggestions.js` (categories and length limits), so
+  change both together.

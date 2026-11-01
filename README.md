@@ -12,7 +12,7 @@ The code is built around one plain state object, rule functions that take that s
 
 The web version is rebuilt and published automatically every time something is pushed to `main` (`.github/workflows/web.yml`). The game's tests run first; if any fail, the old version stays online.
 
-- It runs in any modern browser on a computer, and on phones and tablets (a mouse or touch screen is needed for the map).
+- It runs in any modern browser on a computer, and on phones and tablets. On a phone the interface scales to the screen: menus are full-size and scroll when long, the side panel's contents open from the **Info**, **Research** and **Company** buttons, and you drag the map with one finger.
 - Saved games are kept in your browser on that device.
 - **Install app** (Settings) installs it like an app in Chrome and Edge, or on Android. On iPhone or iPad: tap **Share**, then **Add to Home Screen**.
 - **Updates:** for 30 seconds after the game opens, it checks for a newer version and switches to it. **Update app** (Settings) does the same at any time. Your saves are kept.
@@ -20,6 +20,8 @@ The web version is rebuilt and published automatically every time something is p
 ### Leaderboard, Google sign-in and cloud save
 
 - **Leaderboard** (title screen) shows how far players got on each planet: colonies that bought out their charter come first (fewest turns wins), then everyone else by how much debt they paid off. Type your name on the title screen, then post a score when a colony ends, or choose **Menu → Retire** to post one that's still running.
+- **Suggest a feature** (title screen) sends an idea or bug report to the owner. It becomes a public issue on this repository, so don't include private details. No account is needed.
+- The title screen says **Signed in with Google** when you are; Settings shows which account.
 - **Sign in with Google** (Settings) is optional. It lets you keep one cloud save and carry on from another device: **Save this game to the cloud** on one device, then **Load my game from the cloud** on the other.
 - These features use the owner's Cloudflare Worker in `leaderboard-api/` (https://lastborn-colony.thebotcoder.workers.dev). Without it, or offline, the game plays normally and these buttons explain what's missing. Setup steps for the owner: `leaderboard-api/README.md`.
 
@@ -85,6 +87,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/actions.gd` | Player actions. Each one returns `{ok, reason}`. |
 | `scripts/sim/turn.gd` | `end_turn(state)`. |
 | `scripts/sim/research.gd` | Research topics and their effects. |
+| `scripts/sim/text_rules.gd` | Cleaning rules for everything a player types. |
 | `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
 | `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd` | The screens before landing, and the small map previews. |
 | `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
@@ -130,8 +133,15 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- All 200 headless test checks pass in Godot 4.3, and the Worker's 29 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
+- All 269 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). A colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
 - Ideas: underground levels, a rival faction, changing trade prices, difficulty settings, and sound.
+
+## Input safety
+
+- Everything a player types is cleaned before it's stored, shown or sent (`scripts/sim/text_rules.gd`). Colony and player names keep only letters, numbers, spaces, `-` and `_`, with length limits. Free text (suggestions) loses control characters and invisible characters that could hide or reorder text. Text shown in rich-text panels can't open formatting tags.
+- Saves loaded from the cloud are cleaned the same way.
+- The online service checks everything again on its side, whatever the game sends: types, lengths, allowed characters and ranges, body size limits, and rate limits. **It uses no SQL database, so SQL injection can't happen.** Any future SQL must use bound parameters. Suggestion text is escaped before it goes into a GitHub issue. See `leaderboard-api/README.md`, "Input safety".
+- Hostile input is tested on both sides: SQL-looking text, script tags, BBCode, Markdown, control and invisible characters, over-long text and wrong types.
 
 ## License
 

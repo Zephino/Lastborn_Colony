@@ -17,6 +17,7 @@ const TestOnline = preload("res://tests/test_online.gd")
 const Manifest = preload("res://scripts/sim/manifest.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
 const ColonyText = preload("res://scripts/ui/colony_text.gd")
+const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 var checks := 0
 var failures := 0
@@ -31,6 +32,7 @@ func _init() -> void:
 	test_placement()
 	test_determinism()
 	test_save_round_trip()
+	test_input_rules()
 	test_manifest()
 	test_colony_text()
 	test_planets_and_sites()
@@ -190,6 +192,40 @@ func test_colony_text() -> void:
 		check(text.contains(part), "the report has a %s section" % part)
 	check(ColonyText.tile(s, Vector2i(int(st["x"]), int(st["y"]))).contains("Idle last turn"), "the tile text shows the problem")
 	check(ColonyText.summary(s).contains("idle"), "the summary points to idle buildings")
+
+
+func test_input_rules() -> void:
+	print("Input cleaning")
+	var hostile := {
+		"'; DROP TABLE scores; --": "DROP TABLE scores --",
+		"1 OR 1=1": "1 OR 11",
+		"<script>alert(1)</script>": "scriptalert1script",
+		"[color=red]Red[/color]": "colorredRedcolor",
+		"[url=https://x.y]click[/url]": "urlhttpsxyclickurl",
+		"Bad\u202Ename": "Badname",
+		"Zero\u200Bwidth": "Zerowidth",
+		"Tab\tand\nnewline": "Tab and newline",
+		"  lots    of   space  ": "lots of space",
+	}
+	for raw in hostile:
+		var input: String = str(raw).c_unescape()
+		var out := TextRules.clean_name(input, 40)
+		check(out == hostile[raw], "name cleaning: %s -> %s" % [JSON.stringify(raw), out])
+	check(TextRules.clean_name("x".repeat(500), 16).length() == 16, "names are cut to their maximum length")
+	check(TextRules.clean_colony_name("[[[]]]") == TextRules.DEFAULT_COLONY, "a name with nothing usable becomes the default")
+	var text := TextRules.clean_text("Hi\u0000 there;\u202E 'quoted' <b>\nline two".c_unescape(), 200, true)
+	check(not text.contains("\u0000".c_unescape()) and not text.contains("\u202E".c_unescape()), "free text drops control and bidi characters")
+	check(text.contains("'quoted'") and text.contains(";") and text.contains("\n"), "free text keeps punctuation and line breaks as plain text")
+	check(not TextRules.clean_text("a\nb".c_unescape(), 20).contains("\n"), "single-line text has no line breaks")
+	check(TextRules.escape_bbcode("[url]x[/url]") == "[lb]url]x[lb]/url]", "text shown in rich labels can't open tags")
+	var s := NewGame.create(1, "[color=red]<b>Evil</b>'; DROP")
+	check(s["colony_name"] == "colorredbEvilb DROP", "a new colony's name is cleaned (%s)" % s["colony_name"])
+	var forged: Dictionary = JSON.parse_string(SaveGame.to_text(s))
+	forged["colony_name"] = "[img]http://x/a.png[/img]"
+	forged["planet"] = "../../etc"
+	var loaded: Variant = SaveGame.from_text(JSON.stringify(forged))
+	check(typeof(loaded) == TYPE_DICTIONARY and not str(loaded["colony_name"]).contains("[") and loaded["planet"] == "brume", "a tampered save's name and planet are cleaned on load")
+	check(not ColonyText.summary(loaded).contains("[img]"), "the summary never shows a typed tag")
 
 
 func test_manifest() -> void:

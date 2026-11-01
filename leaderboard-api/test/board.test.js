@@ -216,5 +216,6 @@ test("only the web game's own address gets CORS access", async () => {
 
 test("unknown paths answer 404", async () => {
   assert.equal((await worker.fetch(new Request("https://example.workers.dev/lobby"), fakeEnv())).status, 404);
-  assert.equal((await worker.fetch(new Request("https://example.workers.dev/suggestions"), fakeEnv())).status, 404);
+  assert.equal((await worker.fetch(new Request("https://example.workers.dev/admin"), fakeEnv())).status, 404);
+  assert.equal((await worker.fetch(new Request("https://example.workers.dev/leaderboard/../admin"), fakeEnv())).status, 404);
 });

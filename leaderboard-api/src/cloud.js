@@ -15,6 +15,7 @@
  */
 
 import { corsHeaders } from "./cors.js";
+import { byteLength, readBody } from "./safety.js";
 
 export const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const CODE_LENGTH = 12;
@@ -54,7 +55,7 @@ export async function hashCode(code) {
 /** A save the Worker will keep: a Lastborn Colony save (a JSON object with a numeric `version`), not too big. */
 export function validateSave(text) {
   if (typeof text !== "string" || text.length === 0) return { error: "empty save" };
-  if (text.length > MAX_SAVE_BYTES) return { error: "save too large" };
+  if (text.length > MAX_SAVE_BYTES || byteLength(text) > MAX_SAVE_BYTES) return { error: "save too large" };
   let save;
   try {
     save = JSON.parse(text);
@@ -76,9 +77,9 @@ export async function handleCloud(request, env) {
   if (request.method !== "GET" && request.method !== "PUT") return json(request, { error: "method not allowed" }, 405);
   let body = "";
   if (request.method === "PUT") {
-    const declared = parseInt(request.headers.get("content-length") || "0", 10);
-    if (Number.isFinite(declared) && declared > MAX_SAVE_BYTES) return json(request, { error: "save too large" }, 413);
-    body = await request.text();
+    const read = await readBody(request, MAX_SAVE_BYTES);
+    if (read.tooLarge) return json(request, { error: "save too large" }, 413);
+    body = read.text;
     const checked = validateSave(body);
     if (checked.error) return json(request, { error: checked.error }, checked.error === "save too large" ? 413 : 400);
   }
@@ -88,7 +89,11 @@ export async function handleCloud(request, env) {
   return new Response(await res.text(), { status: res.status, headers: headersFor(request) });
 }
 
-/** One player's cloud save. */
+/**
+ * One player's cloud save, reachable only through this Worker. The save is
+ * kept as opaque text with the key/value API (get/put), never SQL; any future
+ * SQL here must use bound parameters, never values in the query text.
+ */
 export class SaveVault {
   constructor(state) {
     this.storage = state.storage;

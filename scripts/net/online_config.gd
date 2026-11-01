@@ -57,6 +57,12 @@ static func auth_url(path: String) -> String:
 	return "" if base == "" else base + "/auth/" + path
 
 
+## Anonymous suggestions (leaderboard-api/src/suggestions.js); "" when off.
+static func suggestions_url() -> String:
+	var base := api_base()
+	return "" if base == "" else base + "/suggestions"
+
+
 ## The privacy policy page (shown by the Worker).
 static func privacy_url() -> String:
 	var base := api_base()

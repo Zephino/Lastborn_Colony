@@ -11,6 +11,7 @@ const SaveGame = preload("res://scripts/sim/save_game.gd")
 const AppActions = preload("res://scripts/ui/app_actions.gd")
 const OnlineConfig = preload("res://scripts/net/online_config.gd")
 const ScoreEntry = preload("res://scripts/net/score_entry.gd")
+const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 const PROFILE_PATH := "user://profile.json"
 
@@ -114,12 +115,14 @@ func _on_update() -> void:
 # ---------------------------------------------------------------- Online
 
 func _on_account_changed() -> void:
+	main._refresh_signed_in()
 	if main.settings_open:
 		show_settings()
 
 
 func _on_player_name_changed(text: String) -> void:
-	main.player_name = text
+	# The field keeps what was typed; only the cleaned name is stored and sent.
+	main.player_name = TextRules.clean_name(text, TextRules.MAX_PLAYER_NAME)
 	_save_profile()
 
 
@@ -127,7 +130,9 @@ func _load_profile() -> Dictionary:
 	if not FileAccess.file_exists(PROFILE_PATH):
 		return {}
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PROFILE_PATH))
-	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return {}
+	return {"name": TextRules.clean_name(str(parsed.get("name", "")), TextRules.MAX_PLAYER_NAME)}
 
 
 func _save_profile() -> void:
@@ -209,3 +214,82 @@ func _on_cloud_loaded(text: String, error: String) -> void:
 	main.show_game()
 	main._after_turn()
 	main._toast("Loaded your game from the cloud.")
+
+
+# ---------------------------------------------------------------- Suggest a feature
+
+const Online = preload("res://scripts/net/online.gd")
+
+var _suggestion_category: OptionButton
+var _suggestion_title: LineEdit
+var _suggestion_text: TextEdit
+var _suggestion_send: Button
+
+
+## A form that sends a suggestion to the owner (it becomes a GitHub Issue
+## through the online service). No account or email is needed. Everything typed
+## is cleaned here (TextRules.clean_text) and checked again by the server.
+func show_suggestion_form() -> void:
+	main.show_modal("Suggest a feature", "Ideas, problems, anything. Your suggestion is posted publicly on the game's GitHub page, so don't include private details.", [], true)
+	var box: VBoxContainer = _modal_box()
+	_suggestion_category = OptionButton.new()
+	_suggestion_category.custom_minimum_size = Vector2(0, 44)
+	for c in Online.suggestion_categories():
+		_suggestion_category.add_item(str(c))
+	box.add_child(main._label("Category"))
+	box.add_child(_suggestion_category)
+	box.add_child(main._label("Short title"))
+	_suggestion_title = LineEdit.new()
+	_suggestion_title.max_length = Online.SUGGESTION_MAX_TITLE
+	_suggestion_title.custom_minimum_size = Vector2(0, 44)
+	_suggestion_title.placeholder_text = "For example: A map legend"
+	box.add_child(_suggestion_title)
+	box.add_child(main._label("Details"))
+	_suggestion_text = TextEdit.new()
+	_suggestion_text.custom_minimum_size = Vector2(0, 140)
+	_suggestion_text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	_suggestion_text.placeholder_text = "What would you like, and why? (at least %d characters)" % Online.SUGGESTION_MIN_DESCRIPTION
+	_suggestion_text.text_changed.connect(_limit_suggestion_text)
+	box.add_child(_suggestion_text)
+	_suggestion_send = main._button("Send", _send_suggestion)
+	_suggestion_send.custom_minimum_size = Vector2(0, 44)
+	box.add_child(_suggestion_send)
+	var close: Button = main._button("Close", Callable(main, "close_modal"))
+	close.custom_minimum_size = Vector2(0, 44)
+	box.add_child(close)
+	_suggestion_title.grab_focus.call_deferred()
+
+
+## The VBox inside the dialog that show_modal just opened.
+func _modal_box() -> VBoxContainer:
+	var boxes: Array = main.modal.find_children("*", "VBoxContainer", true, false)
+	return boxes[0]
+
+
+func _limit_suggestion_text() -> void:
+	if _suggestion_text.text.length() > Online.SUGGESTION_MAX_DESCRIPTION:
+		_suggestion_text.text = _suggestion_text.text.substr(0, Online.SUGGESTION_MAX_DESCRIPTION)
+		_suggestion_text.set_caret_column(_suggestion_text.get_line(_suggestion_text.get_line_count() - 1).length())
+		_suggestion_text.set_caret_line(_suggestion_text.get_line_count() - 1)
+
+
+func _send_suggestion() -> void:
+	var title := TextRules.clean_text(_suggestion_title.text, Online.SUGGESTION_MAX_TITLE)
+	var text := TextRules.clean_text(_suggestion_text.text, Online.SUGGESTION_MAX_DESCRIPTION, true)
+	var category := _suggestion_category.get_item_text(_suggestion_category.selected)
+	var problem := Online.suggestion_problem(category, title, text)
+	if problem != "":
+		main._toast(problem)
+		return
+	_suggestion_send.disabled = true
+	_suggestion_send.text = "Sending…"
+	main.online.submit_suggestion(category, title, text)
+
+
+func _on_suggestion_sent(ok: bool, message: String) -> void:
+	main._toast(message)
+	if ok:
+		main.close_modal()
+	elif _suggestion_send != null and is_instance_valid(_suggestion_send):
+		_suggestion_send.disabled = false
+		_suggestion_send.text = "Send"

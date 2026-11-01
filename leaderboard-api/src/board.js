@@ -60,11 +60,10 @@ export function sanitizeName(raw, max = MAX_NAME_LENGTH) {
   return cleaned.slice(0, max).trim();
 }
 
+/** A JSON number that is whole and in min..max. Strings ("12"), arrays, null and true are refused. */
 function wholeNumber(raw, min, max) {
-  if (typeof raw === "string" && raw.trim() === "") return null;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || !Number.isInteger(n) || n < min || n > max) return null;
-  return n;
+  if (typeof raw !== "number" || !Number.isInteger(raw) || raw < min || raw > max) return null;
+  return raw;
 }
 
 /**
@@ -73,15 +72,16 @@ function wholeNumber(raw, min, max) {
  */
 export function validateScore(body) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return { error: "invalid json" };
-  if (looksLikeInjection(body.name)) return { error: "invalid name" };
+  // Text fields must really be strings: ["Ari"] or 42 would otherwise turn into text.
+  if (typeof body.name !== "string" || looksLikeInjection(body.name)) return { error: "invalid name" };
   const name = sanitizeName(body.name, MAX_NAME_LENGTH);
   if (!name) return { error: "invalid name" };
-  if (looksLikeInjection(body.colony)) return { error: "invalid colony" };
+  if (typeof body.colony !== "string" || looksLikeInjection(body.colony)) return { error: "invalid colony" };
   const colony = sanitizeName(body.colony, MAX_COLONY_LENGTH);
   if (!colony) return { error: "invalid colony" };
-  const planet = String(body.planet ?? "");
+  const planet = typeof body.planet === "string" ? body.planet : "";
   if (!PLANET_PATTERN.test(planet)) return { error: "invalid planet" };
-  const ending = String(body.ending ?? "");
+  const ending = typeof body.ending === "string" ? body.ending : "";
   if (!ENDINGS.includes(ending)) return { error: "invalid ending" };
   const turn = wholeNumber(body.turn, 1, MAX_TURN);
   if (turn === null) return { error: "invalid turn" };
@@ -92,7 +92,7 @@ export function validateScore(body) {
   if (ending === "free" && debt_paid !== debt_total) return { error: "invalid debt" };
   const population = wholeNumber(body.population, 0, MAX_POPULATION);
   if (population === null) return { error: "invalid population" };
-  const version = String(body.version ?? "");
+  const version = typeof body.version === "string" ? body.version : "";
   if (!VERSION_PATTERN.test(version)) return { error: "invalid version" };
   return { entry: { name, colony, planet, ending, turn, debt_paid, debt_total, population, version } };
 }

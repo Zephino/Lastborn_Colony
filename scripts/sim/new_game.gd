@@ -6,6 +6,7 @@ const GameData = preload("res://scripts/sim/game_data.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
 const Rng = preload("res://scripts/sim/rng.gd")
 const Manifest = preload("res://scripts/sim/manifest.gd")
+const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 const SAVE_VERSION := 1
 
@@ -13,6 +14,7 @@ const SAVE_VERSION := 1
 ## options (all optional): "planet" (id), "site" (landing site index),
 ## "manifest" (cargo, see manifest.gd; defaults to the recommended load).
 static func create(game_seed: int, colony_name: String, options: Dictionary = {}) -> Dictionary:
+	colony_name = TextRules.clean_colony_name(colony_name)
 	var b := GameData.balance()
 	var start: Dictionary = b["start"]
 	var planet_id: String = str(options.get("planet", GameData.DEFAULT_PLANET))

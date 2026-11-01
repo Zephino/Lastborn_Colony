@@ -2,6 +2,42 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.07
+Date: 11/01/2026
+Time: 2:24 AM
+
+### Changes
+- **Readable on phones.** The interface now scales by the device's pixel density; before, a phone drew everything at a third of the size. On a phone:
+  - **Title, setup and dialogs:** the title screen and setup pages fit the screen, and long dialogs scroll.
+  - **Manifest and landing sites:** each price moves under its item, and the sites stack in one column.
+  - **Buttons:** touch-sized (44 points).
+- **Phone layout for the game screen** (narrow screens only):
+  - **Build list:** narrower.
+  - **Side panel:** hidden, with its contents opening from new **Info**, **Research** and **Company** buttons. Tapping a tile opens its details.
+  - **Buttons:** they wrap so all of them are reachable.
+  - **Map:** drag it with one finger, or with the mouse on a computer (a click without moving still selects).
+- **Title screen:**
+  - **Suggest a feature:** a form with category, title and details, sent to the owner as a GitHub issue through the online service.
+  - **Quit**, now in the browser too: it closes the tab where the browser allows it, otherwise it says the tab can be closed.
+  - **Signed in with Google**, shown when signed in. No name is shown; Settings has that.
+- **Input safety (game):** new `scripts/sim/text_rules.gd` cleans everything a player types.
+  - **Names:** colony and player names keep letters, numbers, spaces, `-` and `_`, up to 24 and 16 characters.
+  - **Free text:** control characters and invisible text-reordering characters are removed.
+  - **Rich-text panels:** the log and the colony summary can't be made to open formatting tags.
+  - **Saves:** a save loaded from a file or the cloud has its colony name and planet checked.
+- **Input safety (online service):**
+  - **Suggestions:** a new endpoint (`/suggestions`) with a category allowlist, length and size limits, a spam trap, and limits of 3 a day per address and 40 a day overall. Suggestion text is escaped so it can't add formatting, links, HTML, @mentions or issue references to the GitHub issue.
+  - **No SQL:** the service uses no SQL database, so SQL injection isn't possible. This is now stated in its README, with a rule that any future SQL must use bound parameters.
+  - **Audit fixes:** the leaderboard accepted numbers sent as text and lists as names; sending `null` to sign-in crashed the service; body size limits counted characters instead of bytes; and two inputs had no length cap. All four are fixed.
+  - **Hostile-input tests:** every route was tested with SQL-looking text, script tags, BBCode, Markdown, control and invisible characters, over-long text, wrong types, huge bodies and broken JSON. All are refused or made harmless.
+- **Tests:** 269 game checks pass (50 new, including hostile names and tampered saves) and 53 online-service tests (24 new).
+- **Played in a phone-sized browser here** (390×844 points, touch): the title, Suggest a feature, Settings, the whole setup, the game screen, dragging the map, and tapping a tile.
+- **Owner setup for suggestions** (in `leaderboard-api/README.md`): a fine-grained GitHub token for this repository with **Issues: read and write**, stored in Cloudflare as the `GITHUB_TOKEN` secret.
+- **Exception to `lastborn.mdc`:** `scripts/net/online.gd` is now about 600 lines, over the ~400 aim.
+
+### Reason
+The owner asked for menus readable on a phone, Suggest a feature and Quit buttons on the main screen, a signed-in indicator on the main screen, and for all user input to be sanitized and protected against SQL injection.
+
 ## Version 00.01.06
 Date: 11/01/2026
 Time: 2:06 AM

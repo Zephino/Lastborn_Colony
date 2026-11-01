@@ -1,5 +1,5 @@
 {
-  "_comment": "Player-facing text for the online features (leaderboard, Sign in with Google, cloud save). Used by scripts/net/online.gd and score_entry.gd. %s and %d are filled in by the game.",
+  "_comment": "Player-facing text for the online features (leaderboard, Sign in with Google, cloud save, suggestions). Used by scripts/net/online.gd and score_entry.gd. %s and %d are filled in by the game.",
   "default_colony": "Colony",
   "offline": "Online features are off in this build.",
   "no_connection": "Can't reach the server. Check your internet connection and try again.",
@@ -30,5 +30,16 @@
   "cloud_refused": "The cloud refused this save: %s.",
   "cloud_bad_account": "Your sign-in is no longer valid. Sign out and sign in again.",
   "cloud_empty": "There's no cloud save yet.",
-  "cloud_unreadable": "The cloud save couldn't be read."
+  "cloud_unreadable": "The cloud save couldn't be read.",
+  "suggest_sent": "Thanks! Your suggestion was sent to the developer.",
+  "suggest_busy": "Your suggestion is still being sent.",
+  "suggest_not_set_up": "Suggestions aren't set up on the server yet.",
+  "suggest_bad_category": "Choose a category for your suggestion.",
+  "suggest_title_length": "The title must be %d to %d characters long.",
+  "suggest_description_length": "The description must be %d to %d characters long.",
+  "suggest_too_many_links": "Please include at most %d links.",
+  "suggest_refused": "The server refused this suggestion: %s.",
+  "suggest_too_large": "This suggestion is too long to send.",
+  "suggest_rate_limited": "Too many suggestions today. Please try again tomorrow.",
+  "suggest_github_failed": "The suggestion couldn't be saved (%s). Please try again later."
 }

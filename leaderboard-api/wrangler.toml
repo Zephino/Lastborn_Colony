@@ -25,8 +25,9 @@ tag = "v1"
 new_sqlite_classes = ["SaveVault", "AccountVault"]
 
 [vars]
-# Only used if the optional GITHUB_TOKEN secret is set (a public copy of the
-# board on the repository's `data` branch). The board works without it.
+# Used with the GITHUB_TOKEN secret: suggestions become issues in
+# GITHUB_OWNER/GITHUB_REPO, and the optional public copy of the board goes to
+# GITHUB_BRANCH/GITHUB_PATH. The board works without the token.
 GITHUB_OWNER = "Zephino"
 GITHUB_REPO = "Lastborn_Colony"
 GITHUB_BRANCH = "data"
@@ -36,4 +37,5 @@ GITHUB_PATH = "leaderboard.json"
 # lastborn-colony → Settings → Variables and Secrets, type "Secret"):
 #   GOOGLE_CLIENT_ID      Sign in with Google (see README.md)
 #   GOOGLE_CLIENT_SECRET
-#   GITHUB_TOKEN          optional: copy the board to GitHub
+#   GITHUB_TOKEN          player suggestions → GitHub Issues (Issues: read/write),
+#                         and the optional board copy (Contents: read/write)

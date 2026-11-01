@@ -1,6 +1,6 @@
 ## Headless checks for the online code that needs no network: building and
-## checking leaderboard scores, reading the Worker's answers, the account file
-## and the server addresses. Called from tests/run_tests.gd:
+## checking leaderboard scores, reading the Worker's answers, the account file,
+## the server addresses, and tidying and checking suggestions. Called from tests/run_tests.gd:
 ##   const TestOnline = preload("res://tests/test_online.gd")
 ##   TestOnline.run(check)
 extends RefCounted
@@ -22,6 +22,7 @@ static func run(check: Callable) -> void:
 	_replies(check)
 	_account_file(check)
 	_config(check)
+	_suggestions(check)
 
 
 static func _score_entries(check: Callable) -> void:
@@ -134,4 +135,66 @@ static func _config(check: Callable) -> void:
 	check.call(not OnlineConfig.enabled() and OnlineConfig.cloud_url() == "", "online features can be turned off")
 	OnlineConfig.base_override = saved
 	for key in ["offline", "no_connection", "not_set_up", "score_accepted", "sign_in_done", "cloud_saved", "cloud_empty"]:
+		check.call(OnlineConfig.text(key) != key, "data/online.json has text for %s" % key)
+
+
+static func _suggestions(check: Callable) -> void:
+	check.call(Online.suggestion_categories() == ["Gameplay", "Balance", "Interface", "Bug", "Online", "Other"], "suggestion categories match the Worker's list")
+	var cats := Online.suggestion_categories()
+	cats.append("Admin")
+	check.call(Online.suggestion_categories().size() == 6, "the category list can't be changed by a caller")
+	var hidden := "A" + char(0) + "b" + char(0x07) + "c" + char(0x202E) + "d" + char(0x2066) + "e" + char(0x200B) + "f" + char(0xFEFF) + "g" + char(0xAD) + "h" + char(0xE0041) + "i" + char(0x7F) + "j"
+	check.call(Online.clean_suggestion_text(hidden, true) == "Abcdefghij", "control, bidi, zero-width and tag characters are removed")
+	check.call(Online.clean_suggestion_text("  Two\nline\r\n\ttitle  ", true) == "Two line title", "a title becomes one trimmed line")
+	check.call(Online.clean_suggestion_text("One\r\n\r\n\r\n\r\nTwo  \nThree", false) == "One\n\nTwo\nThree", "a description keeps at most one blank line")
+	check.call(Online.clean_suggestion_text("Caf\u00e9 \U01F680 '; DROP TABLE scores; --", true) == "Caf\u00e9 \U01F680 '; DROP TABLE scores; --", "ordinary text, accents, emoji and quotes are kept (the server escapes them)")
+
+	var desc := "The Vent Tap heat feels much too strong on Hollow."
+	check.call(Online.suggestion_problem("Balance", "Vent Taps", desc) == "", "a normal suggestion passes")
+	check.call(Online.suggestion_problem("balance", "Vent Taps", desc) == OnlineConfig.text("suggest_bad_category"), "category must match exactly")
+	check.call(Online.suggestion_problem("<script>", "Vent Taps", desc) == OnlineConfig.text("suggest_bad_category"), "an unknown category is refused")
+	var title_msg := OnlineConfig.text("suggest_title_length") % [Online.SUGGESTION_MIN_TITLE, Online.SUGGESTION_MAX_TITLE]
+	check.call(Online.suggestion_problem("Bug", "Hi", desc) == title_msg, "a title under 5 characters is refused")
+	check.call(Online.suggestion_problem("Bug", char(0x200B).repeat(10) + "Hi", desc) == title_msg, "invisible characters don't count toward the title")
+	check.call(Online.suggestion_problem("Bug", "x".repeat(101), desc) == title_msg, "a title over 100 characters is refused")
+	check.call(Online.suggestion_problem("Bug", "x".repeat(100), desc) == "", "a 100-character title is fine")
+	var desc_msg := OnlineConfig.text("suggest_description_length") % [Online.SUGGESTION_MIN_DESCRIPTION, Online.SUGGESTION_MAX_DESCRIPTION]
+	check.call(Online.suggestion_problem("Bug", "Vent Taps", "too short") == desc_msg, "a description under 20 characters is refused")
+	check.call(Online.suggestion_problem("Bug", "Vent Taps", "y".repeat(2001)) == desc_msg, "a description over 2000 characters is refused")
+	check.call(Online.suggestion_problem("Bug", "Vent Taps", "y".repeat(2000)) == "", "a 2000-character description is fine")
+	check.call(Online.suggestion_problem("Bug", "Vent Taps", desc + " http://a https://b www.c") == OnlineConfig.text("suggest_too_many_links") % 2, "more than 2 links are refused")
+
+	var client := Online.client_details()
+	check.call(client.keys() == ["game_version", "runtime", "device_type", "platform", "browser"], "client details are the five coarse fields only")
+	check.call(client["game_version"] == str(ProjectSettings.get_setting("application/config/version")), "client details carry the game version")
+	check.call(client["runtime"] in ["Web", "Native"] and client["device_type"] in ["Desktop", "Phone", "Tablet", "Unknown"], "runtime and device come from fixed lists")
+	var body := Online.suggestion_payload("Bug", " Map\nflicker" + char(0x202E) + " ", "  " + desc + char(0x200B) + "  ", client)
+	check.call(body["title"] == "Map flicker" and body["description"] == desc, "the payload carries tidied text")
+	check.call(body["website"] == "", "the payload carries an empty honeypot")
+	check.call(body.keys() == ["category", "title", "description", "website", "client"], "the payload has only the expected fields")
+
+	var r := Online.suggestion_reply(OK_RESULT, 201, '{"accepted":true,"issue_number":42}')
+	check.call(r["ok"] and r["message"] == OnlineConfig.text("suggest_sent"), "a delivered suggestion is reported")
+	check.call(not Online.suggestion_reply(OK_RESULT, 201, "{}")["ok"], "201 without accepted is not success")
+	var other := Online.suggestion_reply(OK_RESULT, 200, '{"accepted":true}')
+	check.call(not other["ok"] and other["message"] == OnlineConfig.text("server_error") % 200, "only 201 means delivered")
+	check.call(Online.suggestion_reply(OK_RESULT, 429, "{}")["message"] == OnlineConfig.text("suggest_rate_limited"), "the daily limit is reported")
+	check.call(Online.suggestion_reply(OK_RESULT, 503, '{"error":"x"}')["message"] == OnlineConfig.text("suggest_not_set_up"), "a Worker without a token says suggestions aren't set up")
+	check.call(Online.suggestion_reply(OK_RESULT, 404, "")["message"] == OnlineConfig.text("suggest_not_set_up"), "an older Worker without suggestions says so")
+	check.call(Online.suggestion_reply(OK_RESULT, 413, "")["message"] == OnlineConfig.text("suggest_too_large"), "a too-large suggestion is reported")
+	check.call(Online.suggestion_reply(OK_RESULT, 400, '{"error":"invalid category"}')["message"] == OnlineConfig.text("suggest_refused") % "invalid category", "a refused suggestion says why")
+	var odd := Online.suggestion_reply(OK_RESULT, 502, JSON.stringify({"error": "bad" + char(0x202E) + "\n" + "z".repeat(500)}))
+	check.call(not odd["ok"] and not ("\n" in odd["message"]) and not (char(0x202E) in odd["message"]) and odd["message"].length() < 400, "a server reason is tidied and cut short before it is shown")
+	check.call(Online.suggestion_reply(NO_CONNECTION, 0, "")["message"] == OnlineConfig.text("no_connection"), "offline suggestion gives a short message")
+	check.call(Online.suggestion_reply(OK_RESULT, 201, "<html>")["ok"] == false, "a garbled reply is not success")
+
+	check.call(Online.suggestions_status_reply(OK_RESULT, 200, '{"accepting":true}'), "status: accepting")
+	check.call(not Online.suggestions_status_reply(OK_RESULT, 200, '{"accepting":false}'), "status: not accepting")
+	check.call(not Online.suggestions_status_reply(OK_RESULT, 200, '{"accepting":"true"}'), "status: only a real true counts")
+	check.call(not Online.suggestions_status_reply(NO_CONNECTION, 0, ""), "status: offline means not accepting")
+	var saved := OnlineConfig.base_override
+	OnlineConfig.base_override = "http://127.0.0.1:8787"
+	check.call(OnlineConfig.suggestions_url() == "http://127.0.0.1:8787/suggestions", "suggestions URL")
+	OnlineConfig.base_override = saved
+	for key in ["suggest_sent", "suggest_not_set_up", "suggest_rate_limited", "suggest_refused", "suggest_github_failed", "suggest_title_length", "suggest_description_length", "suggest_bad_category", "suggest_too_many_links", "suggest_too_large", "suggest_busy"]:
 		check.call(OnlineConfig.text(key) != key, "data/online.json has text for %s" % key)

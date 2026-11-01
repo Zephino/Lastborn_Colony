@@ -3,6 +3,8 @@
 extends RefCounted
 
 const NewGame = preload("res://scripts/sim/new_game.gd")
+const TextRules = preload("res://scripts/sim/text_rules.gd")
+const GameData = preload("res://scripts/sim/game_data.gd")
 
 const DIR := "user://saves"
 const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest"]
@@ -49,6 +51,10 @@ static func normalize(state: Dictionary) -> void:
 			state[k] = (DEFAULTS[k] as Variant) if typeof(DEFAULTS[k]) != TYPE_DICTIONARY else (DEFAULTS[k] as Dictionary).duplicate(true)
 	if not state.has("debt_total"):
 		state["debt_total"] = 6000.0
+	# A save can come from a file or the cloud: never trust its text or ids.
+	state["colony_name"] = TextRules.clean_colony_name(str(state.get("colony_name", "")))
+	if not GameData.has_planet(str(state["planet"])):
+		state["planet"] = GameData.DEFAULT_PLANET
 	for k in INT_FIELDS:
 		state[k] = int(state[k])
 	var occupancy := {}

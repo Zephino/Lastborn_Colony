@@ -1,6 +1,6 @@
 ## Draws the colony map with simple shapes (no image assets) and turns mouse
-## input into tile clicks. Left click: select or build. Right/middle drag: pan.
-## Wheel: zoom.
+## input into tile clicks. Click or tap: select or build. Drag (any button or
+## one finger): pan. Wheel: zoom.
 extends Control
 
 signal tile_clicked(cell: Vector2i)
@@ -26,6 +26,11 @@ var selected := Vector2i(-1, -1)
 var hover := Vector2i(-1, -1)
 var build_type := ""
 var _dragging := false
+## A left press becomes a pan once it moves this far; otherwise it is a click.
+const DRAG_THRESHOLD := 10.0
+var _left_down := false
+var _left_panning := false
+var _left_from := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -64,14 +69,26 @@ func _gui_input(event: InputEvent) -> void:
 			_zoom(1.0 / 1.12, mb.position)
 		elif mb.button_index == MOUSE_BUTTON_RIGHT or mb.button_index == MOUSE_BUTTON_MIDDLE:
 			_dragging = mb.pressed
-		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
-			var c := cell_at(mb.position)
-			if c.x >= 0:
-				tile_clicked.emit(c)
+		elif mb.button_index == MOUSE_BUTTON_LEFT:
+			if mb.pressed:
+				_left_down = true
+				_left_panning = false
+				_left_from = mb.position
+			else:
+				if _left_down and not _left_panning:
+					var c := cell_at(mb.position)
+					if c.x >= 0:
+						tile_clicked.emit(c)
+				_left_down = false
+				_left_panning = false
 		accept_event()
 	elif event is InputEventMouseMotion:
 		var mm := event as InputEventMouseMotion
-		if _dragging:
+		if _left_down and not _left_panning and mm.position.distance_to(_left_from) > DRAG_THRESHOLD:
+			_left_panning = true
+			pan += mm.position - _left_from
+			queue_redraw()
+		elif _dragging or _left_panning:
 			pan += mm.relative
 			queue_redraw()
 		var c := cell_at(mm.position)

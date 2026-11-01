@@ -98,6 +98,13 @@ static func planets() -> Array:
 	return _planets
 
 
+static func has_planet(id: String) -> bool:
+	for p in planets():
+		if p["id"] == id:
+			return true
+	return false
+
+
 static func planet(id: String) -> Dictionary:
 	for p in planets():
 		if p["id"] == id:

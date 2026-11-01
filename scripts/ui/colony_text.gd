@@ -7,6 +7,7 @@ const GameData = preload("res://scripts/sim/game_data.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const Turn = preload("res://scripts/sim/turn.gd")
 const Research = preload("res://scripts/sim/research.gd")
+const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 const RED := "#ff6a5a"
 const AMBER := "#e8b04a"
@@ -30,7 +31,7 @@ static func signed(v: float) -> String:
 static func summary(state: Dictionary) -> String:
 	var b := GameData.balance()
 	var lines := PackedStringArray()
-	lines.append("[b]%s[/b], on %s" % [state["colony_name"], GameData.planet(state["planet"])["name"]])
+	lines.append("[b]%s[/b], on %s" % [TextRules.escape_bbcode(str(state["colony_name"])), GameData.planet(state["planet"])["name"]])
 	lines.append("Adults %s, children %s, elders %s." % [fmt(float(state["adults"])), fmt(float(state["children"])), fmt(float(state["elders"]))])
 	lines.append("Crime %s." % fmt(float(state["crime"])))
 	if state["plague"]["active"]:

@@ -47,8 +47,19 @@ func _new_page(title: String, width: float = 760.0) -> VBoxContainer:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
-	box.add_child(_label(title, 28, ACCENT))
+	var heading := _label(title, 28 if not _narrow() else 22, ACCENT)
+	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(heading)
 	return box
+
+
+## True on phone-sized screens (in interface units, after device scaling).
+func _narrow() -> bool:
+	return get_viewport_rect().size.x < 640.0
+
+
+func _width() -> float:
+	return get_viewport_rect().size.x
 
 
 func _label(text: String, size_px: int = 0, color: Color = Color.WHITE, wrap: bool = false) -> Label:
@@ -66,12 +77,13 @@ func _button(text: String, action: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.custom_minimum_size = Vector2(0, 44)
+	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.pressed.connect(action)
 	return b
 
 
 func _nav(box: VBoxContainer, back: Callable, next_label: String, next: Callable) -> Button:
-	var row := HBoxContainer.new()
+	var row: BoxContainer = HBoxContainer.new() if not _narrow() else VBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	box.add_child(row)
 	var b := _button("Back", back)
@@ -125,19 +137,25 @@ func show_manifest() -> void:
 	var debt := Manifest.debt_of(manifest)
 	box.add_child(_label("Everything in the hold is bought on credit from the Company: more cargo makes the start easier, but adds to the debt you must pay off.", 0, MUTED, true))
 	var summary := _label("Hold: %d / %d bays    Starting debt: %d marks" % [used, Manifest.bays(), int(debt)], 18, ACCENT)
+	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(summary)
 	var grid := GridContainer.new()
-	grid.columns = 4
+	grid.columns = 4 if not _narrow() else 3
 	grid.add_theme_constant_override("h_separation", 10)
 	box.add_child(grid)
 	for item in GameData.cargo()["items"]:
 		var id: String = item["id"]
 		var n := int(manifest.get(id, 0))
-		var item_label := _label("%s\n%s" % [item["name"], item["desc"]], 0, Color.WHITE, true)
+		var narrow := _narrow()
+		var text := "%s\n%s" % [item["name"], item["desc"]]
+		if narrow:
+			text += "\n+%d marks each" % int(item["debt"])
+		var item_label := _label(text, 0, Color.WHITE, true)
 		item_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		item_label.custom_minimum_size = Vector2(300, 0)
+		item_label.custom_minimum_size = Vector2(minf(300.0, _width() - 190.0), 0)
 		grid.add_child(item_label)
-		grid.add_child(_label("+%d marks" % int(item["debt"]), 0, MUTED))
+		if not narrow:
+			grid.add_child(_label("+%d marks" % int(item["debt"]), 0, MUTED))
 		var minus := _button(" − ", _change.bind(id, -1))
 		minus.disabled = n <= 0
 		minus.custom_minimum_size = Vector2(44, 44)
@@ -147,7 +165,7 @@ func show_manifest() -> void:
 		plus.custom_minimum_size = Vector2(70, 44)
 		plus.tooltip_text = "At most %d." % int(item["max"])
 		grid.add_child(plus)
-	var presets := HBoxContainer.new()
+	var presets: BoxContainer = HBoxContainer.new() if not _narrow() else VBoxContainer.new()
 	presets.add_theme_constant_override("separation", 10)
 	box.add_child(presets)
 	var rec := _button("Recommended load", _set_manifest.bind(Manifest.recommended()))
@@ -179,7 +197,7 @@ func show_sites() -> void:
 	var planet := GameData.planet(planet_id)
 	box.add_child(_label("%s. The orange dot is where the hull lands. Ice is pale blue, vents orange, ore seams teal, and dark rock can't be built on." % planet["name"], 0, MUTED, true))
 	var grid := GridContainer.new()
-	grid.columns = 2
+	grid.columns = 2 if _width() >= 900.0 else 1
 	grid.add_theme_constant_override("h_separation", 12)
 	grid.add_theme_constant_override("v_separation", 12)
 	box.add_child(grid)
@@ -190,7 +208,8 @@ func show_sites() -> void:
 		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(cell)
 		var mini := Minimap.new()
-		mini.custom_minimum_size = Vector2(400, 300)
+		var mini_w := minf(400.0, _width() - 56.0)
+		mini.custom_minimum_size = Vector2(mini_w, mini_w * 0.75)
 		mini.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		cell.add_child(mini)
 		mini.show_map(map)

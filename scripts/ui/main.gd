@@ -17,6 +17,7 @@ const ScoreEntry = preload("res://scripts/net/score_entry.gd")
 const SetupFlow = preload("res://scripts/ui/setup_flow.gd")
 const ColonyText = preload("res://scripts/ui/colony_text.gd")
 const Menus = preload("res://scripts/ui/menus.gd")
+const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 
 
@@ -48,9 +49,13 @@ var toast_left := 0.0
 var player_name := ""
 var settings_open := false
 var menus: RefCounted
+var signed_in_label: Label
+var narrow_game := false
 
 
 func _ready() -> void:
+	_apply_ui_scale()
+	get_window().size_changed.connect(_apply_ui_scale)
 	var t := Theme.new()
 	t.default_font_size = 15
 	var panel_style := StyleBoxFlat.new()
@@ -72,8 +77,23 @@ func _ready() -> void:
 	online.account_changed.connect(menus._on_account_changed)
 	online.cloud_saved.connect(func(_ok: bool, message: String) -> void: _toast(message))
 	online.cloud_loaded.connect(menus._on_cloud_loaded)
+	if online.has_signal("suggestion_sent"):
+		online.suggestion_sent.connect(menus._on_suggestion_sent)
 	player_name = menus._load_profile().get("name", "")
 	show_title()
+
+
+## Phones and high-density screens have 2-3 physical pixels per point; without
+## this, every menu would be drawn tiny. The interface is laid out in points
+## and scaled up by the device's pixel ratio.
+func _apply_ui_scale() -> void:
+	var win := get_window()
+	var ratio := 1.0
+	if AppActions.is_web():
+		ratio = clampf(DisplayServer.screen_get_scale(), 1.0, 4.0)
+	win.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	win.content_scale_size = Vector2i(maxi(1, int(win.size.x / ratio)), maxi(1, int(win.size.y / ratio)))
 
 
 func _clear_screen() -> void:
@@ -105,59 +125,104 @@ func _button(text: String, action: Callable) -> Button:
 func show_title() -> void:
 	_clear_screen()
 	state = {}
+	var narrow := _view_size().x < 520.0
 	var root := Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root)
 	screen = root
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	root.add_child(scroll)
 	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.add_child(center)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center)
 	var box := VBoxContainer.new()
-	box.custom_minimum_size = Vector2(420, 0)
-	box.add_theme_constant_override("separation", 12)
+	box.custom_minimum_size = Vector2(minf(420.0, _view_size().x - 32.0), 0)
+	box.add_theme_constant_override("separation", 10)
 	center.add_child(box)
-	var title := _label(GameData.story()["title"], 56, ACCENT)
+	var title := _label(GameData.story()["title"], 40 if narrow else 56, ACCENT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(title)
 	var sub := _label("A colony on the edge between night and day.", 16, Color(0.75, 0.78, 0.82))
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	box.add_child(sub)
+	signed_in_label = _label("", 14, Color(0.45, 0.85, 0.55))
+	signed_in_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(signed_in_label)
+	_refresh_signed_in()
 	box.add_child(HSeparator.new())
 	box.add_child(_label("Colony name"))
 	var name_edit := LineEdit.new()
 	name_edit.text = "Margin"
+	name_edit.max_length = TextRules.MAX_COLONY_NAME
+	name_edit.placeholder_text = "Letters, numbers, spaces, - and _"
+	name_edit.custom_minimum_size = Vector2(0, 44)
 	box.add_child(name_edit)
 	box.add_child(_label("Map seed"))
 	var seed_box := SpinBox.new()
 	seed_box.min_value = 1
 	seed_box.max_value = 999999
+	seed_box.rounded = true
 	seed_box.value = randi_range(1, 999999)
+	seed_box.custom_minimum_size = Vector2(0, 44)
 	box.add_child(seed_box)
 	box.add_child(_label("Your name on the leaderboard"))
 	var player_edit := LineEdit.new()
 	player_edit.text = player_name
-	player_edit.max_length = ScoreEntry.MAX_NAME_LENGTH
+	player_edit.max_length = TextRules.MAX_PLAYER_NAME
 	player_edit.placeholder_text = "Letters, numbers, spaces, - and _"
+	player_edit.custom_minimum_size = Vector2(0, 44)
 	player_edit.text_changed.connect(menus._on_player_name_changed)
 	box.add_child(player_edit)
-	box.add_child(_button("New colony", _on_new_colony.bind(name_edit, seed_box)))
+	box.add_child(_title_button("New colony", _on_new_colony.bind(name_edit, seed_box)))
 	for slot in ["manual", "autosave"]:
 		if SaveGame.exists(slot):
 			var label := "Load saved game" if slot == "manual" else "Load autosave"
-			box.add_child(_button(label, func() -> void: _load(slot)))
-	box.add_child(_button("Leaderboard", show_leaderboard.bind("")))
-	box.add_child(_button("Settings", show_settings))
-	if not AppActions.is_web():
-		box.add_child(_button("Quit", func() -> void: get_tree().quit()))
+			box.add_child(_title_button(label, func() -> void: _load(slot)))
+	box.add_child(_title_button("Leaderboard", show_leaderboard.bind("")))
+	box.add_child(_title_button("Suggest a feature", menus.show_suggestion_form))
+	box.add_child(_title_button("Settings", show_settings))
+	box.add_child(_title_button("Quit", _quit))
 	var version := _label("v" + str(ProjectSettings.get_setting("application/config/version", "")), 13, Color(0.55, 0.6, 0.66))
 	root.add_child(version)
 	version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 12)
 
 
+func _title_button(text: String, action: Callable) -> Button:
+	var b := _button(text, action)
+	b.custom_minimum_size = Vector2(0, 44)
+	return b
+
+
+## Shows "Signed in with Google" on the title screen (no name: Settings has that).
+func _refresh_signed_in() -> void:
+	if signed_in_label == null or not is_instance_valid(signed_in_label):
+		return
+	signed_in_label.text = "Signed in with Google" if online != null and online.is_signed_in() else ""
+	signed_in_label.visible = signed_in_label.text != ""
+
+
+## Quit: closes the game. In a browser a page can't always close its own tab,
+## so if it's still open after trying, say so.
+func _quit() -> void:
+	if not AppActions.is_web():
+		get_tree().quit()
+		return
+	JavaScriptBridge.eval("window.close()", true)
+	show_modal("Quit", "Your games are saved in this browser. You can close this tab now.", [["Back", close_modal, true]], true)
+
+
+## The screen size in interface units (after scaling for the device).
+func _view_size() -> Vector2:
+	return get_viewport_rect().size
+
+
 func _on_new_colony(name_edit: LineEdit, seed_box: SpinBox) -> void:
-	var colony := name_edit.text.strip_edges()
-	if colony == "":
-		colony = "Margin"
+	var colony := TextRules.clean_colony_name(name_edit.text)
 	var seed_value := int(seed_box.value)
 	_clear_screen()
 	var flow := SetupFlow.new()
@@ -218,8 +283,11 @@ func show_game() -> void:
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(middle)
 
+	# Phones: a narrow build list, no side panel (its contents open as dialogs
+	# from the Info, Research and Company buttons), and wrapping buttons.
+	narrow_game = _view_size().x < 760.0
 	var left := PanelContainer.new()
-	left.custom_minimum_size = Vector2(220, 0)
+	left.custom_minimum_size = Vector2(150 if narrow_game else 220, 0)
 	middle.add_child(left)
 	var left_scroll := ScrollContainer.new()
 	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -253,6 +321,7 @@ func show_game() -> void:
 
 	var right := PanelContainer.new()
 	right.custom_minimum_size = Vector2(320, 0)
+	right.visible = not narrow_game
 	middle.add_child(right)
 	var right_box := VBoxContainer.new()
 	right.add_child(right_box)
@@ -284,30 +353,43 @@ func show_game() -> void:
 
 	# Bottom: log and turn controls.
 	var bottom := PanelContainer.new()
-	bottom.custom_minimum_size = Vector2(0, 170)
+	bottom.custom_minimum_size = Vector2(0, 150 if narrow_game else 170)
 	root.add_child(bottom)
-	var bottom_row := HBoxContainer.new()
+	var bottom_row: BoxContainer = VBoxContainer.new() if narrow_game else HBoxContainer.new()
 	bottom.add_child(bottom_row)
 	var log_box := VBoxContainer.new()
 	log_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bottom_row.add_child(log_box)
 	hint_label = _label("", 13, Color(0.7, 0.75, 0.8))
+	hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint_label.custom_minimum_size = Vector2(120, 0)
 	log_box.add_child(hint_label)
 	log_view = RichTextLabel.new()
 	log_view.bbcode_enabled = true
 	log_view.scroll_following = true
 	log_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	log_box.add_child(log_view)
-	var buttons := VBoxContainer.new()
-	buttons.custom_minimum_size = Vector2(150, 0)
-	bottom_row.add_child(buttons)
+	var buttons: Container = HFlowContainer.new() if narrow_game else VBoxContainer.new()
+	buttons.custom_minimum_size = Vector2(0 if narrow_game else 150, 0)
+	if narrow_game:
+		bottom_row.add_child(buttons)
+		bottom_row.move_child(buttons, 0)
+	else:
+		bottom_row.add_child(buttons)
 	end_turn_button = _button("End turn  (Enter)", func() -> void: _run_turns(1))
 	buttons.add_child(end_turn_button)
 	run_button = _button("Run 5 turns", func() -> void: _run_turns(5))
 	buttons.add_child(run_button)
-	buttons.add_child(_button("Colony report", show_report))
+	if narrow_game:
+		buttons.add_child(_button("Info", show_info))
+		buttons.add_child(_button("Research", show_research))
+		buttons.add_child(_button("Company", show_company))
+	buttons.add_child(_button("Report" if narrow_game else "Colony report", show_report))
 	buttons.add_child(_button("Save", _on_save))
 	buttons.add_child(_button("Menu", _on_menu))
+	if narrow_game:
+		for b in buttons.get_children():
+			(b as Button).custom_minimum_size = Vector2(72, 40)
 
 	map_view.set_state(state)
 	refresh()
@@ -335,6 +417,8 @@ func _on_tile_clicked(cell: Vector2i) -> void:
 			return
 	map_view.selected = cell
 	refresh()
+	if narrow_game and map_view.build_type == "":
+		show_info()
 
 
 func _on_demolish() -> void:
@@ -524,7 +608,7 @@ func _refresh_hint() -> void:
 				text += "  Heat here: %.1f." % (GameData.num(def, "heat_need") * GameData.cold_at(h.x, state["planet"]))
 		hint_label.text = text
 	else:
-		hint_label.text = "Click a tile to inspect it. Choose a building on the left to place it. Right-drag to pan, wheel to zoom."
+		hint_label.text = "Tap a tile to inspect it. Choose a building on the left to place it. Drag the map to move it." if narrow_game else "Click a tile to inspect it. Choose a building on the left to place it. Drag the map to move it; wheel to zoom."
 
 
 func _selected_structure() -> Dictionary:
@@ -541,6 +625,51 @@ func _refresh_inspector() -> void:
 	inspector.text = ColonyText.summary(state) if c.x < 0 else ColonyText.tile(state, c)
 
 
+## Phones: the side panel's contents as dialogs.
+func show_info() -> void:
+	var s := _selected_structure()
+	var options: Array = []
+	if not s.is_empty() and s["type"] != "hull":
+		options.append(["Demolish", _demolish_and_close, true])
+	options.append(["Back", close_modal, true])
+	show_modal("Info", _plain(inspector.text), options, true)
+
+
+func _demolish_and_close() -> void:
+	_on_demolish()
+	close_modal()
+
+
+func show_company() -> void:
+	var body := "Debt: %s marks. Next payment: %s on turn %d.\nMarks: %s.\nExport reserve: %d alloy (Launch Rails never sell below this)." % [
+		_fmt(float(state["debt"])), _fmt(Turn.next_payment_amount(state)), Turn.next_payment_turn(state),
+		_fmt(float(state["stock"]["credits"])), int(state["export_reserve"])]
+	show_modal("Company account", body, [
+		["Pay 100 marks early", _company_action.bind("pay", 100.0), true],
+		["Pay 500 marks early", _company_action.bind("pay", 500.0), true],
+		["Export reserve +10", _company_action.bind("reserve", 10.0), true],
+		["Export reserve -10", _company_action.bind("reserve", -10.0), true],
+		["Back", close_modal, true]], true)
+
+
+func _company_action(kind: String, amount: float) -> void:
+	if kind == "pay":
+		_pay(amount)
+	else:
+		_change_reserve(amount)
+	show_company()
+
+
+## BBCode text as plain text, for dialogs.
+func _plain(bbcode: String) -> String:
+	var r := RichTextLabel.new()
+	r.bbcode_enabled = true
+	r.text = bbcode
+	var out := r.get_parsed_text()
+	r.free()
+	return out
+
+
 func show_report() -> void:
 	show_modal("Colony report, turn %d" % (int(state["turn"]) - 1), ColonyText.report(state), [["Back", close_modal, true]], true)
 
@@ -548,7 +677,7 @@ func show_report() -> void:
 func _refresh_log() -> void:
 	var lines := PackedStringArray()
 	for entry in state["log"]:
-		lines.append("[color=#8a93a0]T%d[/color]  %s" % [int(entry["turn"]), entry["text"]])
+		lines.append("[color=#8a93a0]T%d[/color]  %s" % [int(entry["turn"]), TextRules.escape_bbcode(str(entry["text"]))])
 	log_view.text = "\n".join(lines)
 
 
@@ -601,6 +730,8 @@ func _process(delta: float) -> void:
 func show_modal(title: String, body: String, options: Array, can_cancel: bool = false) -> void:
 	close_modal()
 	modal_can_cancel = can_cancel
+	var view := _view_size()
+	var width := minf(560.0, view.x - 24.0)
 	var layer := Control.new()
 	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(layer)
@@ -609,26 +740,35 @@ func show_modal(title: String, body: String, options: Array, can_cancel: bool = 
 	shade.color = Color(0, 0, 0, 0.6)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(shade)
+	# Long dialogs scroll, so they work on short phone screens too.
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	layer.add_child(scroll)
 	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	layer.add_child(center)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(560, 0)
+	panel.custom_minimum_size = Vector2(width, 0)
 	center.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	panel.add_child(box)
-	box.add_child(_label(title, 26, ACCENT))
+	var heading := _label(title, 26 if view.x >= 520.0 else 22, ACCENT)
+	heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	box.add_child(heading)
 	var text := Label.new()
 	text.text = body
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text.custom_minimum_size = Vector2(540, 0)
+	text.custom_minimum_size = Vector2(width - 20.0, 0)
 	box.add_child(text)
 	var first: Button = null
 	for opt in options:
 		var b := _button(opt[0], opt[1])
 		b.disabled = not opt[2]
 		b.custom_minimum_size = Vector2(0, 44)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		box.add_child(b)
 		if first == null and not b.disabled:
 			first = b
