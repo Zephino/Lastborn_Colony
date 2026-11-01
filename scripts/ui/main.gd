@@ -14,10 +14,10 @@ const Research = preload("res://scripts/sim/research.gd")
 const Online = preload("res://scripts/net/online.gd")
 const OnlineConfig = preload("res://scripts/net/online_config.gd")
 const ScoreEntry = preload("res://scripts/net/score_entry.gd")
+const SetupFlow = preload("res://scripts/ui/setup_flow.gd")
 
 const PROFILE_PATH := "user://profile.json"
-const PLANET := "brume"
-const PLANET_NAME := "Brume"
+
 
 const BG := Color(0.06, 0.07, 0.09)
 const PANEL := Color(0.10, 0.11, 0.14)
@@ -142,7 +142,7 @@ func show_title() -> void:
 		if SaveGame.exists(slot):
 			var label := "Load saved game" if slot == "manual" else "Load autosave"
 			box.add_child(_button(label, func() -> void: _load(slot)))
-	box.add_child(_button("Leaderboard", show_leaderboard))
+	box.add_child(_button("Leaderboard", show_leaderboard.bind("")))
 	box.add_child(_button("Settings", show_settings))
 	if not AppActions.is_web():
 		box.add_child(_button("Quit", func() -> void: get_tree().quit()))
@@ -155,14 +155,27 @@ func _on_new_colony(name_edit: LineEdit, seed_box: SpinBox) -> void:
 	var colony := name_edit.text.strip_edges()
 	if colony == "":
 		colony = "Margin"
-	_start_new(int(seed_box.value), colony)
+	var seed_value := int(seed_box.value)
+	_clear_screen()
+	var flow := SetupFlow.new()
+	add_child(flow)
+	screen = flow
+	flow.setup(seed_value)
+	flow.cancelled.connect(show_title)
+	flow.finished.connect(_start_new.bind(seed_value, colony))
 
 
-func _start_new(seed_value: int, colony: String) -> void:
-	state = NewGame.create(seed_value, colony)
+func _start_new(options: Dictionary, seed_value: int, colony: String) -> void:
+	state = NewGame.create(seed_value, colony, options)
 	show_game()
-	var paragraphs: Array = GameData.story()["intro"]
-	show_modal("Briefing", "\n\n".join(PackedStringArray(paragraphs)), [["Begin", close_modal, true]], true)
+	var planet := GameData.planet(state["planet"])
+	var kits := PackedStringArray()
+	for k in state["kits"]:
+		kits.append("%d × %s" % [int(state["kits"][k]), GameData.building(k)["name"]])
+	var body := "The hull is down on %s. Starting debt: %d marks. The first payment is due on turn %d." % [planet["name"], int(state["debt"]), int(GameData.balance()["first_payment_turn"])]
+	if not kits.is_empty():
+		body += "\n\nPrefab kits in the hold (free to place, shown on the left): " + ", ".join(kits) + "."
+	show_modal("Landed", body, [["Begin", close_modal, true]], true)
 
 
 func _load(slot: String) -> void:
@@ -472,7 +485,9 @@ func refresh() -> void:
 
 	for id in build_buttons:
 		var def := GameData.building(id)
-		build_buttons[id].disabled = float(stock["alloy"]) < GameData.num(def, "cost") or state["ending"] != ""
+		var kits := int(state["kits"].get(id, 0))
+		build_buttons[id].text = "%s  (%s)" % [def["name"], ("prefab ×%d" % kits) if kits > 0 else str(int(GameData.num(def, "cost")))]
+		build_buttons[id].disabled = (kits <= 0 and float(stock["alloy"]) < GameData.num(def, "cost")) or state["ending"] != ""
 	end_turn_button.disabled = state["ending"] != ""
 	run_button.disabled = state["ending"] != ""
 	reserve_label.text = "Export reserve: %d alloy" % int(state["export_reserve"])
@@ -503,7 +518,7 @@ func _refresh_hint() -> void:
 			if not r["ok"]:
 				text = r["reason"]
 			elif GameData.num(def, "heat_need") > 0.0:
-				text += "  Heat here: %.1f." % (GameData.num(def, "heat_need") * GameData.cold_at(h.x))
+				text += "  Heat here: %.1f." % (GameData.num(def, "heat_need") * GameData.cold_at(h.x, state["planet"]))
 		hint_label.text = text
 	else:
 		hint_label.text = "Click a tile to inspect it. Choose a building on the left to place it. Right-drag to pan, wheel to zoom."
@@ -522,7 +537,7 @@ func _refresh_inspector() -> void:
 	var s := _selected_structure()
 	demolish_button.visible = not s.is_empty() and s["type"] != "hull"
 	if c.x < 0:
-		lines.append("[b]%s[/b]" % state["colony_name"])
+		lines.append("[b]%s[/b], on %s" % [state["colony_name"], GameData.planet(state["planet"])["name"]])
 		lines.append("Adults %s, children %s, elders %s." % [_fmt(float(state["adults"])), _fmt(float(state["children"])), _fmt(float(state["elders"]))])
 		lines.append("Crime %s." % _fmt(float(state["crime"])))
 		if state["plague"]["active"]:
@@ -539,7 +554,7 @@ func _refresh_inspector() -> void:
 		return
 	var terrain := Actions.terrain_at(state, c.x, c.y)
 	lines.append("[b]%s[/b]  (%d, %d)" % [terrain.capitalize(), c.x, c.y])
-	lines.append("Light %.2f   Heat factor %.2f" % [GameData.light_at(c.x), GameData.cold_at(c.x)])
+	lines.append("Light %.2f   Heat factor %.2f" % [GameData.light_at(c.x, state["planet"]), GameData.cold_at(c.x, state["planet"])])
 	if s.is_empty():
 		inspector.text = "\n".join(lines)
 		return
@@ -567,7 +582,7 @@ func _refresh_inspector() -> void:
 	if GameData.num(def, "power_use") > 0.0:
 		needs.append("%s power" % GameData.num(def, "power_use"))
 	if GameData.num(def, "heat_need") > 0.0:
-		needs.append("%.1f heat" % (GameData.num(def, "heat_need") * GameData.cold_at(int(s["x"]))))
+		needs.append("%.1f heat" % (GameData.num(def, "heat_need") * GameData.cold_at(int(s["x"]), state["planet"])))
 	var inputs: Dictionary = def.get("inputs", {})
 	for k in inputs:
 		needs.append("%s %s" % [inputs[k], k])
@@ -577,7 +592,7 @@ func _refresh_inspector() -> void:
 	if GameData.num(def, "power_gen") > 0.0:
 		var pg := GameData.num(def, "power_gen")
 		if def.get("solar", false):
-			pg *= GameData.light_at(int(s["x"]))
+			pg *= GameData.light_at(int(s["x"]), state["planet"])
 		gives.append("%.1f power" % pg)
 	if GameData.num(def, "heat_gen") > 0.0:
 		gives.append("%s heat" % GameData.num(def, "heat_gen"))
@@ -728,9 +743,23 @@ func _post_score(ending_override: String) -> void:
 	_toast("Sending score…")
 
 
-func show_leaderboard() -> void:
-	show_modal("Leaderboard: %s" % PLANET_NAME, "Loading…", [["Back", close_modal, true]], true)
-	online.fetch_board(PLANET)
+var board_planet := GameData.DEFAULT_PLANET
+
+
+func show_leaderboard(planet_id: String = "") -> void:
+	if planet_id != "":
+		board_planet = planet_id
+	show_modal("Leaderboard: %s" % GameData.planet(board_planet)["name"], "Loading…", _board_options(), true)
+	online.fetch_board(board_planet)
+
+
+func _board_options() -> Array:
+	var options: Array = []
+	for p in GameData.planets():
+		if p["id"] != board_planet:
+			options.append(["Show %s" % p["name"], show_leaderboard.bind(p["id"]), true])
+	options.append(["Back", close_modal, true])
+	return options
 
 
 func _on_board_loaded(entries: Array, error: String) -> void:
@@ -753,7 +782,7 @@ func _on_board_loaded(entries: Array, error: String) -> void:
 				how = "paid %d of %d marks, %s on turn %d" % [int(e.get("debt_paid", 0)), int(e.get("debt_total", 0)), endings.get(e.get("ending", ""), "ended"), int(e.get("turn", 0))]
 			lines.append("%d. %s (%s): %s" % [rank, e.get("name", "?"), e.get("colony", "?"), how])
 			rank += 1
-	show_modal("Leaderboard: %s" % PLANET_NAME, "\n".join(lines), [["Back", close_modal, true]], true)
+	show_modal("Leaderboard: %s" % GameData.planet(board_planet)["name"], "\n".join(lines), _board_options(), true)
 
 
 func _cloud_upload() -> void:

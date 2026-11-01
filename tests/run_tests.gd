@@ -1,4 +1,6 @@
-## Headless tests. Run from the repository root:
+## Headless tests. A script error inside a test stops only that test function,
+## so CI also fails the run if Godot prints "SCRIPT ERROR" (see web.yml).
+## Run from the repository root:
 ##   godot --headless --script res://tests/run_tests.gd
 ## Exits with code 0 when everything passes, 1 otherwise.
 extends SceneTree
@@ -12,9 +14,12 @@ const SaveGame = preload("res://scripts/sim/save_game.gd")
 const Bot = preload("res://tests/bot.gd")
 const Research = preload("res://scripts/sim/research.gd")
 const TestOnline = preload("res://tests/test_online.gd")
+const Manifest = preload("res://scripts/sim/manifest.gd")
+const MapGen = preload("res://scripts/sim/map_gen.gd")
 
 var checks := 0
 var failures := 0
+
 
 
 func _init() -> void:
@@ -24,6 +29,8 @@ func _init() -> void:
 	test_placement()
 	test_determinism()
 	test_save_round_trip()
+	test_manifest()
+	test_planets_and_sites()
 	test_research()
 	test_life_stages()
 	test_crime()
@@ -141,6 +148,65 @@ func test_save_round_trip() -> void:
 	play(b, 30, true)
 	check(SaveGame.to_text(a) == SaveGame.to_text(b), "a loaded game plays on identically")
 	check(typeof(SaveGame.from_text("{}")) == TYPE_STRING, "junk is rejected")
+	var old: Dictionary = JSON.parse_string(SaveGame.to_text(NewGame.create(4, "Margin")))
+	for k in ["planet", "site", "manifest", "kits", "elders", "crime", "plague", "research", "debt_total"]:
+		old.erase(k)
+	var upgraded: Variant = SaveGame.from_text(JSON.stringify(old))
+	check(typeof(upgraded) == TYPE_DICTIONARY and upgraded["planet"] == "brume", "a save from an older version still loads")
+	if typeof(upgraded) == TYPE_DICTIONARY:
+		Turn.end_turn(upgraded)
+		check(int(upgraded["turn"]) == 2, "an older save plays on")
+
+
+func test_manifest() -> void:
+	print("Ship manifest")
+	var rec := Manifest.recommended()
+	check(Manifest.check(rec)["ok"], "the recommended manifest is valid")
+	check(Manifest.bays_used(rec) <= Manifest.bays(), "the recommended manifest fits the hold")
+	var s := NewGame.create(1, "Margin")
+	check(float(s["adults"]) == 22.0 and float(s["children"]) == 8.0, "the recommended load brings 22 adults and 8 children")
+	check(float(s["stock"]["alloy"]) == 80.0 and float(s["stock"]["food"]) == 150.0, "the recommended load brings 80 alloy and 150 food")
+	check(float(s["debt"]) == 6000.0 and float(s["debt_total"]) == 6000.0, "the recommended load costs 6,000 marks of debt")
+	check(not Manifest.check({"alloy": 99})["ok"], "too many of one item is refused")
+	check(not Manifest.check({"berth": 4, "alloy": 4, "rations": 3})["ok"], "more cargo than bays is refused")
+	check(not Manifest.check({"gold": 1})["ok"], "unknown cargo is refused")
+	var bare := NewGame.create(1, "Margin", {"manifest": {}})
+	check(float(bare["debt"]) == float(GameData.cargo()["base_debt"]), "an empty hold costs only the bare ship")
+	var kit := NewGame.create(3, "Margin", {"manifest": {"prefab_mirror": 2}})
+	var hx := int(kit["structures"]["1"]["x"])
+	var hy := int(kit["structures"]["1"]["y"])
+	var alloy := float(kit["stock"]["alloy"])
+	check(Actions.place(kit, "mirror", hx + 1, hy)["ok"] and float(kit["stock"]["alloy"]) == alloy, "a prefab kit is placed without spending alloy")
+	check(int(kit["kits"]["mirror"]) == 1, "placing a kit uses it up")
+	var loaded: Dictionary = SaveGame.from_text(SaveGame.to_text(kit))
+	check(int(loaded["kits"]["mirror"]) == 1 and loaded["planet"] == "brume", "kits and planet survive a save")
+
+
+func test_planets_and_sites() -> void:
+	print("Planets and landing sites")
+	check(GameData.planets().size() == 3, "3 planets loaded")
+	for p in GameData.planets():
+		for site in GameData.balance()["landing_sites"].size():
+			var m := MapGen.generate(11, p["id"], site)
+			var hull: Array = m["hull"]
+			var tiles: Array = m["tiles"]
+			var ok: bool = tiles[int(hull[1])][int(hull[0])] == "regolith"
+			check(ok, "%s site %d: the pad is clear" % [p["id"], site])
+	var a := MapGen.generate(5, "brume", 0)
+	var b := MapGen.generate(5, "brume", 2)
+	check(a["hull"] != b["hull"], "landing sites put the hull in different places")
+	var dry := 0
+	var wet := 0
+	var cm := MapGen.generate(4, "cinder", 0)
+	var hm := MapGen.generate(4, "hollow", 0)
+	for y in cm["tiles"].size():
+		for x in cm["tiles"][y].size():
+			dry += 1 if cm["tiles"][y][x] == "ice" else 0
+			wet += 1 if hm["tiles"][y][x] == "ice" else 0
+	check(dry < wet, "Cinder has less ice than Hollow (%d vs %d)" % [dry, wet])
+	check(GameData.light_at(16, "cinder") > GameData.light_at(16, "hollow"), "Cinder is brighter than Hollow")
+	var s := NewGame.create(2, "Margin", {"planet": "hollow", "site": 1})
+	check(s["planet"] == "hollow" and int(s["site"]) == 1, "a new game remembers its planet and site")
 
 
 ## Builds a lab and power next to the hull and finishes construction.
@@ -256,3 +322,12 @@ func test_bot_colonies() -> void:
 		var pop := float(s["adults"]) + float(s["children"])
 		print("    seed %d: turn %d, ending '%s', population %d, debt %d, structures %d" % [seed_value, int(s["turn"]), s["ending"], int(pop), int(s["debt"]), s["structures"].size()])
 		check(s["ending"] == "free", "seed %d: the bot buys out the charter" % seed_value)
+	for planet_id in ["cinder", "hollow"]:
+		var wins := 0
+		for seed_value in [1, 2, 3]:
+			var s := NewGame.create(seed_value, "Margin", {"planet": planet_id})
+			play(s, 300, true)
+			print("    %s seed %d: turn %d, ending '%s', population %d" % [planet_id, seed_value, int(s["turn"]), s["ending"], int(Turn.population(s))])
+			if s["ending"] == "free":
+				wins += 1
+		check(wins >= 2, "%s: the bot wins at least 2 of 3 games (%d)" % [planet_id, wins])

@@ -26,14 +26,14 @@ static func run(check: Callable) -> void:
 
 static func _score_entries(check: Callable) -> void:
 	var state := NewGame.create(7, "Margin Point")
-	var start: Dictionary = GameData.balance()["start"]
+	var start := {"debt": float(state["debt_total"]), "adults": float(state["adults"]), "children": float(state["children"]), "elders": float(state["elders"])}
 	var e := ScoreEntry.from_state(state, "  Zeph!! ino ", "")
 	check.call(e["name"] == "Zeph ino", "score name keeps only safe characters")
 	check.call(e["colony"] == "Margin Point", "score carries the colony name")
 	check.call(e["planet"] == "brume", "score planet defaults to brume")
 	check.call(e["ending"] == "retired", "an unfinished game is sent as retired")
 	check.call(e["turn"] == 1 and e["debt_paid"] == 0, "a new colony has turn 1 and nothing paid")
-	check.call(e["debt_total"] == int(start["debt"]), "debt_total comes from balance.json start.debt")
+	check.call(e["debt_total"] == int(start["debt"]), "debt_total comes from the state's starting debt")
 	check.call(e["population"] == int(round(float(start["adults"]) + float(start["children"]) + float(start.get("elders", 0)))), "population counts adults, children and elders")
 	check.call(e["version"] == str(ProjectSettings.get_setting("application/config/version")), "score carries the game version")
 	check.call(ScoreEntry.problem(e) == "", "a fresh game's score passes the Worker's rules")

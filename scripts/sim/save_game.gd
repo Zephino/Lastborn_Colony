@@ -5,7 +5,7 @@ extends RefCounted
 const NewGame = preload("res://scripts/sim/new_game.gd")
 
 const DIR := "user://saves"
-const INT_FIELDS := ["version", "seed", "rng", "turn", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest"]
+const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest"]
 const STRUCT_INT_FIELDS := ["x", "y", "progress", "damaged"]
 
 
@@ -30,7 +30,25 @@ static func from_text(text: String) -> Variant:
 	return state
 
 
+## Fields added after the first release, with the value an older save means.
+const DEFAULTS := {
+	"planet": "brume",
+	"site": 0,
+	"manifest": {},
+	"kits": {},
+	"elders": 0.0,
+	"crime": 0.0,
+	"plague": {"active": false, "turns_left": 0, "cure": 0.0, "need": 0.0},
+	"research": {"current": "", "progress": 0.0, "done": []},
+}
+
+
 static func normalize(state: Dictionary) -> void:
+	for k in DEFAULTS:
+		if not state.has(k):
+			state[k] = (DEFAULTS[k] as Variant) if typeof(DEFAULTS[k]) != TYPE_DICTIONARY else (DEFAULTS[k] as Dictionary).duplicate(true)
+	if not state.has("debt_total"):
+		state["debt_total"] = 6000.0
 	for k in INT_FIELDS:
 		state[k] = int(state[k])
 	var occupancy := {}
@@ -41,6 +59,10 @@ static func normalize(state: Dictionary) -> void:
 		occupancy[NewGame.cell_key(s["x"], s["y"])] = id
 	state["occupancy"] = occupancy
 	state["plague"]["turns_left"] = int(state["plague"]["turns_left"])
+	for k in state["kits"]:
+		state["kits"][k] = int(state["kits"][k])
+	for k in state["manifest"]:
+		state["manifest"][k] = int(state["manifest"][k])
 	for entry in state["log"]:
 		entry["turn"] = int(entry["turn"])
 

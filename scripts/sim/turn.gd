@@ -163,7 +163,7 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 			pg *= boost
 			hg *= boost
 			if def.get("solar", false):
-				pg *= GameData.light_at(int(s["x"]))
+				pg *= GameData.light_at(int(s["x"]), state["planet"])
 				if int(state["storm"]) > 0:
 					var loss := (1.0 - float(b["storm_solar_factor"])) * Research.mult(state, "storm")
 					pg *= 1.0 - loss
@@ -186,7 +186,7 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 				continue
 			var need := int(GameData.num(def, "workers"))
 			var pu := GameData.num(def, "power_use")
-			var hn := GameData.num(def, "heat_need") * GameData.cold_at(int(s["x"])) * heat_mult
+			var hn := GameData.num(def, "heat_need") * GameData.cold_at(int(s["x"]), state["planet"]) * heat_mult
 			if workers >= need and power >= pu and heat >= hn:
 				workers -= need
 				power -= pu
@@ -530,8 +530,9 @@ static func _events(state: Dictionary) -> void:
 		return
 	var list := GameData.events()
 	var weights: Array = []
+	var planet_weights: Dictionary = GameData.planet(state["planet"]).get("event_weights", {})
 	for e in list:
-		weights.append(float(e.get("weight", 1.0)))
+		weights.append(float(e.get("weight", 1.0)) * float(planet_weights.get(e["id"], 1.0)))
 	var ev: Dictionary = list[Rng.weighted_index(state, weights)]
 	log_msg(state, "%s. %s" % [ev["title"], ev["body"]])
 	Actions.apply_effects(state, ev.get("effects", {}))

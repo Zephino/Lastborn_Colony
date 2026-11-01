@@ -46,6 +46,15 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## How to play
 
+### Before landing
+
+1. **Briefing:** the story so far.
+2. **Choose a planet.** Brume (Standard) has ice, vents and sunlight all within reach. Cinder (Harder) is bright and hot, but ice is rare. Hollow (Hardest) is icy and full of vents, but the sun is weak. Each planet has its own leaderboard.
+3. **Pack the ship.** The hold has 10 cargo bays. Choose colonists, alloy, food, oxygen, water, starting funds, or prefab buildings (placed later for free). Everything is bought on credit, so each bay adds to the debt you must pay off. **Recommended load** is a balanced start that costs 6,000 marks.
+4. **Choose a landing site.** Four sites on the same map, each with a preview and a count of the ice, vents and ore seams nearby.
+
+### In the colony
+
 - **Build** by choosing a building on the left and clicking a tile. A new building must touch the colony. Lay **Heat Mains** (1 alloy each) to reach further out.
 - **Terrain matters.** Ice Drills go on ice, Vent Taps on vents (orange), and Seam Cutters on ore seams (teal streaks). Ridges, deep ice and scorched ground can't be built on.
 - **The climate band is the core trade-off.** Mirror Fields make more power the further east they are. Buildings need more heat the further west they are. Ice and vents are mostly in the west, so the best sites pull you in both directions. Selecting a tile shows its light and heat factor.
@@ -66,7 +75,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 | Path | What it is |
 | --- | --- |
-| `data/*.json` | All numbers and text: balance, buildings, research, events, story. Tune the game here. |
+| `data/*.json` | All numbers and text: balance, buildings, research, events, story, planets, cargo, online messages. Tune the game here. |
 | `scripts/sim/` | The rules. Has no scene or node dependencies, so it runs headless. |
 | `scripts/sim/game_data.gd` | Loads the JSON once. Also has the climate functions `light_at` and `cold_at`. |
 | `scripts/sim/rng.gd` | mulberry32 random numbers. The generator state is kept in `state["rng"]`, so saves replay exactly. |
@@ -75,6 +84,8 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/actions.gd` | Player actions. Each one returns `{ok, reason}`. |
 | `scripts/sim/turn.gd` | `end_turn(state)`. |
 | `scripts/sim/research.gd` | Research topics and their effects. |
+| `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
+| `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd` | The screens before landing, and the small map previews. |
 | `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |
 | `scripts/ui/main.gd` | All screens, built in code. |
 | `scripts/ui/map_view.gd` | Map drawing and mouse input. |
@@ -116,8 +127,8 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- All 137 headless test checks pass in Godot 4.3, and the Worker's 29 tests pass. The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
-- Ideas: more planets, underground levels, a rival faction, changing trade prices, difficulty settings, and sound.
+- All 170 headless test checks pass in Godot 4.3, and the Worker's 29 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
+- Ideas: underground levels, a rival faction, changing trade prices, difficulty settings, and sound.
 
 ## License
 

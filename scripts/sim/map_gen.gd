@@ -10,8 +10,11 @@ const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 
 ## Returns {"tiles": Array of rows of terrain names, "hull": [x, y]}.
-static func generate(map_seed: int) -> Dictionary:
+## The planet sets how much ice, rock, ore and vents there are; the landing
+## site (an index into balance.json "landing_sites") moves the pad.
+static func generate(map_seed: int, planet_id: String = "brume", site: int = 0) -> Dictionary:
 	var b := GameData.balance()
+	var planet := GameData.planet(planet_id)
 	var w: int = int(b["map_width"])
 	var h: int = int(b["map_height"])
 	var r := {"rng": map_seed & Rng.M32}
@@ -22,7 +25,7 @@ static func generate(map_seed: int) -> Dictionary:
 		var row: Array = []
 		for x in w:
 			var xf := float(x) / float(w - 1)
-			row.append("ice" if Rng.next_float(r) < 0.62 * (1.0 - xf) else "regolith")
+			row.append("ice" if Rng.next_float(r) < 0.62 * (1.0 - xf) * float(planet["ice"]) else "regolith")
 		tiles.append(row)
 
 	# 2. Smooth into patches.
@@ -48,7 +51,7 @@ static func generate(map_seed: int) -> Dictionary:
 		tiles = next
 
 	# 3. Ridges: short random walks of impassable rock.
-	for _i in 6:
+	for _i in int(planet["ridges"]):
 		var p := Vector2i(Rng.rand_int(r, 3, w - 4), Rng.rand_int(r, 1, h - 2))
 		for _step in Rng.rand_int(r, 5, 11):
 			tiles[p.y][p.x] = "ridge"
@@ -56,7 +59,7 @@ static func generate(map_seed: int) -> Dictionary:
 			p = Vector2i(clampi(p.x + d.x, 2, w - 3), clampi(p.y + d.y, 0, h - 1))
 
 	# 4. Ore seams in small clusters.
-	for _i in 7:
+	for _i in int(planet["seams"]):
 		var c := Vector2i(Rng.rand_int(r, 4, w - 5), Rng.rand_int(r, 1, h - 2))
 		tiles[c.y][c.x] = "seam"
 		for _j in Rng.rand_int(r, 1, 3):
@@ -64,7 +67,7 @@ static func generate(map_seed: int) -> Dictionary:
 			tiles[c.y + d.y][c.x + d.x] = "seam"
 
 	# 5. Vents, mostly on the colder half.
-	for _i in 8:
+	for _i in int(planet["vents"]):
 		var x := Rng.rand_int(r, 3, w / 2 + 3)
 		var y := Rng.rand_int(r, 0, h - 1)
 		tiles[y][x] = "vent"
@@ -78,7 +81,9 @@ static func generate(map_seed: int) -> Dictionary:
 				tiles[y][x] = "scorch"
 
 	# 7. Clear a landing pad and guarantee a usable start.
-	var hull := Vector2i(w / 2, h / 2)
+	var sites: Array = b["landing_sites"]
+	var offset: Array = sites[clampi(site, 0, sites.size() - 1)]
+	var hull := Vector2i(w / 2 + int(offset[0]), h / 2 + int(offset[1]))
 	for dy in range(-1, 2):
 		for dx in range(-1, 2):
 			tiles[hull.y + dy][hull.x + dx] = "regolith"

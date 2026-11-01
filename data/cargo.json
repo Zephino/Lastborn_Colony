@@ -1,0 +1,123 @@
+{
+  "_comment": "The ship's manifest. Each unit fills one cargo bay and is bought on credit, adding 'debt' marks to the colony's starting debt. 'recommended' is the default load; with it a game starts exactly as before the manifest existed.",
+  "bays": 10,
+  "base_debt": 3500,
+  "items": [
+    {
+      "id": "berth",
+      "name": "Colonist berths",
+      "desc": "6 more adults and 2 children.",
+      "debt": 700,
+      "max": 4,
+      "adds": {
+        "adults": 6,
+        "children": 2
+      }
+    },
+    {
+      "id": "alloy",
+      "name": "Alloy crates",
+      "desc": "40 alloy for building.",
+      "debt": 400,
+      "max": 4,
+      "adds": {
+        "alloy": 40
+      }
+    },
+    {
+      "id": "rations",
+      "name": "Ration packs",
+      "desc": "90 food.",
+      "debt": 250,
+      "max": 3,
+      "adds": {
+        "food": 90
+      }
+    },
+    {
+      "id": "oxygen",
+      "name": "Oxygen tanks",
+      "desc": "90 oxygen.",
+      "debt": 250,
+      "max": 3,
+      "adds": {
+        "oxygen": 90
+      }
+    },
+    {
+      "id": "water",
+      "name": "Water bladders",
+      "desc": "60 water. Worth more on dry worlds.",
+      "debt": 200,
+      "max": 3,
+      "adds": {
+        "water": 60
+      }
+    },
+    {
+      "id": "marks",
+      "name": "Starting funds",
+      "desc": "300 marks in the colony account, for early payments.",
+      "debt": 330,
+      "max": 3,
+      "adds": {
+        "credits": 300
+      }
+    },
+    {
+      "id": "prefab_mirror",
+      "name": "Prefab Mirror Field",
+      "desc": "A Mirror Field you can place for free.",
+      "debt": 150,
+      "max": 3,
+      "kit": "mirror"
+    },
+    {
+      "id": "prefab_vent",
+      "name": "Prefab Vent Tap",
+      "desc": "A Vent Tap you can place for free on a vent.",
+      "debt": 250,
+      "max": 2,
+      "kit": "vent"
+    },
+    {
+      "id": "prefab_splitter",
+      "name": "Prefab Splitter",
+      "desc": "A Splitter you can place for free.",
+      "debt": 250,
+      "max": 2,
+      "kit": "splitter"
+    },
+    {
+      "id": "prefab_vat",
+      "name": "Prefab Kelp Vat",
+      "desc": "A Kelp Vat you can place for free.",
+      "debt": 200,
+      "max": 2,
+      "kit": "vat"
+    },
+    {
+      "id": "prefab_forge",
+      "name": "Prefab Forge",
+      "desc": "A Forge you can place for free.",
+      "debt": 300,
+      "max": 1,
+      "kit": "forge"
+    },
+    {
+      "id": "prefab_lab",
+      "name": "Prefab Survey Lab",
+      "desc": "A Survey Lab you can place for free.",
+      "debt": 350,
+      "max": 1,
+      "kit": "lab"
+    }
+  ],
+  "recommended": {
+    "berth": 2,
+    "alloy": 1,
+    "rations": 1,
+    "oxygen": 1,
+    "water": 1
+  }
+}

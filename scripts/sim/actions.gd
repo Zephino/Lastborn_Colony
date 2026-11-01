@@ -54,10 +54,17 @@ static func check_place(state: Dictionary, type: String, x: int, y: int) -> Dict
 		return result(false, "%s must be built on %s." % [def["name"], " or ".join(PackedStringArray(allowed))])
 	if not touches_colony(state, x, y):
 		return result(false, "Must be next to the colony. Extend with heat mains.")
+	if has_kit(state, type):
+		return result(true)
 	var cost := GameData.num(def, "cost")
 	if float(state["stock"]["alloy"]) < cost:
 		return result(false, "Needs %d alloy." % int(cost))
 	return result(true)
+
+
+## Prefab kits from the ship's manifest are placed without spending alloy.
+static func has_kit(state: Dictionary, type: String) -> bool:
+	return int(state.get("kits", {}).get(type, 0)) > 0
 
 
 static func place(state: Dictionary, type: String, x: int, y: int) -> Dictionary:
@@ -65,7 +72,10 @@ static func place(state: Dictionary, type: String, x: int, y: int) -> Dictionary
 	if not check["ok"]:
 		return check
 	var def := GameData.building(type)
-	state["stock"]["alloy"] = float(state["stock"]["alloy"]) - GameData.num(def, "cost")
+	if has_kit(state, type):
+		state["kits"][type] = int(state["kits"][type]) - 1
+	else:
+		state["stock"]["alloy"] = float(state["stock"]["alloy"]) - GameData.num(def, "cost")
 	NewGame.add_structure(state, type, x, y, false)
 	return result(true)
 

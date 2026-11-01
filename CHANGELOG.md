@@ -2,6 +2,25 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.05
+Date: 11/01/2026
+Time: 2:00 AM
+
+### Changes
+- **New start: choose what goes on the ship.** "New colony" now leads through four screens before landing (`scripts/ui/setup_flow.gd`):
+  1. **Briefing.**
+  2. **Planet choice:** three original worlds in `data/planets.json`. **Brume** (Standard) is the original map. **Cinder** (Harder) is hot and bright, with rare ice and frequent grit storms. **Hollow** (Hardest) is icy, has many vents and a weak sun, and gets more icequakes. Each planet sets the sunlight, the heat buildings need, how much ice, rock, ore and vents its maps have, and how often its events happen.
+  3. **Pack the ship:** a 10-bay hold (`data/cargo.json`). Cargo is colonists, alloy, food, oxygen, water, starting funds, or prefab buildings (Mirror Field, Vent Tap, Splitter, Kelp Vat, Forge, Survey Lab) that are placed later without spending alloy. Every bay is bought on credit and adds to the starting debt. The **Recommended load** gives exactly the old start (22 adults, 8 children, 150 food and oxygen, 100 water, 80 alloy, 6,000 marks of debt).
+  4. **Landing site:** four sites on the chosen planet's map, each with a small map preview (`scripts/ui/minimap.gd`) and a count of the ice, vents and ore seams nearby.
+- Game rules: `scripts/sim/manifest.gd` checks and applies a manifest. The map generator and the climate now depend on the planet. New games remember their planet, site, manifest, prefab kits and starting debt. Brume with the recommended load plays exactly as before.
+- The leaderboard has a board per planet, with buttons to switch between them. Scores already carried the planet.
+- Older saves still load: missing fields get their old meaning (Brume, no kits, and so on).
+- Planet difficulty labels were set from test runs of the scripted player on 10 maps each: about 101 turns to pay off the debt on Brume, 116 on Cinder and 137 on Hollow (one loss in 13 games on Hollow).
+- **Tests:** 170 checks pass (33 new), covering the manifest limits, prefab kits, planets and landing sites, older saves, and the bot on Cinder and Hollow. A script error inside a test used to stop that test quietly; the web build now fails if Godot reports a script error during the tests. `tests/trace.gd` takes a planet. The whole flow was also played in a browser here: planet, manifest with prefab Vent Taps, landing site, and the game.
+
+### Reason
+The owner pointed out that Cold Ledger let the player choose what goes on the spaceship, and asked to continue. This is Lastborn Colony's own version of that idea, tied to its debt to the Company.
+
 ## Version 00.01.04
 Date: 11/01/2026
 Time: 1:48 AM

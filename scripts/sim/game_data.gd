@@ -8,6 +8,8 @@ static var _building_order: Array = []
 static var _events: Array = []
 static var _story: Dictionary = {}
 static var _research: Array = []
+static var _planets: Array = []
+static var _cargo: Dictionary = {}
 
 
 static func _load_json(path: String) -> Variant:
@@ -29,6 +31,8 @@ static func ensure_loaded() -> void:
 	_events = _load_json("res://data/events.json")
 	_story = _load_json("res://data/story.json")
 	_research = _load_json("res://data/research.json")
+	_planets = _load_json("res://data/planets.json")
+	_cargo = _load_json("res://data/cargo.json")
 
 
 static func balance() -> Dictionary:
@@ -86,15 +90,43 @@ static func num(def: Dictionary, key: String) -> float:
 	return float(def.get(key, 0.0))
 
 
-## Sunlight at column x: low on the night side (west), high on the day side (east).
-static func light_at(x: int) -> float:
-	var b := balance()
-	var w: int = int(b["map_width"])
+const DEFAULT_PLANET := "brume"
+
+
+static func planets() -> Array:
+	ensure_loaded()
+	return _planets
+
+
+static func planet(id: String) -> Dictionary:
+	for p in planets():
+		if p["id"] == id:
+			return p
+	return planets()[0]
+
+
+static func cargo() -> Dictionary:
+	ensure_loaded()
+	return _cargo
+
+
+static func cargo_item(id: String) -> Dictionary:
+	for item in cargo()["items"]:
+		if item["id"] == id:
+			return item
+	return {}
+
+
+## Sunlight at column x on a planet: low on the night side (west), high on the day side (east).
+static func light_at(x: int, planet_id: String = DEFAULT_PLANET) -> float:
+	var p := planet(planet_id)
+	var w: int = int(balance()["map_width"])
 	var t := float(x) / float(max(w - 1, 1))
-	return lerpf(float(b["light_west"]), float(b["light_east"]), t)
+	return lerpf(float(p["light_west"]), float(p["light_east"]), t)
 
 
-## Heat multiplier at column x: buildings need more heat the further west they sit.
-static func cold_at(x: int) -> float:
+## Heat multiplier at column x: buildings need more heat where there is less light.
+static func cold_at(x: int, planet_id: String = DEFAULT_PLANET) -> float:
 	var b := balance()
-	return clampf(float(b["cold_offset"]) - light_at(x), float(b["cold_min"]), float(b["cold_max"]))
+	var p := planet(planet_id)
+	return clampf(float(p["cold_offset"]) - light_at(x, planet_id), float(b["cold_min"]), float(b["cold_max"]))

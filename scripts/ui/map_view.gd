@@ -105,7 +105,7 @@ func _draw() -> void:
 			_draw_terrain_detail(t, r, x, y)
 	# Climate shading: cool blue on the night side, warm on the day side.
 	for x in w:
-		var l := GameData.light_at(x)
+		var l := GameData.light_at(x, state["planet"])
 		var tint := Color(0.2, 0.35, 0.8, 0.22 * clampf(1.0 - l, 0.0, 1.0)) if l < 1.0 else Color(1.0, 0.6, 0.2, 0.18 * clampf(l - 1.0, 0.0, 1.0))
 		draw_rect(Rect2(o + Vector2(x * ts, 0), Vector2(ts, h * ts)), tint)
 	# Grid.
@@ -137,7 +137,7 @@ func _draw() -> void:
 func _terrain_color(t: String, x: int) -> Color:
 	var c: Color = TERRAIN_COLORS.get(t, Color.MAGENTA)
 	if t == "regolith" or t == "seam" or t == "vent":
-		var warm := clampf((GameData.light_at(x) - 0.3) / 1.3, 0.0, 1.0)
+		var warm := clampf((GameData.light_at(x, state["planet"]) - 0.3) / 1.3, 0.0, 1.0)
 		c = c.lerp(Color(0.48, 0.36, 0.26), warm * 0.5)
 	return c
 

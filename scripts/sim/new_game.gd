@@ -5,14 +5,20 @@ extends RefCounted
 const GameData = preload("res://scripts/sim/game_data.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
 const Rng = preload("res://scripts/sim/rng.gd")
+const Manifest = preload("res://scripts/sim/manifest.gd")
 
 const SAVE_VERSION := 1
 
 
-static func create(game_seed: int, colony_name: String) -> Dictionary:
+## options (all optional): "planet" (id), "site" (landing site index),
+## "manifest" (cargo, see manifest.gd; defaults to the recommended load).
+static func create(game_seed: int, colony_name: String, options: Dictionary = {}) -> Dictionary:
 	var b := GameData.balance()
 	var start: Dictionary = b["start"]
-	var map := MapGen.generate(game_seed)
+	var planet_id: String = str(options.get("planet", GameData.DEFAULT_PLANET))
+	var site: int = int(options.get("site", 0))
+	var manifest: Dictionary = options.get("manifest", Manifest.recommended())
+	var map := MapGen.generate(game_seed, planet_id, site)
 	var state := {
 		"version": SAVE_VERSION,
 		"seed": game_seed,
@@ -20,6 +26,10 @@ static func create(game_seed: int, colony_name: String) -> Dictionary:
 		"rng": (game_seed ^ Rng.hash_seed(colony_name)) & Rng.M32,
 		"turn": 1,
 		"colony_name": colony_name,
+		"planet": planet_id,
+		"site": site,
+		"manifest": manifest.duplicate(),
+		"kits": {},
 		"width": int(b["map_width"]),
 		"height": int(b["map_height"]),
 		"tiles": map["tiles"],
@@ -27,7 +37,8 @@ static func create(game_seed: int, colony_name: String) -> Dictionary:
 		"next_id": 1,
 		"occupancy": {},
 		"stock": (start["stock"] as Dictionary).duplicate(),
-		"debt": float(start["debt"]),
+		"debt": 0.0,
+		"debt_total": 0.0,
 		"payments_made": 0,
 		"missed_in_row": 0,
 		"adults": float(start["adults"]),
@@ -47,6 +58,7 @@ static func create(game_seed: int, colony_name: String) -> Dictionary:
 		"report": {},
 		"log": [],
 	}
+	Manifest.apply(state, manifest)
 	var hull: Array = map["hull"]
 	add_structure(state, "hull", int(hull[0]), int(hull[1]), true)
 	state["log"].append({"turn": 1, "text": "The hull settles onto the pad at %s. Payments to the Company begin on turn %d." % [colony_name, int(b["first_payment_turn"])]})

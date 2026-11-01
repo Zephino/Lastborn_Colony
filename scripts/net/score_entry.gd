@@ -29,8 +29,8 @@ static func from_state(state: Dictionary, player_name: String, ending_override: 
 	var ending := ending_override if ending_override != "" else str(state.get("ending", ""))
 	if ending == "":
 		ending = "retired"
-	var start: Dictionary = GameData.balance()["start"]
-	var debt_total := int(round(float(state.get("debt_total", start["debt"]))))
+	const Manifest = preload("res://scripts/sim/manifest.gd")
+	var debt_total := int(round(float(state.get("debt_total", Manifest.debt_of(Manifest.recommended())))))
 	var debt_left := maxf(float(state.get("debt", debt_total)), 0.0)
 	var debt_paid := clampi(int(round(float(debt_total) - debt_left)), 0, maxi(debt_total, 0))
 	if ending == "free":

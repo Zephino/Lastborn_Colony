@@ -54,7 +54,13 @@ jobs:
         run: godot --headless --import --path . || true
 
       - name: Run game tests
-        run: godot --headless --path . --script res://tests/run_tests.gd
+        run: |
+          set -o pipefail
+          godot --headless --path . --script res://tests/run_tests.gd 2>&1 | tee test-output.txt
+          if grep -q "SCRIPT ERROR" test-output.txt; then
+            echo "::error::A test stopped with a script error (see above)."
+            exit 1
+          fi
 
       - name: Test the online service
         if: hashFiles('leaderboard-api/package.json') != ''

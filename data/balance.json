@@ -2,19 +2,18 @@
   "map_width": 32,
   "map_height": 24,
   "start": {
-    "adults": 22,
-    "children": 8,
+    "adults": 10,
+    "children": 4,
+    "elders": 0,
     "morale": 55,
-    "debt": 6000,
     "stock": {
-      "food": 150,
-      "oxygen": 150,
-      "water": 100,
+      "food": 60,
+      "oxygen": 60,
+      "water": 40,
       "ore": 0,
-      "alloy": 80,
+      "alloy": 40,
       "credits": 300
-    },
-    "elders": 0
+    }
   },
   "stored_resources": [
     "food",
@@ -54,9 +53,6 @@
   "defection_rate": 0.02,
   "efficiency_min": 0.5,
   "efficiency_max": 1.3,
-  "light_west": 0.3,
-  "light_east": 1.6,
-  "cold_offset": 1.5,
   "cold_min": 0.2,
   "cold_max": 1.2,
   "storm_solar_factor": 0.4,
@@ -94,5 +90,24 @@
   "plague_cure_points": 10,
   "plague_death_rate": 0.004,
   "plague_final_deaths": 0.1,
-  "plague_morale": -15
+  "plague_morale": -15,
+  "_start_comment": "Start is the bare ship. The manifest (data/cargo.json) adds to it; the recommended manifest gives 22 adults, 8 children, 150 food/oxygen, 100 water, 80 alloy and a 6,000-mark debt.",
+  "landing_sites": [
+    [
+      0,
+      0
+    ],
+    [
+      -6,
+      -6
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      -5,
+      6
+    ]
+  ]
 }
