@@ -2,6 +2,29 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.30
+Date: 11/01/2026
+Time: 4:45 PM
+
+### Changes
+Sprite concepts (still not used in the game):
+- **Each building has its own number of doors** (`DOORS` in `scripts/ui/sprites.gd`). Sides with a tunnel always get an open door; spare doors show as capped ones, front sides first. Other sides are plain wall.
+  - Four doors (hubs): Landing Hull, Commons, Bunkhouse, Clinic, Cache, Lounge, Garden Cavern, Academy.
+  - One door: Mirror Field, Signal Mast, Beam Catcher.
+  - Two doors: everything else.
+  - The sheet shows the one-door buildings with a single tunnel.
+- **Drone Bay:** a one-bay parking lot with painted lines and a parked drone, beside the garage.
+- **Academy redrawn as a proper schoolhouse:**
+  - a brick dome with two rows of lit classroom windows and white trim;
+  - a cream bell tower with an open belfry, a gold bell, a clock and a red roof;
+  - a porch with steps, columns and a gable over the front door;
+  - a flagpole, a fenced playground (swings, slide, sandpit) and the yellow school bus.
+
+Gameplay is unchanged: a building still joins the colony through any side that touches it.
+
+### Reason
+The owner meant that only some buildings should have fewer than four entrances, not all of them. They asked for a parking lot for one drone at the Drone Bay, and for the Academy to look better.
+
 ## Version 00.01.29
 Date: 11/01/2026
 Time: 4:20 PM

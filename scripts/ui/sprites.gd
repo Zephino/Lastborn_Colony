@@ -58,6 +58,27 @@ const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28,
 	"fusion": 0.36, "catcher": 0.16, "reclaimer": 0.30, "fab": 0.32, "dronebay": 0.28, "mast": 0.22,
 	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.44, "lounge": 0.34}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+## How many doors each building has (default 2). Sides with a tunnel always
+## get an open door; spare doors show as capped ones, front sides first.
+const DOORS := {
+	"hull": 4, "commons": 4, "bunk": 4, "clinic": 4, "cache": 4, "lounge": 4, "garden": 4, "academy": 4,
+	"mirror": 1, "mast": 1, "catcher": 1,
+}
+const DOOR_ORDER := [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
+## The sides that show a capped door for the building being drawn.
+static var _cap_sides: Array = []
+
+
+static func cap_sides(type: String, links: Array) -> Array:
+	var spare := int(DOORS.get(type, 2)) - links.size()
+	var out: Array = []
+	for d in DOOR_ORDER:
+		if spare <= 0:
+			break
+		if not (d in links):
+			out.append(d)
+			spare -= 1
+	return out
 
 ## The newer buildings' fittings, drones and satellites live in sprites_more.gd.
 ## It is loaded on first use (it preloads this script, so this can't preload it).
@@ -162,10 +183,10 @@ static func _top_tube(ci: CanvasItem, from: Vector2, to: Vector2, s: float, stat
 
 
 ## A tube opening in the dome wall: an orange ring around a dark hole.
-## A building has a door only where a tunnel joins it, so sides without a
-## tunnel ("capped") show plain wall: nothing is drawn.
-static func _top_port(ci: CanvasItem, p: Vector2, s: float, state: Dictionary, capped: bool) -> void:
-	if capped:
+## Sides without a tunnel get a capped door only while the building has doors
+## to spare (DOORS); the rest are plain wall.
+static func _top_port(ci: CanvasItem, p: Vector2, s: float, state: Dictionary, capped: bool, dir: Vector2i = Vector2i.ZERO) -> void:
+	if capped and not (dir in _cap_sides):
 		return
 	var orange := _fade(ORANGE, state)
 	ci.draw_circle(p, s * 0.075, _fade(METAL_DARK, state))
@@ -184,6 +205,7 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	var m := _fade(METAL, state)
 	var md := _fade(METAL_DARK, state)
 	var links := _links(type, state)
+	_cap_sides = cap_sides(type, links)
 	if type == "main":
 		_top_tunnel(ci, c, s, links, state)
 		return
@@ -273,9 +295,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	# Every side without a tunnel still has a capped orange port, ready for one.
 	for d in DIRS:
 		if not (d in links):
-			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, true)
+			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, true, d)
 		else:
-			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, false)
+			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, false, d)
 	# What shows through the glass, or on top.
 	match type:
 		"hull":
@@ -399,7 +421,7 @@ static func _top_pad(ci: CanvasItem, c: Vector2, s: float, rad: float, links: Ar
 		_glow(ci, c + Vector2.from_angle(i * TAU / 12.0) * rad * 0.80, s * 0.018, orange, state)
 	# Ports on every side (open where a tunnel joins).
 	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links), d)
 	# The control dome at the back-left corner.
 	_top_dome(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.12, orange, Color(0.30, 0.26, 0.22), state)
 	_glow(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.025, orange, state)
@@ -447,7 +469,7 @@ static func _top_hole(ci: CanvasItem, c: Vector2, s: float, rad: float, links: A
 	for i in 4:
 		_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.97, s * 0.02, orange, state)
 	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links), d)
 
 
 ## What shape a tunnel piece is, from its links: "none", "end", "straight",
@@ -616,6 +638,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	var m := _fade(METAL, state)
 	var md := _fade(METAL_DARK, state)
 	var links := _links(type, state)
+	_cap_sides = cap_sides(type, links)
 	if type == "main":
 		_iso_tunnel(ci, c, tw, links, state)
 		return
@@ -823,13 +846,13 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	# there's no tunnel, an open ring where a tunnel's airlock joins.
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.86, d.y * r * 0.86, 0.12), tw, state, true)
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.86, d.y * r * 0.86, 0.12), tw, state, true, d)
 
 
-## A port on the dome's side, seen at an angle. As with _top_port, only sides
-## with a tunnel get one.
-static func _iso_port(ci: CanvasItem, p: Vector2, tw: float, state: Dictionary, capped: bool) -> void:
-	if capped:
+## A port on the dome's side, seen at an angle: an orange ring, capped or open.
+## Capped ones follow the same door count as _top_port.
+static func _iso_port(ci: CanvasItem, p: Vector2, tw: float, state: Dictionary, capped: bool, dir: Vector2i = Vector2i.ZERO) -> void:
+	if capped and not (dir in _cap_sides):
 		return
 	var orange := _fade(ORANGE, state)
 	ci.draw_colored_polygon(_ellipse(p, tw * 0.055, tw * 0.045), _fade(METAL_DARK, state))
@@ -872,7 +895,7 @@ static func _iso_pad(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Arr
 			_iso_link(ci, c, tw, d, r, state)
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.97, d.y * r * 0.97, 0.03), tw, state, true)
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.97, d.y * r * 0.97, 0.03), tw, state, true, d)
 
 
 ## The Shaft at an angle: a round hole in the ground. You see the far inside
@@ -943,7 +966,7 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 			_iso_link(ci, c, tw, d, r, state)
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true)
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true, d)
 
 
 ## A rectangle centred on p, `length` long along `along` and `width` wide.
@@ -1055,7 +1078,7 @@ static func _top_kelpfarm(ci: CanvasItem, c: Vector2, s: float, rad: float, link
 	for i in 8:
 		_glow(ci, c + Vector2.from_angle(i * TAU / 8.0 + PI / 8.0) * rad * 0.96, s * 0.016, _fade(PINK, state), state)
 	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links), d)
 	# A crate of harvested kelp at the front-left corner.
 	var crate := Rect2(c + Vector2(-s * 0.49, s * 0.33), Vector2(s * 0.16, s * 0.15))
 	ci.draw_rect(crate, _fade(Color(0.45, 0.32, 0.20), state))
@@ -1127,7 +1150,7 @@ static func _iso_kelpfarm(ci: CanvasItem, c: Vector2, tw: float, r: float, links
 			_iso_link(ci, c, tw, d, r, state)
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.03), tw, state, true)
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.03), tw, state, true, d)
 
 
 const QUARRY_STEPS := [1.0, 0.74, 0.50, 0.28]
@@ -1158,7 +1181,7 @@ static func _top_quarry(ci: CanvasItem, c: Vector2, s: float, rad: float, links:
 	var vein := PackedVector2Array([c + Vector2(-rad * 0.26, rad * 0.06), c + Vector2(-rad * 0.08, -rad * 0.04), c + Vector2(rad * 0.06, rad * 0.05), c + Vector2(rad * 0.26, -rad * 0.04)])
 	ci.draw_polyline(vein, seam, maxf(2.0, s * 0.025))
 	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * rad * 1.0, s, state, not (d in links))
+		_top_port(ci, c + Vector2(d) * rad * 1.0, s, state, not (d in links), d)
 	# The yellow gantry: two rails on legs, a cross beam and the laser head.
 	for u in [-0.18, 0.18]:
 		ci.draw_line(c + Vector2(u * s, -s * 0.45), c + Vector2(u * s, s * 0.45), md, s * 0.05)
@@ -1223,7 +1246,7 @@ static func _iso_quarry(ci: CanvasItem, c: Vector2, tw: float, r: float, links: 
 			ci.draw_colored_polygon(ledge, rock.darkened(0.12 * k))
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 1.0, d.y * r * 1.0, 0.03), tw, state, true)
+			_iso_port(ci, _iso(c, tw, d.x * r * 1.0, d.y * r * 1.0, 0.03), tw, state, true, d)
 	# The yellow gantry: legs, two rails, a cross beam and the laser head.
 	var rail_z := 0.30
 	for u in [-0.18, 0.18]:
@@ -1278,7 +1301,7 @@ static func _top_scope(ci: CanvasItem, c: Vector2, s: float, rad: float, links: 
 		ci.draw_line(c + dir * rad * 0.12, c + dir * rad * 0.92, line, 1.0)
 	ci.draw_arc(c, rad * 0.95, 0, TAU, 40, vio, maxf(1.5, s * 0.018))
 	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links), d)
 	# Towers and the cables from their tops to the platform.
 	for deg in SCOPE_TOWERS:
 		var tp := c + Vector2.from_angle(deg_to_rad(deg)) * rad * 0.98
@@ -1347,7 +1370,7 @@ static func _iso_scope(ci: CanvasItem, c: Vector2, tw: float, r: float, links: A
 	ci.draw_polyline(_ellipse(center, rx * 0.97, ry * 0.97), vio, 2.0)
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.03), tw, state, true)
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.03), tw, state, true, d)
 	# Cables from every tower top to the platform.
 	var plat := _iso(c, tw, 0, 0, plat_z)
 	for q in towers:
@@ -1454,7 +1477,7 @@ static func _top_forge(ci: CanvasItem, c: Vector2, s: float, rad: float, links: 
 		ci.draw_rect(bar, md, false, 1.0)
 	for d in DIRS:
 		if d != Vector2i(0, 1):
-			_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+			_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links), d)
 
 
 ## The Forge at an angle: the same heavy industrial plant in 3/4 view.
@@ -1533,7 +1556,7 @@ static func _iso_forge(ci: CanvasItem, c: Vector2, tw: float, r: float, links: A
 		if d.x > 0 or d.y > 0:
 			_iso_link(ci, c, tw, d, r, state)
 	if not (Vector2i(1, 0) in links):
-		_iso_port(ci, _iso(c, tw, r * 0.98, 0, 0.12), tw, state, true)
+		_iso_port(ci, _iso(c, tw, r * 0.98, 0, 0.12), tw, state, true, Vector2i(1, 0))
 
 
 ## The Launch Rail as a spin launcher, seen from above: a big sealed vacuum
@@ -1567,7 +1590,7 @@ static func _top_spin(ci: CanvasItem, c: Vector2, s: float, links: Array, state:
 	ci.draw_circle(drum, s * 0.05, md)
 	_glow(ci, drum, s * 0.025, gold, state)
 	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links), d)
 	# The control dome at the front-left corner.
 	_top_dome(ci, c + Vector2(-s * 0.36, s * 0.36), s * 0.11, gold, Color(0.26, 0.28, 0.32), state)
 
@@ -1619,7 +1642,7 @@ static func _iso_spin(ci: CanvasItem, c: Vector2, tw: float, links: Array, state
 			_iso_link(ci, c, tw, d, r, state)
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
-			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.08), tw, state, true)
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.08), tw, state, true, d)
 
 
 static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> void:

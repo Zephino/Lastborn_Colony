@@ -44,6 +44,9 @@ func _buildings(from: int, to: int) -> void:
 		# Top-down, on one ground tile.
 		var r := Rect2(o + Vector2(14, 44), Vector2(120, 120))
 		var sample := {"links": [Vector2i(1, 0), Vector2i(0, 1)]} if id != "main" else {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
+		# One-door buildings get one tunnel; four-door ones show their spare doors.
+		if int(Sprites.DOORS.get(id, 2)) == 1:
+			sample = {"links": [Vector2i(1, 0)]}
 		Sprites.terrain_top(self, "regolith", r)
 		Sprites.draw_top(self, id, r, sample)
 		# Angled, on one diamond.

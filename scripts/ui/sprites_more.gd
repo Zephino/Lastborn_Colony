@@ -86,6 +86,12 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 			ci.draw_rect(rack, md)
 			for k in 3:
 				S._glow(ci, rack.position + Vector2(s * (0.05 + k * 0.10), s * 0.06), s * 0.015, _f(S.GREEN, state), state)
+			# A one-bay parking lot at the back-right, with a drone parked in it.
+			var lot := Rect2(c + Vector2(s * 0.20, -s * 0.49), Vector2(s * 0.29, s * 0.29))
+			ci.draw_rect(lot, _f(Color(0.24, 0.24, 0.26), state))
+			var paint := _f(Color(0.92, 0.92, 0.88), state)
+			ci.draw_polyline(PackedVector2Array([lot.position + Vector2(s * 0.04, lot.size.y - s * 0.03), lot.position + Vector2(s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, lot.size.y - s * 0.03)]), paint, 1.5)
+			S._top_drone(ci, lot.get_center() + Vector2(0, -s * 0.01), s * 0.075, state)
 		"mast":
 			# Guy wires from the mast to three anchors.
 			for ang in [200.0, 320.0, 80.0]:
@@ -98,17 +104,20 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 				ci.draw_rect(Rect2(c + Vector2(-s * 0.48, -s * (0.47 - k * 0.05)), Vector2(s * 0.26, s * 0.035)), _f(S.HAZARD, state).darkened(0.15))
 			_top_rover(ci, c + Vector2(-s * 0.34, s * 0.36), s, _f(RESCUE, state), state)
 		"academy":
-			# A playground at the front-left (slide and swings), a tree, and a yellow school bus at the back.
-			var yard := Rect2(c + Vector2(-s * 0.49, s * 0.22), Vector2(s * 0.27, s * 0.26))
+			# A fenced playground at the front-left (slide and swings), a yellow school bus at the back-right, and a flagpole.
+			var yard := Rect2(c + Vector2(-s * 0.49, s * 0.20), Vector2(s * 0.29, s * 0.29))
 			ci.draw_rect(yard, _f(Color(0.36, 0.55, 0.32), state))
-			ci.draw_line(yard.position + Vector2(s * 0.04, s * 0.05), yard.position + Vector2(s * 0.22, s * 0.05), _f(RESCUE, state), 2.0)
+			ci.draw_rect(yard, _f(S.WHITE, state), false, 1.5)
+			ci.draw_line(yard.position + Vector2(s * 0.04, s * 0.06), yard.position + Vector2(s * 0.22, s * 0.06), _f(RESCUE, state), 2.0)
 			for k in 2:
-				ci.draw_line(yard.position + Vector2(s * (0.08 + k * 0.08), s * 0.05), yard.position + Vector2(s * (0.08 + k * 0.08), s * 0.10), md, 1.0)
-			S._rot_rect(ci, yard.position + Vector2(s * 0.14, s * 0.18), Vector2(1, 0.6), s * 0.16, s * 0.04, _f(S.CYAN, state))
-			S._rot_rect(ci, c + Vector2(s * 0.30, -s * 0.40), Vector2(1, 0), s * 0.30, s * 0.10, _f(Color(0.98, 0.78, 0.15), state))
+				ci.draw_rect(Rect2(yard.position + Vector2(s * (0.08 + k * 0.08), s * 0.08), Vector2(s * 0.03, s * 0.04)), md)
+			S._rot_rect(ci, yard.position + Vector2(s * 0.15, s * 0.20), Vector2(1, 0.6), s * 0.17, s * 0.045, _f(S.CYAN, state))
+			ci.draw_circle(yard.position + Vector2(s * 0.06, s * 0.22), s * 0.035, _f(Color(0.85, 0.75, 0.50), state))
+			S._rot_rect(ci, c + Vector2(s * 0.32, -s * 0.41), Vector2(1, 0), s * 0.30, s * 0.10, _f(Color(0.98, 0.78, 0.15), state))
 			for k in 4:
-				ci.draw_rect(Rect2(c + Vector2(s * (0.18 + k * 0.065), -s * 0.43), Vector2(s * 0.04, s * 0.03)), _f(S.GLASS, state).darkened(0.3))
-			ci.draw_circle(c + Vector2(-s * 0.40, -s * 0.40), s * 0.08, _f(Color(0.30, 0.62, 0.32), state))
+				ci.draw_rect(Rect2(c + Vector2(s * (0.20 + k * 0.065), -s * 0.44), Vector2(s * 0.04, s * 0.03)), _f(S.GLASS, state).darkened(0.3))
+			ci.draw_circle(c + Vector2(s * 0.16, s * 0.47), s * 0.02, md)
+			ci.draw_rect(Rect2(c + Vector2(s * 0.16, s * 0.43), Vector2(s * 0.08, s * 0.045)), _f(BLUE, state))
 		"hazlab":
 			# A thick blast wall all round, with hazard stripes.
 			ci.draw_circle(c, rad * 1.45, _f(Color(0.42, 0.42, 0.40), state))
@@ -188,15 +197,28 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			for k in 3:
 				S._glow(ci, c + Vector2.from_angle(k * TAU / 3.0 + 0.5) * rad * 0.78, s * 0.02, _f(RESCUE, state), state)
 		"academy":
-			# Rows of desks facing the teacher's desk and a chalkboard, and a clock on top.
-			ci.draw_rect(Rect2(c + Vector2(-rad * 0.40, -rad * 0.66), Vector2(rad * 0.8, rad * 0.10)), _f(Color(0.16, 0.30, 0.22), state))
-			ci.draw_rect(Rect2(c + Vector2(-rad * 0.18, -rad * 0.46), Vector2(rad * 0.36, rad * 0.12)), _f(Color(0.50, 0.34, 0.22), state))
-			for row in 3:
-				for col in 4:
-					ci.draw_rect(Rect2(c + Vector2(-rad * 0.50 + col * rad * 0.26, -rad * 0.16 + row * rad * 0.24), Vector2(rad * 0.18, rad * 0.11)), _f(Color(0.70, 0.54, 0.34), state))
-			ci.draw_circle(c, rad * 0.14, _f(S.WHITE, state))
-			ci.draw_line(c, c + Vector2(0, -rad * 0.1), md, 1.5)
-			ci.draw_line(c, c + Vector2(rad * 0.07, 0), md, 1.5)
+			# A brick roof with a ring of skylights, the bell tower in the middle, and the porch at the front-right.
+			var brick := _f(Color(0.72, 0.36, 0.26), state)
+			var trim := _f(Color(0.92, 0.88, 0.80), state)
+			ci.draw_circle(c, rad * 0.82, brick)
+			for k in 8:
+				var dir := Vector2.from_angle(k * TAU / 8.0)
+				ci.draw_line(c + dir * rad * 0.2, c + dir * rad * 0.82, brick.darkened(0.15), 1.0)
+				S._rot_rect(ci, c + Vector2.from_angle(k * TAU / 8.0 + PI / 8.0) * rad * 0.55, Vector2.from_angle(k * TAU / 8.0 + PI / 8.0), rad * 0.16, rad * 0.10, _f(S.AMBER, state).lightened(0.2))
+			ci.draw_arc(c, rad * 0.82, 0, TAU, 36, trim, 2.0)
+			ci.draw_arc(c - Vector2(rad * 0.3, rad * 0.3), rad * 0.4, deg_to_rad(200), deg_to_rad(260), 8, Color(1, 1, 1, 0.35 * brick.a), 2.0)
+			# The bell tower from above: a red pyramid roof.
+			var tw2 := rad * 0.22
+			var red := _f(Color(0.80, 0.28, 0.22), state)
+			for k in 4:
+				var a0 := Vector2.from_angle(k * PI / 2.0 + PI / 4.0) * tw2 * 1.41
+				var a1 := Vector2.from_angle((k + 1) * PI / 2.0 + PI / 4.0) * tw2 * 1.41
+				ci.draw_colored_polygon(PackedVector2Array([c + a0, c + a1, c]), red.darkened(0.08 * k))
+			S._glow(ci, c, s * 0.012, _f(S.GOLD, state), state)
+			# The porch with its steps, at the front-right.
+			var dd := Vector2(1, 1).normalized()
+			S._rot_rect(ci, c + dd * rad * 0.98, dd, s * 0.10, s * 0.18, trim.darkened(0.1))
+			S._rot_rect(ci, c + dd * rad * 0.92, dd, s * 0.06, s * 0.14, trim)
 		"hazlab":
 			# A glowing green containment sphere.
 			S._glow(ci, c, rad * 0.30, _f(LIME, state), state)
@@ -278,6 +300,12 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 			S._box(ci, c, tw, -0.48, -0.46, -0.18, -0.34, 0.14, md, md.lightened(0.15))
 			for k in 3:
 				S._glow(ci, S._iso(c, tw, -0.43 + k * 0.1, -0.34, 0.10), tw * 0.012, _f(S.GREEN, state), state)
+			# A one-bay parking lot at the right, with a drone parked in it.
+			var lot := PackedVector2Array([S._iso(c, tw, 0.20, -0.49, 0.005), S._iso(c, tw, 0.49, -0.49, 0.005), S._iso(c, tw, 0.49, -0.20, 0.005), S._iso(c, tw, 0.20, -0.20, 0.005)])
+			ci.draw_colored_polygon(lot, _f(Color(0.24, 0.24, 0.26), state))
+			var paint := _f(Color(0.92, 0.92, 0.88), state)
+			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, 0.24, -0.23, 0.006), S._iso(c, tw, 0.24, -0.45, 0.006), S._iso(c, tw, 0.45, -0.45, 0.006), S._iso(c, tw, 0.45, -0.23, 0.006)]), paint, 1.5)
+			S._iso_drone(ci, S._iso(c, tw, 0.345, -0.345) - c + c, tw, 0.01, 0.07, state)
 		"mast":
 			for ang in [200.0, 320.0]:
 				var q := Vector2.from_angle(deg_to_rad(ang)) * 0.46
@@ -286,7 +314,7 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 			for k in 3:
 				S._box(ci, c, tw, -0.48, -0.47 + k * 0.05, -0.22, -0.44 + k * 0.05, 0.03, _f(S.HAZARD, state).darkened(0.15), Color(0, 0, 0, 0), k * 0.03)
 		"academy":
-			# A yellow school bus parked at the back-right, and a tree.
+			# A yellow school bus parked at the back-right.
 			var bus := _f(Color(0.98, 0.78, 0.15), state)
 			S._box(ci, c, tw, 0.18, -0.46, 0.48, -0.36, 0.12, bus, Color(0, 0, 0, 0), 0.02)
 			for k in 4:
@@ -294,8 +322,6 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 				ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, u, -0.36, 0.08), S._iso(c, tw, u + 0.04, -0.36, 0.08), S._iso(c, tw, u + 0.04, -0.36, 0.12), S._iso(c, tw, u, -0.36, 0.12)]), _f(S.GLASS, state).darkened(0.3))
 			for u in [0.24, 0.42]:
 				ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, u, -0.36, 0.02), tw * 0.02, tw * 0.02), Color(0.08, 0.08, 0.09, bus.a))
-			ci.draw_line(S._iso(c, tw, -0.38, -0.38), S._iso(c, tw, -0.38, -0.38, 0.12), _f(Color(0.4, 0.3, 0.2), state), tw * 0.015)
-			S._iso_sphere(ci, S._iso(c, tw, -0.38, -0.38, 0.2), tw * 0.08, _f(Color(0.30, 0.62, 0.32), state))
 		"hazlab":
 			# The blast wall: back half first, so the dome sits inside it.
 			_blast_wall(ci, c, tw, r, state, true)
@@ -402,33 +428,7 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			S._glow(ci, apex - Vector2(0, tw * 0.02), tw * 0.025, _f(RESCUE, state), state)
 			_iso_rover(ci, c, tw, Vector2(-0.34, 0.36), _f(RESCUE, state), state)
 		"academy":
-			# A front entrance with columns and a gable, a clock tower with a bell, and a playground.
-			var stone := _f(Color(0.88, 0.84, 0.76), state)
-			S._box(ci, c, tw, r * 0.55, r * 0.35, r * 0.95, r * 0.95, 0.03, stone)
-			for k in 3:
-				var v := r * (0.42 + k * 0.22)
-				ci.draw_line(S._iso(c, tw, r * 0.93, v, 0.03), S._iso(c, tw, r * 0.93, v, 0.17), stone, tw * 0.014)
-			var g0 := S._iso(c, tw, r * 0.95, r * 0.35, 0.17)
-			var g1 := S._iso(c, tw, r * 0.95, r * 0.95, 0.17)
-			ci.draw_colored_polygon(PackedVector2Array([g0, g1, g0.lerp(g1, 0.5) - Vector2(0, tw * 0.07)]), stone.darkened(0.1))
-			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, r * 0.95, r * 0.55, 0.03), S._iso(c, tw, r * 0.95, r * 0.75, 0.03), S._iso(c, tw, r * 0.95, r * 0.75, 0.13), S._iso(c, tw, r * 0.95, r * 0.55, 0.13)]), _f(Color(0.45, 0.30, 0.20), state))
-			# Clock tower on top.
-			S._box(ci, c, tw, -0.05, -0.05, 0.05, 0.05, 0.16, stone, Color(0, 0, 0, 0), h)
-			var face := S._iso(c, tw, 0.05, 0.0, h + 0.11)
-			ci.draw_colored_polygon(S._ellipse(face, tw * 0.025, tw * 0.03), _f(S.WHITE, state))
-			ci.draw_line(face, face - Vector2(0, tw * 0.02), md, 1.0)
-			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, -0.06, -0.06, h + 0.16), S._iso(c, tw, 0.06, -0.06, h + 0.16), S._iso(c, tw, 0.06, 0.06, h + 0.16), S._iso(c, tw, -0.06, 0.06, h + 0.16)]), stone.darkened(0.2))
-			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, -0.06, 0.06, h + 0.16), S._iso(c, tw, 0.06, 0.06, h + 0.16), S._iso(c, tw, 0.06, -0.06, h + 0.16), S._iso(c, tw, 0, 0, h + 0.26)]), _f(RESCUE, state).darkened(0.2))
-			# Playground: grass, a swing set and a slide.
-			var grass := PackedVector2Array([S._iso(c, tw, -0.49, 0.22, 0.0), S._iso(c, tw, -0.22, 0.22, 0.0), S._iso(c, tw, -0.22, 0.48, 0.0), S._iso(c, tw, -0.49, 0.48, 0.0)])
-			ci.draw_colored_polygon(grass, _f(Color(0.36, 0.55, 0.32), state))
-			for u in [-0.45, -0.29]:
-				ci.draw_line(S._iso(c, tw, u, 0.28), S._iso(c, tw, u, 0.28, 0.14), md, 1.5)
-			ci.draw_line(S._iso(c, tw, -0.45, 0.28, 0.14), S._iso(c, tw, -0.29, 0.28, 0.14), _f(RESCUE, state), 2.0)
-			for u in [-0.40, -0.34]:
-				ci.draw_line(S._iso(c, tw, u, 0.28, 0.14), S._iso(c, tw, u, 0.28, 0.05), md, 1.0)
-			ci.draw_line(S._iso(c, tw, -0.26, 0.40, 0.12), S._iso(c, tw, -0.42, 0.44, 0.01), _f(S.CYAN, state), tw * 0.02)
-			ci.draw_line(S._iso(c, tw, -0.26, 0.40, 0.0), S._iso(c, tw, -0.26, 0.40, 0.12), md, 1.5)
+			_school(ci, c, tw, r, h, state)
 		"hazlab":
 			var orb := S._iso(c, tw, 0, 0, 0.05 + h * 0.45)
 			S._glow(ci, orb, tw * 0.06, _f(LIME, state), state)
@@ -454,6 +454,86 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			S._box(ci, c, tw, -0.48, 0.28, -0.26, 0.32, 0.12, md, Color(0, 0, 0, 0), 0.04)
 			S._glow(ci, S._iso(c, tw, -0.40, 0.30, 0.12), tw * 0.02, _f(S.PINK, state), state)
 			S._glow(ci, S._iso(c, tw, -0.32, 0.30, 0.12), tw * 0.02, _f(S.CYAN, state), state)
+
+
+## The Academy at an angle: a brick schoolhouse dome with two rows of lit
+## classroom windows, a bell tower with a clock, a porch with columns, a
+## flagpole and a fenced playground.
+static func _school(ci: CanvasItem, c: Vector2, tw: float, r: float, h: float, state: Dictionary) -> void:
+	var md := _f(S.METAL_DARK, state)
+	var brick := _f(Color(0.72, 0.36, 0.26), state)
+	var trim := _f(Color(0.92, 0.88, 0.80), state)
+	var lit := _f(Color(1.0, 0.82, 0.45), state)
+	var base := S._iso(c, tw, 0, 0, 0.05)
+	var rx := r * tw * 0.72
+	var ry := rx * 0.5
+	var hh := h * tw
+	var shell := S._ellipse(base, rx, ry, 0, 180, 16)
+	shell.append_array(S._ellipse(base, rx, hh, 180, 360, 20))
+	ci.draw_colored_polygon(shell, brick)
+	ci.draw_colored_polygon(S._ellipse(base - Vector2(rx * 0.35, hh * 0.55), rx * 0.40, hh * 0.38, 180, 300, 10), brick.lightened(0.10))
+	# Two rows of classroom windows round the front, and a white trim band.
+	for row in 2:
+		var t: float = [0.22, 0.58][row]
+		var ring_c := base - Vector2(0, hh * t)
+		var k_r := sqrt(1.0 - t * t)
+		for k in 7:
+			var ang := deg_to_rad(15.0 + k * 25.0)
+			var p := ring_c + Vector2(cos(ang) * rx * k_r, sin(ang) * ry * k_r)
+			var w := tw * 0.022 * sin(ang) + tw * 0.006
+			ci.draw_rect(Rect2(p - Vector2(w * 0.5, tw * 0.018), Vector2(w, tw * 0.03)), lit)
+		ci.draw_polyline(S._ellipse(ring_c + Vector2(0, tw * 0.025), rx * k_r, ry * k_r, 5, 175, 16), trim, 1.5)
+	ci.draw_polyline(S._ellipse(base, rx * 0.99, ry * 0.99, 0, 180, 16), trim, 2.5)
+	# The bell tower: a cream tower, an open belfry with a gold bell, a clock and a red roof.
+	var z0 := 0.05 + h * 0.75
+	S._box(ci, c, tw, -0.07, -0.07, 0.07, 0.07, 0.20, trim, Color(0, 0, 0, 0), z0)
+	for face in [[0.07, -0.05, 0.07, 0.05], [-0.05, 0.07, 0.05, 0.07]]:
+		var open := PackedVector2Array([S._iso(c, tw, face[0], face[1], z0 + 0.12), S._iso(c, tw, face[2], face[3], z0 + 0.12), S._iso(c, tw, face[2], face[3], z0 + 0.18), S._iso(c, tw, face[0], face[1], z0 + 0.18)])
+		ci.draw_colored_polygon(open, Color(0.10, 0.08, 0.06, trim.a))
+	S._iso_sphere(ci, S._iso(c, tw, 0.07, 0.07, z0 + 0.14), tw * 0.016, _f(S.GOLD, state))
+	var clock := S._iso(c, tw, 0.07, 0.0, z0 + 0.06)
+	ci.draw_colored_polygon(S._ellipse(clock, tw * 0.022, tw * 0.028), _f(S.WHITE, state))
+	ci.draw_line(clock, clock - Vector2(0, tw * 0.018), md, 1.0)
+	ci.draw_line(clock, clock + Vector2(tw * 0.012, tw * 0.004), md, 1.0)
+	var red := _f(Color(0.80, 0.28, 0.22), state)
+	var peak := S._iso(c, tw, 0, 0, z0 + 0.32)
+	var e := [S._iso(c, tw, -0.085, -0.085, z0 + 0.20), S._iso(c, tw, 0.085, -0.085, z0 + 0.20), S._iso(c, tw, 0.085, 0.085, z0 + 0.20), S._iso(c, tw, -0.085, 0.085, z0 + 0.20)]
+	ci.draw_colored_polygon(PackedVector2Array([e[1], e[2], peak]), red.darkened(0.2))
+	ci.draw_colored_polygon(PackedVector2Array([e[2], e[3], peak]), red)
+	# The porch at the front: steps, four columns, a flat roof and a gable, with the door behind.
+	var u0 := r * 0.52
+	var u1 := r * 1.02
+	S._box(ci, c, tw, u0, u0, u1, u1, 0.025, trim.darkened(0.12))
+	var door := PackedVector2Array([S._iso(c, tw, u0, u0 + 0.05, 0.025), S._iso(c, tw, u0 + 0.06, u0, 0.025), S._iso(c, tw, u0 + 0.06, u0, 0.13), S._iso(c, tw, u0, u0 + 0.05, 0.13)])
+	ci.draw_colored_polygon(door, _f(Color(0.45, 0.28, 0.18), state))
+	for q in [Vector2(u1 - 0.015, u0 + 0.03), Vector2(u1 - 0.015, u1 - 0.015), Vector2(u0 + 0.03, u1 - 0.015)]:
+		ci.draw_line(S._iso(c, tw, q.x, q.y, 0.025), S._iso(c, tw, q.x, q.y, 0.15), trim, tw * 0.014)
+	S._box(ci, c, tw, u0, u0, u1, u1, 0.025, trim, Color(0, 0, 0, 0), 0.15)
+	var g0 := S._iso(c, tw, u0, u1, 0.175)
+	var g1 := S._iso(c, tw, u1, u1, 0.175)
+	ci.draw_colored_polygon(PackedVector2Array([g0, g1, g0.lerp(g1, 0.5) - Vector2(0, tw * 0.05)]), trim.darkened(0.05))
+	ci.draw_polyline(PackedVector2Array([g0, g0.lerp(g1, 0.5) - Vector2(0, tw * 0.05), g1]), brick, 1.5)
+	# A flagpole by the porch.
+	ci.draw_line(S._iso(c, tw, 0.16, 0.47), S._iso(c, tw, 0.16, 0.47, 0.46), md, tw * 0.01)
+	ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.16, 0.47, 0.46), S._iso(c, tw, 0.28, 0.47, 0.46), S._iso(c, tw, 0.28, 0.47, 0.38), S._iso(c, tw, 0.16, 0.47, 0.38)]), _f(BLUE, state))
+	# A fenced playground at the left: swings, a slide and a sandpit.
+	var g := [S._iso(c, tw, -0.49, 0.20, 0.0), S._iso(c, tw, -0.20, 0.20, 0.0), S._iso(c, tw, -0.20, 0.49, 0.0), S._iso(c, tw, -0.49, 0.49, 0.0)]
+	ci.draw_colored_polygon(PackedVector2Array(g), _f(Color(0.36, 0.55, 0.32), state))
+	ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, -0.43, 0.42, 0.0), tw * 0.04, tw * 0.02), _f(Color(0.85, 0.75, 0.50), state))
+	for u in [-0.45, -0.29]:
+		ci.draw_line(S._iso(c, tw, u, 0.26), S._iso(c, tw, u, 0.26, 0.14), md, 1.5)
+	ci.draw_line(S._iso(c, tw, -0.45, 0.26, 0.14), S._iso(c, tw, -0.29, 0.26, 0.14), _f(RESCUE, state), 2.0)
+	for u in [-0.40, -0.34]:
+		ci.draw_line(S._iso(c, tw, u, 0.26, 0.14), S._iso(c, tw, u, 0.26, 0.05), md, 1.0)
+	ci.draw_line(S._iso(c, tw, -0.24, 0.38, 0.12), S._iso(c, tw, -0.38, 0.44, 0.01), _f(S.CYAN, state), tw * 0.02)
+	ci.draw_line(S._iso(c, tw, -0.24, 0.38, 0.0), S._iso(c, tw, -0.24, 0.38, 0.12), md, 1.5)
+	var fence := _f(S.WHITE, state)
+	ci.draw_polyline(PackedVector2Array([g[1], g[2], g[3]]), fence, 1.0)
+	ci.draw_polyline(PackedVector2Array([g[1] - Vector2(0, tw * 0.04), g[2] - Vector2(0, tw * 0.04), g[3] - Vector2(0, tw * 0.04)]), fence, 1.0)
+	for k in 7:
+		var t := float(k) / 6.0
+		var p: Vector2 = g[2].lerp(g[3], t) if k < 4 else g[1].lerp(g[2], (t - 0.5) * 2.0)
+		ci.draw_line(p, p - Vector2(0, tw * 0.04), fence, 1.0)
 
 
 ## A big hourglass-shaped cooling tower at (u, v), hgt tile-widths tall, with steam.
