@@ -2,6 +2,20 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.38
+Date: 11/01/2026
+Time: 7:15 PM
+
+### Changes
+**Better-looking tubes on the angled map** (`scripts/ui/sprites.gd`):
+- **Tubes** are shaded like round metal pipes lit from above, with a highlight along the top, a thin orange stripe, a rib every fifth of a tile, and a raised flange where one tile's tube meets the next. They're slimmer than before.
+- **Airlock collars** are smaller and neater: a short wider ring with an amber band and a small light, drawn in the right order so the tube runs cleanly into and out of it.
+- **Junctions** (T-junctions and crossroads) are now domed drums with an orange band and a light, standing above the tubes.
+- **Corners and dead ends** have rounded, shaded ball joints.
+
+### Reason
+The owner said the tubes needed to look better.
+
 ## Version 00.01.37
 Date: 11/01/2026
 Time: 6:55 PM
