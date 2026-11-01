@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.54
+Date: 11/01/2026
+Time: 11:59 PM
+
+### Changes
+- **The Hauler has a real dump bed** (`scripts/ui/sprites_more.gd`):
+  - an open-topped bed with sides that slope up toward the back, with ribs and a rim;
+  - you can see its inside, with ore and teal ore chunks heaped above the sides;
+  - a tall front wall with a lip reaching over the cab;
+  - a hinge at the rear and a lifting piston underneath.
+  - The beacon sits on the lip.
+
+### Reason
+The owner asked for the Hauler to look like it has a dump bed.
+
 ## Version 00.01.53
 Date: 11/01/2026
 Time: 11:50 PM

@@ -815,27 +815,52 @@ static func draw_unit(ci: CanvasItem, type: String, c: Vector2, tw: float) -> vo
 			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, -0.14, 0.13, 0.04), S._iso(c, tw, -0.07, 0.13, 0.10), S._iso(c, tw, 0.07, 0.13, 0.10), S._iso(c, tw, 0.14, 0.13, 0.04)]), md, 2.0)
 			S._glow(ci, S._iso(c, tw, 0.14, 0.04, 0.12), tw * 0.01, S.WHITE, st)
 		"hauler":
-			# A dump truck: a cab at the front, a ribbed tipping bin heaped with ore,
-			# a lifting piston, and six big wheels.
+			# A dump truck: a cab at the front and an open dump bed behind it. The
+			# bed's sides slope up toward the back, its tall front wall has a lip
+			# over the cab, ore is heaped inside, and it tips on a rear hinge,
+			# lifted by a piston.
 			for u in [-0.20, -0.06, 0.16]:
 				_wheel(ci, c, tw, u, -0.12, 0.055, 0.055)
-			S._box(ci, c, tw, -0.27, -0.11, 0.25, 0.11, 0.04, md, md.lightened(0.1), 0.06)
-			S._box(ci, c, tw, 0.10, -0.10, 0.25, 0.10, 0.13, yel, yel.lightened(0.1), 0.10)
-			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.25, -0.08, 0.15), S._iso(c, tw, 0.25, 0.08, 0.15), S._iso(c, tw, 0.25, 0.08, 0.21), S._iso(c, tw, 0.25, -0.08, 0.21)]), S.GLASS.darkened(0.3))
+			S._box(ci, c, tw, -0.27, -0.10, 0.25, 0.10, 0.04, md, md.lightened(0.1), 0.06)
+			S._box(ci, c, tw, 0.11, -0.10, 0.25, 0.10, 0.12, yel, yel.lightened(0.1), 0.10)
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.25, -0.08, 0.15), S._iso(c, tw, 0.25, 0.08, 0.15), S._iso(c, tw, 0.25, 0.08, 0.20), S._iso(c, tw, 0.25, -0.08, 0.20)]), S.GLASS.darkened(0.3))
 			S._glow(ci, S._iso(c, tw, 0.25, 0.07, 0.12), tw * 0.01, S.WHITE, st)
-			S._glow(ci, S._iso(c, tw, 0.17, 0.0, 0.25), tw * 0.012, S.AMBER, st)
-			# The bin: tilted a little, with ribs, heaped with ore.
-			ci.draw_line(S._iso(c, tw, -0.05, 0.10, 0.10), S._iso(c, tw, -0.10, 0.10, 0.18), m.lightened(0.3), tw * 0.012)
-			S._box(ci, c, tw, -0.27, -0.11, 0.07, 0.11, 0.12, yel.darkened(0.1), yel.darkened(0.3), 0.11)
-			for k in 4:
-				var u := -0.23 + k * 0.085
-				ci.draw_line(S._iso(c, tw, u, 0.11, 0.12), S._iso(c, tw, u, 0.11, 0.22), yel.darkened(0.35), 2.0)
-			for k in 9:
-				var layer := 0 if k < 6 else 1
+			# The piston under the bed, and the hinge at the back.
+			ci.draw_line(S._iso(c, tw, 0.02, 0.0, 0.10), S._iso(c, tw, -0.02, 0.0, 0.13), m.lightened(0.3), tw * 0.014)
+			ci.draw_circle(S._iso(c, tw, -0.24, 0.10, 0.11), tw * 0.01, md)
+			var bed := yel.darkened(0.12)
+			var inner := yel.darkened(0.45)
+			# Bed corners: floor along the bottom, rim along the top (higher at the back).
+			var f_back := -0.24
+			var f_front := 0.08
+			var r_back := -0.30
+			var r_front := 0.09
+			var floor_z := 0.11
+			var rim_back := 0.22
+			var rim_front := 0.21
+			# Far side wall (inside face) and the floor, seen over the near wall.
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, f_back, -0.10, floor_z), S._iso(c, tw, f_front, -0.10, floor_z), S._iso(c, tw, r_front, -0.11, rim_front), S._iso(c, tw, r_back, -0.11, rim_back)]), inner)
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, f_back, -0.10, floor_z), S._iso(c, tw, f_front, -0.10, floor_z), S._iso(c, tw, f_front, 0.10, floor_z), S._iso(c, tw, f_back, 0.10, floor_z)]), inner.darkened(0.2))
+			# Ore heaped in the bed.
+			for k in 11:
+				var layer := 0 if k < 6 else (1 if k < 10 else 2)
 				var ang := k * 2.4
-				_iso_chunk(ci, S._iso(c, tw, -0.10 + cos(ang) * 0.09 * (1.0 - layer * 0.5), sin(ang) * 0.06 * (1.0 - layer * 0.5), 0.24 + layer * 0.035), tw * 0.03, S.TEAL if k % 3 == 0 else Color(0.45, 0.43, 0.41))
+				var spread := 1.0 - layer * 0.35
+				_iso_chunk(ci, S._iso(c, tw, -0.10 + cos(ang) * 0.11 * spread, sin(ang) * 0.06 * spread, floor_z + 0.09 + layer * 0.045), tw * 0.034, S.TEAL if k % 3 == 0 else Color(0.45, 0.43, 0.41))
+			# The tall front wall with its lip reaching over the cab.
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, f_front, -0.10, floor_z), S._iso(c, tw, f_front, 0.10, floor_z), S._iso(c, tw, r_front, 0.11, rim_front + 0.04), S._iso(c, tw, r_front, -0.11, rim_front + 0.04)]), bed)
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, r_front, -0.11, rim_front + 0.04), S._iso(c, tw, 0.20, -0.11, rim_front + 0.04), S._iso(c, tw, 0.20, 0.11, rim_front + 0.04), S._iso(c, tw, r_front, 0.11, rim_front + 0.04)]), bed.lightened(0.12))
+			# The near side wall (outside face), with ribs and a rim.
+			var near := PackedVector2Array([S._iso(c, tw, f_back, 0.10, floor_z), S._iso(c, tw, f_front, 0.10, floor_z), S._iso(c, tw, r_front, 0.11, rim_front), S._iso(c, tw, r_back, 0.11, rim_back)])
+			ci.draw_colored_polygon(near, bed)
+			for k in 4:
+				var t := 0.15 + k * 0.23
+				ci.draw_line(near[0].lerp(near[1], t), near[3].lerp(near[2], t), bed.darkened(0.3), 2.0)
+			ci.draw_line(near[3], near[2], bed.lightened(0.25), 2.0)
+			ci.draw_line(near[0], near[3], bed.darkened(0.2), 2.0)
 			for u in [-0.20, -0.06, 0.16]:
 				_wheel(ci, c, tw, u, 0.12, 0.055, 0.055)
+			S._glow(ci, S._iso(c, tw, 0.18, 0.0, 0.27), tw * 0.012, S.AMBER, st)
 		"weather":
 			_panels(ci, c, tw, Color(0.25, 0.40, 0.75))
 			S._box(ci, c, tw, -0.07, -0.07, 0.07, 0.07, 0.14, S.WHITE.darkened(0.1), Color(0, 0, 0, 0), 0.2)
