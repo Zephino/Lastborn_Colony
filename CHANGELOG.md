@@ -2,6 +2,23 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.17
+Date: 11/01/2026
+Time: 8:51 AM
+
+### Changes
+- **Tunnels in every shape** (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game). A tunnel tile now takes its shape from its neighbours (`Sprites.tunnel_shape`):
+  - **Lone stub:** a short tube capped at both ends.
+  - **Dead end:** a tube capped with an orange light.
+  - **Straight:** one continuous tube, with no hub.
+  - **Corner:** an elbow joint.
+  - **T-junction and crossroads:** a round hub.
+- Both styles, top-down and angled. In the angled style, caps and elbows are drawn on top so tubes never hide them.
+- New concept sheet: `tools/sprite_sheet.gd` now also renders `lastborn_sprites_tunnels.png`, with all 16 ways a tunnel tile can connect.
+
+### Reason
+The owner asked for tunnels in all shapes.
+
 ## Version 00.01.16
 Date: 11/01/2026
 Time: 8:48 AM

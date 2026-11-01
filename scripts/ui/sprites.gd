@@ -261,18 +261,61 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 		ci.draw_arc(c, rad, 0, TAU, 32, Color(acc.r, acc.g, acc.b, 0.8), 1.5)
 
 
-## A Heat Main tile: a pressurised tunnel toward each linked neighbour.
+## What shape a tunnel piece is, from its links: "none", "end", "straight",
+## "corner", "tee" or "cross".
+static func tunnel_shape(links: Array) -> String:
+	match links.size():
+		0:
+			return "none"
+		1:
+			return "end"
+		2:
+			var a: Vector2i = links[0]
+			var b: Vector2i = links[1]
+			return "straight" if a + b == Vector2i.ZERO else "corner"
+		3:
+			return "tee"
+	return "cross"
+
+
+## A Heat Main (tunnel) tile, top-down. Straight runs are one continuous tube,
+## corners get an elbow, T-junctions and crossroads a round hub, and a dead end
+## a capped end with an orange light.
 static func _top_tunnel(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
 	var md := _fade(METAL_DARK, state)
 	var m := _fade(METAL, state)
 	var a := _fade(ORANGE, state)
-	for d in links:
-		_top_tube(ci, c, c + Vector2(d) * s * 0.5, s, state)
-	# A round junction where the tubes meet.
-	ci.draw_circle(c, s * 0.16, md)
-	ci.draw_circle(c, s * 0.13, m)
-	ci.draw_arc(c, s * 0.13, 0, TAU, 20, a, 2.0)
-	ci.draw_circle(c, s * 0.06, m.lightened(0.2))
+	match tunnel_shape(links):
+		"none":
+			_top_tube(ci, c - Vector2(s * 0.22, 0), c + Vector2(s * 0.22, 0), s, state)
+			_top_cap(ci, c - Vector2(s * 0.22, 0), s, state)
+			_top_cap(ci, c + Vector2(s * 0.22, 0), s, state)
+		"end":
+			_top_tube(ci, c, c + Vector2(links[0]) * s * 0.5, s, state)
+			_top_cap(ci, c, s, state)
+		"straight":
+			_top_tube(ci, c - Vector2(links[0]) * s * 0.5, c + Vector2(links[0]) * s * 0.5, s, state)
+		"corner":
+			for d in links:
+				_top_tube(ci, c, c + Vector2(d) * s * 0.5, s, state)
+			# The elbow: a round joint the width of the tube.
+			ci.draw_circle(c, s * 0.11, md)
+			ci.draw_circle(c, s * 0.085, m)
+			ci.draw_arc(c, s * 0.06, 0, TAU, 16, Color(a.r, a.g, a.b, 0.85 * a.a), 2.0)
+		_:
+			for d in links:
+				_top_tube(ci, c, c + Vector2(d) * s * 0.5, s, state)
+			ci.draw_circle(c, s * 0.17, md)
+			ci.draw_circle(c, s * 0.14, m)
+			ci.draw_arc(c, s * 0.14, 0, TAU, 20, a, 2.0)
+			ci.draw_circle(c, s * 0.06, m.lightened(0.2))
+
+
+## The closed end of a tube: a round cap with an orange light.
+static func _top_cap(ci: CanvasItem, p: Vector2, s: float, state: Dictionary) -> void:
+	ci.draw_circle(p, s * 0.12, _fade(METAL_DARK, state))
+	ci.draw_circle(p, s * 0.095, _fade(METAL, state))
+	_glow(ci, p, s * 0.03, _fade(ORANGE, state), state)
 
 
 # ============================================================ isometric
@@ -511,22 +554,50 @@ static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> v
 	ci.draw_circle(p - Vector2(rad * 0.25, rad * 0.25), rad * 0.6, col)
 
 
-## A Heat Main tile: round tunnel tubes toward each linked neighbour, meeting
-## at a round junction.
+## A Heat Main (tunnel) tile at an angle, in the same shapes as the top-down one.
 static func _iso_tunnel(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
 	var m := _fade(METAL, state)
 	var a := _fade(ORANGE, state)
 	var stripe := Color(a.r, a.g, a.b, 0.85 * a.a)
+	var shape := tunnel_shape(links)
+	if shape == "none":
+		_iso_tube(ci, c, tw, 0, -0.22, 0.22, 0.085, 0.10, m, stripe)
+		_iso_cap(ci, _iso(c, tw, 0.22, 0, 0.10), tw, state)
+		return
+	if shape == "straight":
+		var d: Vector2i = links[0]
+		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, -0.5, 0.5, 0.085, 0.10, m, stripe)
+		return
 	var back: Array = []
 	var front: Array = []
 	for d in links:
 		(back if (d.x < 0 or d.y < 0) else front).append(d)
 	for d in back:
 		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, 0.0, float(d.x if d.x != 0 else d.y) * 0.5, 0.085, 0.10, m, stripe)
-	_cyl(ci, c, tw, 0, 0, 0.16, 0.20, _fade(METAL_DARK, state), m)
-	ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.20), tw * 0.115, tw * 0.058), a, 2.0)
+	if shape == "tee" or shape == "cross":
+		# The hub sits between the tubes going back and the ones coming forward.
+		_cyl(ci, c, tw, 0, 0, 0.16, 0.20, _fade(METAL_DARK, state), m)
+		ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.20), tw * 0.115, tw * 0.058), a, 2.0)
 	for d in front:
 		_iso_tube(ci, c, tw, 0 if d.x != 0 else 1, 0.0, float(d.x if d.x != 0 else d.y) * 0.5, 0.085, 0.10, m, stripe)
+	# Caps and elbows close the middle of the tile, so they go on top.
+	if shape == "end":
+		_iso_cap(ci, _iso(c, tw, 0, 0, 0.10), tw, state)
+	elif shape == "corner":
+		_iso_ball(ci, _iso(c, tw, 0, 0, 0.10), tw * 0.088, m)
+		ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.10), tw * 0.055, tw * 0.033), stripe, 1.5)
+
+
+## A rounded ball joint (the elbow of a corner).
+static func _iso_ball(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> void:
+	ci.draw_circle(p, rad, col.darkened(0.25))
+	ci.draw_circle(p - Vector2(rad * 0.2, rad * 0.25), rad * 0.7, col)
+
+
+## The closed end of a tube at an angle: a round cap with an orange light.
+static func _iso_cap(ci: CanvasItem, p: Vector2, tw: float, state: Dictionary) -> void:
+	_iso_ball(ci, p, tw * 0.085, _fade(METAL, state))
+	_glow(ci, p - Vector2(0, tw * 0.02), tw * 0.022, _fade(ORANGE, state), state)
 
 
 # ============================================================ terrain

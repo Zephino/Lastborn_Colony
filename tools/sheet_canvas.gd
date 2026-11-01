@@ -20,6 +20,8 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.06, 0.07, 0.09))
 	if page == "buildings":
 		_buildings()
+	elif page == "tunnels":
+		_tunnels()
 	else:
 		_world()
 
@@ -112,3 +114,24 @@ func _links(b: Dictionary, cell: Vector2i) -> Dictionary:
 		if b.has(cell + d):
 			out.append(d)
 	return {"links": out}
+
+
+## Every tunnel shape: all 16 combinations of neighbours, both styles.
+func _tunnels() -> void:
+	_text("Tunnels: every shape (dead end, straight, corner, T-junction, crossroads, and a lone stub). Top-down and angled.", Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
+	var dirs := [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
+	var names := {"none": "lone stub", "end": "dead end", "straight": "straight", "corner": "corner", "tee": "T-junction", "cross": "crossroads"}
+	for mask in 16:
+		var links: Array = []
+		for i in 4:
+			if mask & (1 << i):
+				links.append(dirs[i])
+		var o := Vector2(20 + (mask % 4) * 470, 70 + (mask / 4) * 315)
+		draw_rect(Rect2(o, Vector2(458, 303)), Color(0.10, 0.11, 0.14))
+		_text(names[Sprites.tunnel_shape(links)], o + Vector2(12, 26), 20, Color(1.0, 0.82, 0.48))
+		var r := Rect2(o + Vector2(20, 60), Vector2(150, 150))
+		Sprites.terrain_top(self, "regolith", r)
+		Sprites.draw_top(self, "main", r, {"links": links})
+		var c := o + Vector2(320, 150)
+		Sprites.terrain_iso(self, "regolith", c, 220.0)
+		Sprites.draw_iso(self, "main", c, 220.0, {"links": links})
