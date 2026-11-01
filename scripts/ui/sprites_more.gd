@@ -717,46 +717,125 @@ static func draw_unit(ci: CanvasItem, type: String, c: Vector2, tw: float) -> vo
 	var tyre := Color(0.08, 0.08, 0.09)
 	match type:
 		"grader":
-			_tracks(ci, c, tw)
-			S._box(ci, c, tw, -0.16, -0.10, 0.12, 0.10, 0.10, yel, Color(0, 0, 0, 0), 0.06)
-			S._box(ci, c, tw, -0.12, -0.07, 0.02, 0.07, 0.08, md, S.GLASS.lightened(0.2), 0.16)
-			# The wide blade at the front.
-			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.22, -0.20, 0.02), S._iso(c, tw, 0.22, 0.20, 0.02), S._iso(c, tw, 0.20, 0.20, 0.14), S._iso(c, tw, 0.20, -0.20, 0.14)]), m.lightened(0.15))
-			ci.draw_line(S._iso(c, tw, 0.12, 0.0, 0.09), S._iso(c, tw, 0.20, 0.0, 0.08), md, tw * 0.02)
-			S._glow(ci, S._iso(c, tw, -0.05, 0.0, 0.26), tw * 0.015, S.AMBER, st)
-		"borer":
-			_tracks(ci, c, tw)
-			S._box(ci, c, tw, -0.18, -0.10, 0.06, 0.10, 0.14, yel.darkened(0.1), Color(0, 0, 0, 0), 0.06)
-			# The drill cone, pointing forward, with its spiral.
-			var tipp := S._iso(c, tw, 0.36, 0.0, 0.12)
-			var b0 := S._iso(c, tw, 0.06, -0.09, 0.12)
-			var b1 := S._iso(c, tw, 0.06, 0.09, 0.12)
-			var b2 := S._iso(c, tw, 0.06, 0.0, 0.22)
-			var b3 := S._iso(c, tw, 0.06, 0.0, 0.02)
-			ci.draw_colored_polygon(Geometry2D.convex_hull(PackedVector2Array([tipp, b0, b1, b2, b3])), m.lightened(0.2))
+			# A bulldozer: treads, a yellow body and cab cage, a curved blade on
+			# hydraulic arms at the front, ripper teeth at the back, and a beacon.
+			_tread(ci, c, tw, -0.13, false)
+			S._box(ci, c, tw, -0.17, -0.10, 0.11, 0.10, 0.08, yel, yel.lightened(0.1), 0.07)
+			S._box(ci, c, tw, -0.17, -0.08, -0.12, 0.08, 0.05, md, Color(0, 0, 0, 0), 0.15)
 			for k in 4:
-				var t := 0.15 + k * 0.2
-				ci.draw_line(b2.lerp(tipp, t), b3.lerp(tipp, t + 0.08), md, 1.5)
-			S._glow(ci, S._iso(c, tw, -0.1, 0.0, 0.24), tw * 0.015, S.AMBER, st)
+				ci.draw_line(S._iso(c, tw, -0.15, -0.06 + k * 0.04, 0.15), S._iso(c, tw, -0.15, -0.06 + k * 0.04, 0.20), m.lightened(0.2), 1.5)
+			# The cab: a cage of bars round tinted glass.
+			S._box(ci, c, tw, -0.10, -0.07, 0.03, 0.07, 0.10, S.GLASS.darkened(0.3), S.GLASS.lightened(0.1), 0.15)
+			for q in [Vector2(-0.10, 0.07), Vector2(0.03, 0.07), Vector2(0.03, -0.07)]:
+				ci.draw_line(S._iso(c, tw, q.x, q.y, 0.15), S._iso(c, tw, q.x, q.y, 0.26), yel.darkened(0.3), 2.0)
+			S._box(ci, c, tw, -0.11, -0.08, 0.04, 0.08, 0.015, yel.darkened(0.2), Color(0, 0, 0, 0), 0.25)
+			S._glow(ci, S._iso(c, tw, -0.04, 0.0, 0.28), tw * 0.013, S.AMBER, st)
+			_tread(ci, c, tw, 0.13, true)
+			# Hydraulic arms and the blade.
+			for v in [-0.09, 0.09]:
+				ci.draw_line(S._iso(c, tw, 0.08, v, 0.10), S._iso(c, tw, 0.22, v, 0.06), md, tw * 0.018)
+				ci.draw_line(S._iso(c, tw, 0.06, v, 0.13), S._iso(c, tw, 0.18, v, 0.09), m.lightened(0.3), tw * 0.008)
+			var blade := PackedVector2Array()
+			var blade_top := PackedVector2Array()
+			for k in 9:
+				var t := float(k) / 8.0
+				var v := lerpf(-0.22, 0.22, t)
+				var bow := 0.025 * sin(t * PI)
+				blade.append(S._iso(c, tw, 0.24 - bow, v, 0.01))
+				blade_top.append(S._iso(c, tw, 0.22 - bow, v, 0.13))
+			var face := blade.duplicate()
+			var back := blade_top.duplicate()
+			back.reverse()
+			face.append_array(back)
+			ci.draw_colored_polygon(face, yel.darkened(0.15))
+			ci.draw_polyline(blade, m.lightened(0.3), 2.0)
+			ci.draw_polyline(blade_top, yel.lightened(0.2), 1.5)
+			S._glow(ci, S._iso(c, tw, 0.11, 0.06, 0.12), tw * 0.01, S.WHITE, st)
+		"borer":
+			# A tracked digger with a big spiral drill on an arm, throwing rock chips.
+			_tread(ci, c, tw, -0.13, false)
+			var org := Color(0.95, 0.55, 0.15)
+			S._box(ci, c, tw, -0.20, -0.10, 0.04, 0.10, 0.10, org, org.lightened(0.1), 0.07)
+			S._box(ci, c, tw, -0.18, -0.08, -0.06, 0.08, 0.08, S.GLASS.darkened(0.3), S.GLASS.lightened(0.1), 0.17)
+			S._box(ci, c, tw, -0.19, -0.09, -0.05, 0.09, 0.015, org.darkened(0.25), Color(0, 0, 0, 0), 0.25)
+			S._glow(ci, S._iso(c, tw, -0.12, 0.0, 0.27), tw * 0.013, S.AMBER, st)
+			# Hazard stripes along the body.
+			for k in 5:
+				var u := -0.18 + k * 0.045
+				ci.draw_line(S._iso(c, tw, u, 0.10, 0.09), S._iso(c, tw, u + 0.02, 0.10, 0.15), md, 2.0)
+			_tread(ci, c, tw, 0.13, true)
+			# The arm and the drill motor.
+			ci.draw_line(S._iso(c, tw, 0.02, 0.0, 0.16), S._iso(c, tw, 0.14, 0.0, 0.14), md, tw * 0.035)
+			S._box(ci, c, tw, 0.10, -0.05, 0.16, 0.05, 0.09, m, m.lightened(0.15), 0.08)
+			# The drill: a cone with spiral flutes, pointing forward and a little down.
+			var tip := S._iso(c, tw, 0.40, 0.0, 0.07)
+			var ring: Array = []
+			for k in 12:
+				var th := k * TAU / 12.0
+				ring.append(S._iso(c, tw, 0.16, 0.08 * cos(th), 0.125 + 0.08 * sin(th)))
+			var cone := PackedVector2Array(ring)
+			cone.append(tip)
+			ci.draw_colored_polygon(Geometry2D.convex_hull(cone), m.lightened(0.15))
+			for k in 4:
+				var th := k * TAU / 4.0 + 0.4
+				var a: Vector2 = S._iso(c, tw, 0.16, 0.08 * cos(th), 0.125 + 0.08 * sin(th))
+				var mid := S._iso(c, tw, 0.28, 0.04 * cos(th + 1.2), 0.10 + 0.04 * sin(th + 1.2))
+				ci.draw_polyline(PackedVector2Array([a, mid, tip]), md, 1.5)
+			ci.draw_circle(tip, tw * 0.008, S.WHITE)
+			for k in 5:
+				ci.draw_circle(tip + Vector2(cos(k * 1.3) * tw * (0.04 + (k % 2) * 0.03), -absf(sin(k * 1.3)) * tw * 0.05), tw * 0.008, Color(0.45, 0.43, 0.41))
 		"prospector":
+			# A six-wheeled explorer: rocker arms, a white body with a solar deck,
+			# a camera mast and a sampling arm scanning the ground.
+			var white := S.WHITE.darkened(0.08)
 			for u in [-0.14, 0.0, 0.14]:
-				for v in [-0.10, 0.10]:
-					ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, u, v, 0.04), tw * 0.035, tw * 0.035), tyre)
-			S._box(ci, c, tw, -0.18, -0.09, 0.18, 0.09, 0.06, S.WHITE.darkened(0.1), Color(0, 0, 0, 0), 0.05)
-			ci.draw_line(S._iso(c, tw, -0.1, -0.05, 0.11), S._iso(c, tw, -0.1, -0.05, 0.36), md, 2.0)
-			ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, -0.1, -0.05, 0.38), tw * 0.05, tw * 0.03), S.WHITE)
-			S._glow(ci, S._iso(c, tw, -0.1, -0.05, 0.38), tw * 0.012, S.CYAN, st)
-			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, 0.14, 0.05, 0.11), S._iso(c, tw, 0.24, 0.05, 0.16), S._iso(c, tw, 0.30, 0.08, 0.04)]), md, 2.0)
-			S._glow(ci, S._iso(c, tw, 0.30, 0.08, 0.04), tw * 0.012, S.TEAL, st)
+				_wheel(ci, c, tw, u, -0.13, 0.04, 0.04)
+			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, -0.14, -0.13, 0.04), S._iso(c, tw, -0.07, -0.13, 0.10), S._iso(c, tw, 0.07, -0.13, 0.10), S._iso(c, tw, 0.14, -0.13, 0.04)]), md, 2.0)
+			S._box(ci, c, tw, -0.16, -0.10, 0.14, 0.10, 0.06, white, white.lightened(0.05), 0.09)
+			var deck := PackedVector2Array([S._iso(c, tw, -0.18, -0.12, 0.155), S._iso(c, tw, 0.10, -0.12, 0.155), S._iso(c, tw, 0.10, 0.12, 0.155), S._iso(c, tw, -0.18, 0.12, 0.155)])
+			ci.draw_colored_polygon(deck, Color(0.25, 0.40, 0.75))
+			for k in 3:
+				var t := float(k + 1) / 4.0
+				ci.draw_line(deck[0].lerp(deck[1], t), deck[3].lerp(deck[2], t), Color(0.55, 0.70, 1.0), 1.0)
+			ci.draw_line(deck[0].lerp(deck[3], 0.5), deck[1].lerp(deck[2], 0.5), Color(0.55, 0.70, 1.0), 1.0)
+			# Camera mast with a two-eyed head.
+			var mast_top := S._iso(c, tw, 0.11, -0.06, 0.36)
+			ci.draw_line(S._iso(c, tw, 0.11, -0.06, 0.15), mast_top, md, tw * 0.012)
+			S._box(ci, c, tw, 0.08, -0.09, 0.14, -0.03, 0.04, white, Color(0, 0, 0, 0), 0.35)
+			for k in 2:
+				ci.draw_circle(S._iso(c, tw, 0.14, -0.08 + k * 0.035, 0.37), tw * 0.007, Color(0.15, 0.25, 0.35))
+			# Sampling arm with a scanner beam on the ground.
+			var elbow := S._iso(c, tw, 0.22, 0.08, 0.16)
+			var hand := S._iso(c, tw, 0.30, 0.10, 0.05)
+			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, 0.13, 0.07, 0.12), elbow, hand]), md, tw * 0.012)
+			ci.draw_colored_polygon(PackedVector2Array([hand, S._iso(c, tw, 0.36, 0.06, 0.0), S._iso(c, tw, 0.36, 0.16, 0.0)]), Color(S.TEAL.r, S.TEAL.g, S.TEAL.b, 0.35))
+			S._glow(ci, hand, tw * 0.01, S.TEAL, st)
+			for u in [-0.14, 0.0, 0.14]:
+				_wheel(ci, c, tw, u, 0.13, 0.04, 0.04)
+			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, -0.14, 0.13, 0.04), S._iso(c, tw, -0.07, 0.13, 0.10), S._iso(c, tw, 0.07, 0.13, 0.10), S._iso(c, tw, 0.14, 0.13, 0.04)]), md, 2.0)
+			S._glow(ci, S._iso(c, tw, 0.14, 0.04, 0.12), tw * 0.01, S.WHITE, st)
 		"hauler":
-			for u in [-0.2, -0.04, 0.16]:
-				for v in [-0.12, 0.12]:
-					ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, u, v, 0.045), tw * 0.04, tw * 0.04), tyre)
-			S._box(ci, c, tw, -0.26, -0.11, 0.24, 0.11, 0.05, md, Color(0, 0, 0, 0), 0.05)
-			S._box(ci, c, tw, 0.10, -0.10, 0.24, 0.10, 0.12, yel, Color(0, 0, 0, 0), 0.10)
-			S._box(ci, c, tw, -0.26, -0.11, 0.06, 0.11, 0.10, m, Color(0, 0, 0, 0), 0.10)
-			for k in 6:
-				S._iso_sphere(ci, S._iso(c, tw, -0.22 + (k % 3) * 0.1, -0.05 + (k / 3) * 0.1, 0.22), tw * 0.03, S.TEAL if k % 2 == 0 else Color(0.45, 0.43, 0.41))
+			# A dump truck: a cab at the front, a ribbed tipping bin heaped with ore,
+			# a lifting piston, and six big wheels.
+			for u in [-0.20, -0.06, 0.16]:
+				_wheel(ci, c, tw, u, -0.12, 0.055, 0.055)
+			S._box(ci, c, tw, -0.27, -0.11, 0.25, 0.11, 0.04, md, md.lightened(0.1), 0.06)
+			S._box(ci, c, tw, 0.10, -0.10, 0.25, 0.10, 0.13, yel, yel.lightened(0.1), 0.10)
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.25, -0.08, 0.15), S._iso(c, tw, 0.25, 0.08, 0.15), S._iso(c, tw, 0.25, 0.08, 0.21), S._iso(c, tw, 0.25, -0.08, 0.21)]), S.GLASS.darkened(0.3))
+			S._glow(ci, S._iso(c, tw, 0.25, 0.07, 0.12), tw * 0.01, S.WHITE, st)
+			S._glow(ci, S._iso(c, tw, 0.17, 0.0, 0.25), tw * 0.012, S.AMBER, st)
+			# The bin: tilted a little, with ribs, heaped with ore.
+			ci.draw_line(S._iso(c, tw, -0.05, 0.10, 0.10), S._iso(c, tw, -0.10, 0.10, 0.18), m.lightened(0.3), tw * 0.012)
+			S._box(ci, c, tw, -0.27, -0.11, 0.07, 0.11, 0.12, yel.darkened(0.1), yel.darkened(0.3), 0.11)
+			for k in 4:
+				var u := -0.23 + k * 0.085
+				ci.draw_line(S._iso(c, tw, u, 0.11, 0.12), S._iso(c, tw, u, 0.11, 0.22), yel.darkened(0.35), 2.0)
+			for k in 9:
+				var layer := 0 if k < 6 else 1
+				var ang := k * 2.4
+				_iso_chunk(ci, S._iso(c, tw, -0.10 + cos(ang) * 0.09 * (1.0 - layer * 0.5), sin(ang) * 0.06 * (1.0 - layer * 0.5), 0.24 + layer * 0.035), tw * 0.03, S.TEAL if k % 3 == 0 else Color(0.45, 0.43, 0.41))
+			for u in [-0.20, -0.06, 0.16]:
+				_wheel(ci, c, tw, u, 0.12, 0.055, 0.055)
 		"weather":
 			_panels(ci, c, tw, Color(0.25, 0.40, 0.75))
 			S._box(ci, c, tw, -0.07, -0.07, 0.07, 0.07, 0.14, S.WHITE.darkened(0.1), Color(0, 0, 0, 0), 0.2)
@@ -790,13 +869,43 @@ static func draw_unit(ci: CanvasItem, type: String, c: Vector2, tw: float) -> vo
 			ci.draw_line(emitter, ground, Color(1.0, 0.95, 0.8, 0.9), 2.0)
 
 
-## Caterpillar tracks under a tracked drone.
-static func _tracks(ci: CanvasItem, c: Vector2, tw: float) -> void:
-	for v in [-0.13, 0.13]:
-		S._box(ci, c, tw, -0.22, v - 0.04, 0.18, v + 0.04, 0.07, Color(0.12, 0.12, 0.13))
-		for k in 5:
-			var u := -0.2 + k * 0.09
-			ci.draw_line(S._iso(c, tw, u, v + 0.04, 0.0), S._iso(c, tw, u, v + 0.04, 0.07), Color(0.3, 0.3, 0.32), 1.0)
+## A tyre seen from the side at (u, v), its centre at height z, radius r (tile
+## units): a dark tread, a lighter rim and a hub, drawn in the wheel's own plane.
+static func _wheel(ci: CanvasItem, c: Vector2, tw: float, u: float, v: float, z: float, r: float) -> void:
+	var tyre := PackedVector2Array()
+	var rim := PackedVector2Array()
+	for k in 16:
+		var th := k * TAU / 16.0
+		tyre.append(S._iso(c, tw, u + r * cos(th), v, z + r * sin(th)))
+		rim.append(S._iso(c, tw, u + r * 0.55 * cos(th), v, z + r * 0.55 * sin(th)))
+	ci.draw_colored_polygon(tyre, Color(0.10, 0.10, 0.11))
+	for k in 8:
+		var th := k * TAU / 8.0
+		ci.draw_line(S._iso(c, tw, u + r * 0.8 * cos(th), v, z + r * 0.8 * sin(th)), S._iso(c, tw, u + r * cos(th), v, z + r * sin(th)), Color(0.22, 0.22, 0.24), 1.0)
+	ci.draw_colored_polygon(rim, S.METAL)
+	ci.draw_circle(S._iso(c, tw, u, v, z), maxf(1.0, tw * r * 0.2), S.METAL_DARK)
+
+
+## A caterpillar tread on side v of a tracked drone: a dark belt with road
+## wheels and tread cleats (near = the side facing the viewer).
+static func _tread(ci: CanvasItem, c: Vector2, tw: float, v: float, near: bool) -> void:
+	var belt := Color(0.12, 0.12, 0.13)
+	S._box(ci, c, tw, -0.22, v - 0.04, 0.18, v + 0.04, 0.08, belt, belt.lightened(0.08))
+	if near:
+		for k in 4:
+			_wheel(ci, c, tw, -0.16 + k * 0.1, v + 0.041, 0.04, 0.03)
+		for k in 9:
+			var u := -0.21 + k * 0.047
+			ci.draw_line(S._iso(c, tw, u, v + 0.04, 0.075), S._iso(c, tw, u + 0.02, v + 0.04, 0.08), Color(0.32, 0.32, 0.34), 1.5)
+
+
+## A small rough lump of rock or ore.
+static func _iso_chunk(ci: CanvasItem, p: Vector2, r: float, col: Color) -> void:
+	var pts := PackedVector2Array()
+	for i in 7:
+		pts.append(p + Vector2.from_angle(i * TAU / 7.0) * r * (0.75 + 0.25 * sin(i * 2.3 + p.x)))
+	ci.draw_colored_polygon(pts, col.darkened(0.15))
+	ci.draw_circle(p - Vector2(r * 0.25, r * 0.3), r * 0.4, col.lightened(0.1))
 
 
 ## A satellite's two solar wings.

@@ -2,6 +2,33 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.53
+Date: 11/01/2026
+Time: 11:50 PM
+
+### Changes
+**The four drones (rovers) were redrawn with much more detail** (`draw_unit` in `scripts/ui/sprites_more.gd`). These drawings are used on the map and in the sprite sheet.
+- **Grader:** a bulldozer.
+  - treads with road wheels and cleats;
+  - a yellow body with an engine grille and a cab cage round tinted glass, with a roof beacon;
+  - a curved blade on hydraulic arms, and a headlight.
+- **Borer:** an orange tracked digger.
+  - a glass cab with a beacon, and hazard stripes;
+  - a drill motor on an arm, driving a big cone drill with spiral flutes;
+  - rock chips flying off the tip.
+- **Prospector:** a six-wheeled explorer.
+  - rocker arms, a white body and a blue solar deck;
+  - a camera mast with a two-eyed head;
+  - a sampling arm shining a teal scanner beam on the ground.
+- **Hauler:** a dump truck.
+  - a yellow cab with a windscreen, headlight and beacon;
+  - a ribbed tipping bin heaped with ore and teal ore chunks, on a lifting piston;
+  - six big wheels.
+- New shared drawings: `_wheel` (a tyre in its own plane with tread, rim and hub), `_tread` (a caterpillar tread with road wheels), and `_iso_chunk` (a lump of ore).
+
+### Reason
+The owner said the rovers needed work.
+
 ## Version 00.01.52
 Date: 11/01/2026
 Time: 11:30 PM
