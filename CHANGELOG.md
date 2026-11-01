@@ -2,6 +2,20 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.43
+Date: 11/01/2026
+Time: 8:45 PM
+
+### Changes
+A second look at the sprites the owner hadn't commented on (`scripts/ui/sprites_more.gd`). Beam Catcher and Garden Cavern were kept as they are. Four were reworked:
+- **Rescue Station:** the floating life ring is gone. It now has a red roll-up bay door in the hall's curved side, a red stripe along it, and red and blue beacons on the roof. The rescue rover is parked in front of the door.
+- **Lounge:** a glowing pink neon rim round its foot, two rows of coloured string lights across the dome, and a neon sign on a post.
+- **Hazard Lab:** glowing waste barrels beside it and a yellow warning sign on a post.
+- **Signal Mast:** a proper lattice tower, wide at the foot and narrowing to the top, with cross-braces, and two real dishes on arms with feed horns.
+
+### Reason
+The owner asked for a second look at the Rescue Station, Lounge, Hazard Lab, Signal Mast, Beam Catcher and Garden Cavern.
+
 ## Version 00.01.42
 Date: 11/01/2026
 Time: 8:25 PM
