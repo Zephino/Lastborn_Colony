@@ -110,8 +110,13 @@ static func _top_link(ci: CanvasItem, c: Vector2, s: float, d: Vector2i, rad: fl
 	var m := _fade(METAL, state)
 	var from := c + dir * rad * 0.85
 	var to := c + dir * s * 0.5
-	ci.draw_colored_polygon(PackedVector2Array([from + side * s * 0.09, to + side * s * 0.09, to - side * s * 0.09, from - side * s * 0.09]), md)
-	ci.draw_line(from, to, _fade(Color(0.65, 0.70, 0.78), state), s * 0.05)
+	var orange := _fade(ORANGE, state)
+	# The tube, like a Heat Main: dark casing, metal core, glowing orange stripe, ribs.
+	ci.draw_colored_polygon(PackedVector2Array([from + side * s * 0.12, to + side * s * 0.12, to - side * s * 0.12, from - side * s * 0.12]), md)
+	ci.draw_line(from, to, m, s * 0.10)
+	ci.draw_line(from, to, Color(orange.r, orange.g, orange.b, 0.8 * orange.a), s * 0.035)
+	var rib := c + dir * (rad + (s * 0.5 - rad) * 0.7)
+	ci.draw_line(rib + side * s * 0.13, rib - side * s * 0.13, md.darkened(0.3), 2.0)
 	# Airlock: a wider chamber against the dome, with amber door stripes.
 	var lock_c := c + dir * (rad + s * 0.04)
 	var half := s * 0.075
@@ -120,6 +125,19 @@ static func _top_link(ci: CanvasItem, c: Vector2, s: float, d: Vector2i, rad: fl
 	var amber := _fade(AMBER, state)
 	ci.draw_line(lock_c + side * s * 0.11 - dir * half * 0.6, lock_c - side * s * 0.11 - dir * half * 0.6, amber, 2.0)
 	ci.draw_line(lock_c + side * s * 0.11 + dir * half * 0.6, lock_c - side * s * 0.11 + dir * half * 0.6, amber, 2.0)
+	# The opening in the dome wall: an orange ring.
+	_top_port(ci, c + dir * rad * 0.92, s, state, false)
+
+
+## A tube opening in the dome wall: an orange ring around a dark hole.
+## Capped (no tunnel yet) ports get a metal cap with a small orange light.
+static func _top_port(ci: CanvasItem, p: Vector2, s: float, state: Dictionary, capped: bool) -> void:
+	var orange := _fade(ORANGE, state)
+	ci.draw_circle(p, s * 0.075, _fade(METAL_DARK, state))
+	ci.draw_circle(p, s * 0.045, _fade(METAL, state) if capped else Color(0.03, 0.02, 0.02, orange.a))
+	ci.draw_arc(p, s * 0.07, 0, TAU, 18, orange, maxf(1.5, s * 0.022))
+	if capped:
+		ci.draw_circle(p, s * 0.015, orange)
 
 
 ## Draws building `type` filling `r` (one map tile), seen from above.
@@ -156,6 +174,12 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 		"drill":
 			ci.draw_circle(c + Vector2(s * 0.30, s * 0.30), s * 0.13, _fade(Color(0.25, 0.45, 0.75), state))
 	_top_dome(ci, c, rad, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
+	# Every side without a tunnel still has a capped orange port, ready for one.
+	for d in DIRS:
+		if not (d in links):
+			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, true)
+		else:
+			_top_port(ci, c + Vector2(d) * rad * 0.92, s, state, false)
 	# What shows through the glass, or on top.
 	match type:
 		"hull":
@@ -302,10 +326,13 @@ static func _iso_link(ci: CanvasItem, c: Vector2, tw: float, d: Vector2i, r: flo
 	var m := _fade(METAL, state)
 	var amber := _fade(AMBER, state)
 	var a0 := r * 0.8
+	var orange := _fade(ORANGE, state)
+	var stripe := Color(orange.r, orange.g, orange.b, 0.85 * orange.a)
 	if dv.x != 0:
 		var lo := minf(dv.x * a0, dv.x * 0.5)
 		var hi := maxf(dv.x * a0, dv.x * 0.5)
-		_box(ci, c, tw, lo, -0.08, hi, 0.08, 0.10, md, m)
+		_box(ci, c, tw, lo, -0.10, hi, 0.10, 0.12, md, m)
+		ci.draw_line(_iso(c, tw, lo, 0, 0.12), _iso(c, tw, hi, 0, 0.12), stripe, 2.5)
 		var l0 := dv.x * (r + 0.02) - 0.06
 		_box(ci, c, tw, l0, -0.12, l0 + 0.12, 0.12, 0.15, m, m.lightened(0.15))
 		ci.draw_line(_iso(c, tw, l0 + 0.12, -0.10, 0.04), _iso(c, tw, l0 + 0.12, 0.10, 0.04), amber, 2.0)
@@ -313,7 +340,8 @@ static func _iso_link(ci: CanvasItem, c: Vector2, tw: float, d: Vector2i, r: flo
 	else:
 		var lo := minf(dv.y * a0, dv.y * 0.5)
 		var hi := maxf(dv.y * a0, dv.y * 0.5)
-		_box(ci, c, tw, -0.08, lo, 0.08, hi, 0.10, md, m)
+		_box(ci, c, tw, -0.10, lo, 0.10, hi, 0.12, md, m)
+		ci.draw_line(_iso(c, tw, 0, lo, 0.12), _iso(c, tw, 0, hi, 0.12), stripe, 2.5)
 		var l0 := dv.y * (r + 0.02) - 0.06
 		_box(ci, c, tw, -0.12, l0, 0.12, l0 + 0.12, 0.15, m, m.lightened(0.15))
 		ci.draw_line(_iso(c, tw, -0.10, l0 + 0.12, 0.04), _iso(c, tw, 0.10, l0 + 0.12, 0.04), amber, 2.0)
@@ -432,6 +460,21 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	for d in links:
 		if d.x > 0 or d.y > 0:
 			_iso_link(ci, c, tw, d, r, state)
+	# The two sides facing the viewer show their orange ports: a capped one where
+	# there's no tunnel, an open ring where a tunnel's airlock joins.
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links):
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.86, d.y * r * 0.86, 0.12), tw, state, true)
+
+
+## A port on the dome's side, seen at an angle: an orange ring, capped or open.
+static func _iso_port(ci: CanvasItem, p: Vector2, tw: float, state: Dictionary, capped: bool) -> void:
+	var orange := _fade(ORANGE, state)
+	ci.draw_colored_polygon(_ellipse(p, tw * 0.055, tw * 0.045), _fade(METAL_DARK, state))
+	ci.draw_colored_polygon(_ellipse(p, tw * 0.033, tw * 0.027), _fade(METAL, state) if capped else Color(0.03, 0.02, 0.02, orange.a))
+	ci.draw_polyline(_ellipse(p, tw * 0.05, tw * 0.04), orange, 2.0)
+	if capped:
+		ci.draw_circle(p, tw * 0.01, orange)
 
 
 static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> void:

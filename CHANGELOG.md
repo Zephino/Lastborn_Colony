@@ -2,6 +2,19 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.15
+Date: 11/01/2026
+Time: 8:46 AM
+
+### Changes
+- **Orange tube ports on every dome** (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game):
+  - **Tunnels:** every tunnel between buildings now looks like a Heat Main: a dark casing, a metal core, a glowing orange stripe and ribs. Where it meets a dome there is an airlock and an **open orange ring** in the dome wall.
+  - **Unconnected sides:** every side of a dome without a tunnel has a **capped orange port**, a metal cap in an orange ring with a small orange light, ready for a tunnel.
+  - **Angled style:** the tunnels carry the same orange stripe, and the two sides facing the viewer show their ports.
+
+### Reason
+The owner asked for every building to have an orange tube opening like the Heat Main.
+
 ## Version 00.01.14
 Date: 11/01/2026
 Time: 8:44 AM
