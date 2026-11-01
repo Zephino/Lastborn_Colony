@@ -2,6 +2,16 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.50
+Date: 11/01/2026
+Time: 10:45 PM
+
+### Changes
+- **The worker's pickaxe hangs from a loop on the side of the tool belt** (`_hanging_pick` in `scripts/ui/people.gd`). The curved steel head rests in a small metal loop at the hip, and the wooden handle hangs down beside the leg. It is no longer slung across the back.
+
+### Reason
+The owner asked for the pickaxe to hang from a loop on the side.
+
 ## Version 00.01.49
 Date: 11/01/2026
 Time: 10:35 PM

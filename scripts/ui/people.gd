@@ -46,6 +46,7 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 		ci.draw_rect(Rect2(feet + Vector2(-u * 1.6, -u * 3.6), Vector2(u * 3.2, u * 0.6)), Color(0.42, 0.30, 0.18))
 		for x in [-u * 1.3, u * 0.5]:
 			ci.draw_rect(Rect2(feet + Vector2(x, -u * 3.3), Vector2(u * 0.8, u * 0.9)), Color(0.50, 0.36, 0.22))
+		_hanging_pick(ci, feet, u, facing)
 	else:
 		ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 5.2), Vector2(u * 3.0, u * 0.7)), stripe)
 	# Arms, swinging a little when walking.
@@ -93,29 +94,8 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 static func _back_gear(ci: CanvasItem, pack: Vector2, u: float, job: String, facing: float) -> void:
 	match job:
 		"worker":
-			# A pickaxe slung across the back: a wooden handle, and a curved steel
-			# head across its top that tapers to a point at each end.
-			var low := pack + Vector2(facing * u * 1.1, u * 1.6)
-			var top := pack + Vector2(-facing * u * 1.2, -u * 4.2)
-			var along := (top - low).normalized()
-			var across := along.orthogonal()
-			ci.draw_line(low, top + along * u * 0.3, Color(0.55, 0.38, 0.22), u * 0.5)
-			ci.draw_line(low, top + along * u * 0.3, Color(0.68, 0.50, 0.30), u * 0.18)
-			var head := top + along * u * 0.2
-			var upper := PackedVector2Array()
-			var lower := PackedVector2Array()
-			for i in 9:
-				var t := float(i) / 8.0 * 2.0 - 1.0
-				var centre := head + across * t * u * 2.3 - along * t * t * u * 0.8
-				var w := u * 0.45 * (1.0 - absf(t) * 0.92)
-				upper.append(centre + along * w)
-				lower.append(centre - along * w)
-			lower.reverse()
-			var blade := upper.duplicate()
-			blade.append_array(lower)
-			ci.draw_colored_polygon(blade, Color(0.66, 0.68, 0.72))
-			ci.draw_polyline(upper, Color(0.88, 0.90, 0.94), maxf(1.0, u * 0.15))
-			ci.draw_rect(Rect2(head - Vector2(u * 0.35, u * 0.35), Vector2(u * 0.7, u * 0.7)), Color(0.32, 0.33, 0.36))
+			# (The pickaxe hangs from a loop on the tool belt; see _hanging_pick.)
+			pass
 		"scientist":
 			# A tall antenna with a glowing tip, and a small dish.
 			var mast_top := pack + Vector2(-facing * u * 0.4, -u * 6.2)
@@ -131,6 +111,33 @@ static func _back_gear(ci: CanvasItem, pack: Vector2, u: float, job: String, fac
 			ci.draw_rect(Rect2(pack + Vector2(-u * 0.9, -u * 2.0), Vector2(u * 1.8, u * 0.55)), Color(0.20, 0.20, 0.24))
 			ci.draw_rect(Rect2(pack + Vector2(-u * 0.8, -u * 1.95), Vector2(u * 0.75, u * 0.45)), Color(1.0, 0.30, 0.30))
 			ci.draw_rect(Rect2(pack + Vector2(u * 0.05, -u * 1.95), Vector2(u * 0.75, u * 0.45)), Color(0.35, 0.55, 1.0))
+
+
+## The worker's pickaxe, hanging from a metal loop on the side of the tool
+## belt: the curved steel head rests in the loop and the wooden handle hangs
+## down beside the leg.
+static func _hanging_pick(ci: CanvasItem, feet: Vector2, u: float, facing: float) -> void:
+	var loop := feet + Vector2(-facing * u * 1.9, -u * 3.3)
+	var handle_end := feet + Vector2(-facing * u * 2.3, -u * 0.5)
+	ci.draw_line(loop, handle_end, Color(0.55, 0.38, 0.22), u * 0.5)
+	ci.draw_line(loop, handle_end, Color(0.68, 0.50, 0.30), u * 0.18)
+	# The head: curved, tapering to a point at each end, drooping a little.
+	var upper := PackedVector2Array()
+	var lower := PackedVector2Array()
+	for i in 9:
+		var t := float(i) / 8.0 * 2.0 - 1.0
+		var centre := loop + Vector2(t * u * 1.9, t * t * u * 0.6 - u * 0.1)
+		var w := u * 0.42 * (1.0 - absf(t) * 0.92)
+		upper.append(centre - Vector2(0, w))
+		lower.append(centre + Vector2(0, w))
+	lower.reverse()
+	var blade := upper.duplicate()
+	blade.append_array(lower)
+	ci.draw_colored_polygon(blade, Color(0.66, 0.68, 0.72))
+	ci.draw_polyline(upper, Color(0.88, 0.90, 0.94), maxf(1.0, u * 0.15))
+	ci.draw_rect(Rect2(loop - Vector2(u * 0.32, u * 0.32), Vector2(u * 0.64, u * 0.64)), Color(0.32, 0.33, 0.36))
+	# The belt loop round it.
+	ci.draw_arc(loop + Vector2(0, -u * 0.05), u * 0.5, deg_to_rad(180), deg_to_rad(360), 8, Color(0.75, 0.77, 0.82), maxf(1.0, u * 0.22))
 
 
 ## Things strapped on the side of the backpack, by job (drawn over the pack).
