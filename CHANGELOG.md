@@ -2,6 +2,20 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.28
+Date: 11/01/2026
+Time: 4:05 PM
+
+### Changes
+Sprite concepts in `scripts/ui/sprites_more.gd` (still not used in the game), following the owner's feedback:
+- **Fusion Core looks like a power station:** a concrete containment dome with a blue-lit hatch, and two big hourglass cooling towers at its sides with clouds of steam.
+- **Fab Shop looks like a factory:** a factory hall with a sawtooth roof of skylights and a tall smoking chimney. Inside, a conveyor carries parts between two yellow robot arms, and crates of parts wait outside. The old gantry, which looked like a cross, is gone.
+- **Academy looks like a school:** a clock tower with a red roof, a front entrance with columns and a gable, and rows of desks facing a chalkboard. Outside are a playground with swings and a slide, a yellow school bus and a tree.
+- **Drone Bay looks like a garage:** a garage beside the dome with a half-open roll-up door, a drone parked inside, a light over the door and a hazard-striped sill. A charging rack stands at the back.
+
+### Reason
+The owner said the Fab Shop looked like a church, the Academy like a movie theater, the Fusion Core should look like a nuclear power plant, and the Drone Bay like a garage.
+
 ## Version 00.01.27
 Date: 11/01/2026
 Time: 3:40 PM
