@@ -175,6 +175,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	if type == "rail":
 		_top_spin(ci, c, s, links, state)
 		return
+	if type == "forge":
+		_top_forge(ci, c, s, rad, links, state)
+		return
 	# Fittings outside the dome, drawn first so the dome sits on top.
 	match type:
 		"mirror":
@@ -199,19 +202,6 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			if _lit(state):
 				for k in 3:
 					ci.draw_circle(c + Vector2(-s * 0.22 + k * s * 0.05, -s * 0.40 - k * s * 0.03), s * (0.04 + k * 0.015), Color(0.95, 0.95, 1.0, 0.35 - k * 0.08))
-		"forge":
-			# A conveyor belt bringing ore in from the left, with ore on it.
-			var belt := Rect2(Vector2(r.position.x, c.y - s * 0.07), Vector2(s * 0.30, s * 0.14))
-			ci.draw_rect(belt, md)
-			for k in 4:
-				ci.draw_line(Vector2(belt.position.x + k * s * 0.08, belt.position.y), Vector2(belt.position.x + k * s * 0.08, belt.end.y), m, 1.0)
-			for k in 2:
-				ci.draw_circle(Vector2(belt.position.x + s * (0.06 + k * 0.12), c.y), s * 0.035, _fade(Color(0.45, 0.42, 0.40), state))
-			# Finished alloy bars stacked at the front-right.
-			for k in 3:
-				var bar := Rect2(c + Vector2(s * 0.20 + (k % 2) * s * 0.07, s * 0.30 - (k / 2) * s * 0.06), Vector2(s * 0.12, s * 0.05))
-				ci.draw_rect(bar, _fade(Color(0.80, 0.84, 0.90), state))
-				ci.draw_rect(bar, md, false, 1.0)
 		"drill":
 			ci.draw_circle(c + Vector2(s * 0.30, s * 0.30), s * 0.13, _fade(Color(0.25, 0.45, 0.75), state))
 		"lab":
@@ -278,20 +268,6 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			ci.draw_arc(hub, rad * 0.5, 0, TAU, 24, a, 2.0)
 			for i in 8:
 				ci.draw_line(hub, hub + Vector2.from_angle(i * TAU / 8.0) * rad * 0.5, m, 2.0)
-		"forge":
-			# The crucible pouring molten metal, with sparks.
-			ci.draw_circle(c + Vector2(-rad * 0.10, rad * 0.10), rad * 0.34, md)
-			_glow(ci, c + Vector2(-rad * 0.10, rad * 0.10), rad * 0.24, a, state)
-			if _lit(state):
-				for k in 6:
-					ci.draw_circle(c + Vector2(-rad * 0.10, rad * 0.10) + Vector2.from_angle(k * 1.1) * rad * (0.36 + 0.08 * (k % 3)), 1.5, Color(1.0, 0.85, 0.4, 0.9))
-			# Twin smokestacks with dark smoke.
-			for k in 2:
-				var stack := c + Vector2(rad * (0.30 + k * 0.32), -rad * (0.55 - k * 0.15))
-				ci.draw_circle(stack, s * 0.065, md.darkened(0.2))
-				ci.draw_circle(stack, s * 0.035, Color(0.04, 0.04, 0.04, a.a))
-				if _lit(state):
-					ci.draw_circle(stack + Vector2(s * 0.05, -s * 0.06), s * 0.05, Color(0.20, 0.20, 0.22, 0.45))
 		"rail":
 			_glow(ci, c, s * 0.035, a, state)
 		"commons":
@@ -596,6 +572,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	if type == "rail":
 		_iso_spin(ci, c, tw, links, state)
 		return
+	if type == "forge":
+		_iso_forge(ci, c, tw, r, links, state)
+		return
 	# Tunnels toward the back go behind the dome; toward the front, in front of it.
 	for d in links:
 		if d.x < 0 or d.y < 0:
@@ -626,13 +605,6 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			if _lit(state):
 				for k in 3:
 					ci.draw_circle(_iso(c, tw, -0.05, -0.36, 0.48 + k * 0.10) + Vector2(k * tw * 0.03, 0), tw * (0.04 + k * 0.018), Color(0.95, 0.95, 1.0, 0.30 - k * 0.07))
-		"forge":
-			# Conveyor bringing ore in from the back-left, and twin smokestacks behind.
-			_box(ci, c, tw, -0.50, -0.08, -0.20, 0.08, 0.10, md, m.darkened(0.1))
-			for k in 2:
-				_iso_sphere(ci, _iso(c, tw, -0.44 + k * 0.12, 0, 0.13), tw * 0.025, _fade(Color(0.45, 0.42, 0.40), state))
-			for k in 2:
-				_cyl(ci, c, tw, 0.04 + k * 0.18, -0.30 + k * 0.06, 0.05, 0.46 - k * 0.06, md.darkened(0.15), Color(0.05, 0.05, 0.05, a.a))
 		"lab":
 			# Sensor mast at the back, with a blinking light.
 			var mast := _iso(c, tw, -0.36, -0.30)
@@ -697,24 +669,6 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			for i in 8:
 				ci.draw_line(hub, hub + Vector2.from_angle(i * TAU / 8.0) * tw * 0.12, md, 2.0)
 			ci.draw_arc(hub, tw * 0.10, 0, TAU, 20, a, 2.0)
-		"forge":
-			# Dark smoke from the stacks, a glowing furnace door, and sparks.
-			if _lit(state):
-				for k in 2:
-					var top := _iso(c, tw, 0.04 + k * 0.18, -0.30 + k * 0.06, 0.46 - k * 0.06)
-					for j in 3:
-						ci.draw_circle(top - Vector2(-j * tw * 0.03, tw * (0.05 + j * 0.06)), tw * (0.035 + j * 0.015), Color(0.20, 0.20, 0.22, 0.45 - j * 0.12))
-			var mouth := _iso(c, tw, 0.05, r * 0.9, 0.10)
-			ci.draw_colored_polygon(_ellipse(mouth, tw * 0.08, tw * 0.06, 180, 360, 10), a)
-			_glow(ci, mouth, tw * 0.045, a, state)
-			if _lit(state):
-				for k in 5:
-					ci.draw_circle(mouth + Vector2(cos(k * 1.3) * tw * 0.09, -absf(sin(k * 1.3)) * tw * 0.08), 1.5, Color(1.0, 0.85, 0.4, 0.9))
-			# Finished alloy bars stacked at the front-right.
-			for k in 3:
-				var u := 0.30 + (k % 2) * 0.08
-				var z := 0.0 + (k / 2) * 0.04
-				_box(ci, c, tw, u - 0.04, 0.30, u + 0.03, 0.42, 0.035, _fade(Color(0.80, 0.84, 0.90), state), Color(0, 0, 0, 0), z)
 		"rail":
 			_glow(ci, _iso(c, tw, 0, 0, 0.10), tw * 0.03, a, state)
 		"commons":
@@ -891,6 +845,157 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true)
+
+
+const STEEL := Color(0.38, 0.38, 0.40)
+const HAZARD := Color(1.0, 0.72, 0.12)
+
+
+## The Forge, seen from above: a heavy riveted steel dome (not glass) with
+## glowing heat vents, hazard stripes, an ore hopper fed by a conveyor, banded
+## smokestacks with a pipe looping into them, a furnace door throwing sparks,
+## alloy bars, and an amber warning beacon.
+static func _top_forge(ci: CanvasItem, c: Vector2, s: float, rad: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var steel := _fade(STEEL, state)
+	var hot := _fade(ORANGE, state)
+	var haz := _fade(HAZARD, state)
+	for d in links:
+		_top_link(ci, c, s, d, rad, state)
+	# Conveyor from the left edge into the ore hopper.
+	var belt := Rect2(Vector2(c.x - s * 0.5, c.y - s * 0.06), Vector2(s * 0.22, s * 0.12))
+	ci.draw_rect(belt, md)
+	for k in 3:
+		ci.draw_line(Vector2(belt.position.x + k * s * 0.07, belt.position.y), Vector2(belt.position.x + k * s * 0.07, belt.end.y), steel, 1.0)
+	ci.draw_circle(Vector2(belt.position.x + s * 0.08, c.y), s * 0.03, _fade(Color(0.45, 0.42, 0.40), state))
+	var hop := Rect2(c + Vector2(-s * 0.42, -s * 0.36), Vector2(s * 0.20, s * 0.20))
+	ci.draw_rect(hop, md)
+	ci.draw_rect(hop.grow(-s * 0.04), steel.darkened(0.25))
+	ci.draw_line(hop.position, hop.end, md, 1.0)
+	ci.draw_line(Vector2(hop.end.x, hop.position.y), Vector2(hop.position.x, hop.end.y), md, 1.0)
+	# The steel dome: shadow, hazard ring, riveted plates, glowing vents.
+	ci.draw_circle(c + Vector2(rad * 0.10, rad * 0.14), rad * 1.04, Color(0, 0, 0, 0.30 * steel.a))
+	ci.draw_circle(c, rad, md)
+	for i in 16:
+		var a0 := i * TAU / 16.0
+		ci.draw_arc(c, rad * 0.93, a0, a0 + TAU / 32.0, 4, haz if i % 2 == 0 else Color(0.05, 0.05, 0.05, haz.a), maxf(2.0, s * 0.03))
+	ci.draw_circle(c, rad * 0.86, steel)
+	for k in 6:
+		var dir := Vector2.from_angle(k * TAU / 6.0)
+		ci.draw_line(c + dir * rad * 0.25, c + dir * rad * 0.86, md, 1.5)
+		for j in 3:
+			ci.draw_circle(c + dir * rad * (0.38 + j * 0.18) + dir.orthogonal() * s * 0.012, 1.1, md.darkened(0.3))
+	ci.draw_arc(c, rad * 0.55, 0, TAU, 28, md, 1.5)
+	for k in 3:
+		var p := c + Vector2.from_angle(k * TAU / 3.0 + 0.5) * rad * 0.70
+		ci.draw_rect(Rect2(p - Vector2(s * 0.04, s * 0.012), Vector2(s * 0.08, s * 0.024)), hot)
+	ci.draw_circle(c, rad * 0.24, md)
+	ci.draw_circle(c, rad * 0.16, steel.lightened(0.1))
+	_glow(ci, c, s * 0.03, _fade(AMBER, state), state)
+	# Pipe from the dome to the stacks, and the stacks with hazard bands.
+	ci.draw_line(c + Vector2(rad * 0.4, -rad * 0.4), c + Vector2(s * 0.33, -s * 0.33), md, s * 0.07)
+	ci.draw_line(c + Vector2(rad * 0.4, -rad * 0.4), c + Vector2(s * 0.33, -s * 0.33), steel, s * 0.045)
+	for k in 2:
+		var st := c + Vector2(s * (0.30 + k * 0.12), -s * (0.40 - k * 0.12))
+		ci.draw_circle(st, s * 0.075, md)
+		ci.draw_arc(st, s * 0.065, 0, TAU, 16, haz, 2.0)
+		ci.draw_circle(st, s * 0.04, Color(0.03, 0.03, 0.03, steel.a))
+		if _lit(state):
+			ci.draw_circle(st + Vector2(s * 0.05, -s * 0.05), s * 0.05, Color(0.18, 0.18, 0.20, 0.45))
+	# Furnace door at the front, glowing and throwing sparks.
+	var door := c + Vector2(0, rad * 0.86)
+	ci.draw_rect(Rect2(door - Vector2(s * 0.08, s * 0.05), Vector2(s * 0.16, s * 0.07)), md)
+	ci.draw_rect(Rect2(door - Vector2(s * 0.06, s * 0.035), Vector2(s * 0.12, s * 0.04)), hot)
+	if _lit(state):
+		for k in 5:
+			ci.draw_circle(door + Vector2(cos(k * 1.3) * s * 0.10, sin(k * 1.3) * s * 0.05 + s * 0.04), 1.4, Color(1.0, 0.85, 0.4, 0.9))
+	# Alloy bars at the front-right.
+	for k in 3:
+		var bar := Rect2(c + Vector2(s * 0.24 + (k % 2) * s * 0.07, s * 0.33 - (k / 2) * s * 0.06), Vector2(s * 0.12, s * 0.05))
+		ci.draw_rect(bar, _fade(Color(0.80, 0.84, 0.90), state))
+		ci.draw_rect(bar, md, false, 1.0)
+	for d in DIRS:
+		if d != Vector2i(0, 1):
+			_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+
+
+## The Forge at an angle: the same heavy industrial plant in 3/4 view.
+static func _iso_forge(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var steel := _fade(STEEL, state)
+	var hot := _fade(ORANGE, state)
+	var haz := _fade(HAZARD, state)
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, r, state)
+	# Banded smokestacks behind, with smoke, and the pipe looping into them.
+	for k in 2:
+		var u := 0.10 + k * 0.20
+		var v := -0.34 + k * 0.06
+		var hgt := 0.50 - k * 0.07
+		_cyl(ci, c, tw, u, v, 0.06, hgt, md, Color(0.04, 0.04, 0.04, steel.a))
+		for band in [0.25, 0.45]:
+			ci.draw_polyline(_ellipse(_iso(c, tw, u, v, hgt * band + 0.05), tw * 0.043, tw * 0.022, 0, 180, 10), haz, 3.0)
+		if _lit(state):
+			var top := _iso(c, tw, u, v, hgt)
+			for j in 3:
+				ci.draw_circle(top - Vector2(-j * tw * 0.03, tw * (0.05 + j * 0.06)), tw * (0.035 + j * 0.015), Color(0.18, 0.18, 0.20, 0.45 - j * 0.12))
+	var pipe := PackedVector2Array([_iso(c, tw, 0.05, -0.10, 0.30), _iso(c, tw, 0.05, -0.10, 0.44), _iso(c, tw, 0.10, -0.30, 0.44)])
+	ci.draw_polyline(pipe, md, tw * 0.05)
+	ci.draw_polyline(pipe, steel, tw * 0.032)
+	# Ore hopper on legs at the back-left, fed by a conveyor.
+	_box(ci, c, tw, -0.50, -0.06, -0.24, 0.06, 0.06, md, steel.darkened(0.15), 0.10)
+	for k in 2:
+		_iso_sphere(ci, _iso(c, tw, -0.44 + k * 0.10, 0, 0.19), tw * 0.022, _fade(Color(0.45, 0.42, 0.40), state))
+	for leg in [Vector2(-0.38, -0.30), Vector2(-0.22, -0.30), Vector2(-0.38, -0.14), Vector2(-0.22, -0.14)]:
+		ci.draw_line(_iso(c, tw, leg.x, leg.y), _iso(c, tw, leg.x, leg.y, 0.26), md, tw * 0.012)
+	var funnel := PackedVector2Array([_iso(c, tw, -0.42, -0.34, 0.42), _iso(c, tw, -0.18, -0.34, 0.42), _iso(c, tw, -0.26, -0.18, 0.26), _iso(c, tw, -0.34, -0.18, 0.26)])
+	ci.draw_colored_polygon(funnel, steel.darkened(0.2))
+	ci.draw_polyline(PackedVector2Array([funnel[0], funnel[1], funnel[2], funnel[3], funnel[0]]), md, 1.5)
+	# The steel dome: hazard-striped base, riveted opaque plates, glowing vents.
+	var base := _iso(c, tw, 0, 0, 0.0)
+	var rx := r * tw * 0.72
+	var ry := rx * 0.5
+	var h := r * 0.80
+	ci.draw_colored_polygon(_ellipse(base + Vector2(rx * 0.12, ry * 0.25), rx * 1.08, ry * 1.08), Color(0, 0, 0, 0.28 * steel.a))
+	_cyl(ci, c, tw, 0, 0, r, 0.07, md, md)
+	for i in 16:
+		var a0 := float(i) * 180.0 / 16.0
+		ci.draw_polyline(_ellipse(base - Vector2(0, tw * 0.035), rx, ry, a0, a0 + 11.25 * 0.9, 3), haz if i % 2 == 0 else Color(0.05, 0.05, 0.05, haz.a), tw * 0.03)
+	var top := base - Vector2(0, tw * 0.07)
+	var shell := _ellipse(top, rx, ry, 0, 180, 16)
+	shell.append_array(_ellipse(top, rx, h * tw, 180, 360, 20))
+	ci.draw_colored_polygon(shell, steel)
+	ci.draw_colored_polygon(_ellipse(top - Vector2(rx * 0.30, h * tw * 0.45), rx * 0.45, h * tw * 0.35, 180, 300, 10), steel.lightened(0.12))
+	for k in [0.33, 0.66]:
+		ci.draw_polyline(_ellipse(top, rx * k, h * tw, 180, 360, 14), md, 1.5)
+	ci.draw_polyline(_ellipse(top - Vector2(0, h * tw * 0.45), rx * 0.88, ry * 0.88, 180, 360, 16), md, 1.5)
+	for k in 7:
+		var ang := deg_to_rad(200 + k * 20)
+		ci.draw_circle(top - Vector2(0, h * tw * 0.45) + Vector2(cos(ang) * rx * 0.88, sin(ang) * ry * 0.88), 1.3, md.darkened(0.3))
+	for k in 3:
+		var vp := top + Vector2((k - 1) * rx * 0.42, -h * tw * (0.30 + 0.05 * absf(k - 1)))
+		ci.draw_colored_polygon(PackedVector2Array([vp + Vector2(-tw * 0.025, -tw * 0.006), vp + Vector2(tw * 0.025, -tw * 0.006), vp + Vector2(tw * 0.025, tw * 0.006), vp + Vector2(-tw * 0.025, tw * 0.006)]), hot)
+	# Warning beacon on top.
+	var apex := top - Vector2(0, h * tw)
+	_cyl(ci, c, tw, 0, 0, 0.05, 0.05, md, md, 0.07 + h - 0.02)
+	_glow(ci, apex - Vector2(0, tw * 0.05), tw * 0.025, _fade(AMBER, state), state)
+	# Furnace door, sparks and alloy bars at the front.
+	var mouth := _iso(c, tw, 0.05, r * 0.92, 0.10)
+	ci.draw_colored_polygon(_ellipse(mouth, tw * 0.09, tw * 0.065, 180, 360, 10), md)
+	ci.draw_colored_polygon(_ellipse(mouth, tw * 0.07, tw * 0.05, 180, 360, 10), hot)
+	_glow(ci, mouth, tw * 0.045, hot, state)
+	if _lit(state):
+		for k in 5:
+			ci.draw_circle(mouth + Vector2(cos(k * 1.3) * tw * 0.09, -absf(sin(k * 1.3)) * tw * 0.08), 1.5, Color(1.0, 0.85, 0.4, 0.9))
+	for k in 3:
+		var u := 0.30 + (k % 2) * 0.08
+		_box(ci, c, tw, u - 0.04, 0.30, u + 0.03, 0.42, 0.035, _fade(Color(0.80, 0.84, 0.90), state), Color(0, 0, 0, 0), (k / 2) * 0.04)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, r, state)
+	if not (Vector2i(1, 0) in links):
+		_iso_port(ci, _iso(c, tw, r * 0.98, 0, 0.12), tw, state, true)
 
 
 ## The Launch Rail as a spin launcher, seen from above: a big sealed vacuum

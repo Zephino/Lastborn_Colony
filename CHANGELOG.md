@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.23
+Date: 11/01/2026
+Time: 1:42 PM
+
+### Changes
+- **The Forge looks industrial** (sprite concept in `scripts/ui/sprites.gd`, still not used in the game). It is no longer a glass dome but a heavy plant:
+  - a riveted steel dome with panel seams, glowing orange heat vents and an amber warning beacon on top;
+  - hazard stripes around its base;
+  - an ore hopper on legs, fed by a conveyor carrying ore;
+  - two smokestacks with hazard bands and dark smoke, joined to the dome by a thick pipe;
+  - a glowing furnace door throwing sparks, and a stack of finished alloy bars.
+- Drawn both top-down and angled. Tunnels and ports join it like any other building. The old Forge drawing code was removed.
+
+### Reason
+The owner asked for the Forge to look more industrial.
+
 ## Version 00.01.22
 Date: 11/01/2026
 Time: 1:39 PM
