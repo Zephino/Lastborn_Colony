@@ -38,6 +38,9 @@ const ACCENT := {
 	"mirror": CYAN, "vent": GOLD, "drill": WATER, "splitter": CYAN, "vat": GREEN, "bunk": GOLD,
 	"cutter": TEAL, "forge": ORANGE, "rail": GOLD,
 	"commons": GREEN, "clinic": TEAL, "cache": GOLD, "lab": VIOLET, "workshop": CYAN, "warden": VIOLET,
+	"fusion": Color(0.55, 0.85, 1.0), "catcher": GOLD, "reclaimer": GREEN, "fab": AMBER, "dronebay": Color(1.0, 0.72, 0.12),
+	"mast": CYAN, "rescue": Color(1.0, 0.35, 0.25), "academy": Color(0.45, 0.60, 1.0), "hazlab": Color(0.60, 1.0, 0.30),
+	"garden": GREEN, "lounge": PINK,
 }
 ## What fills each dome (seen through the glass).
 const INTERIOR := {
@@ -45,11 +48,26 @@ const INTERIOR := {
 	"clinic": Color(0.80, 0.86, 0.90), "drill": Color(0.14, 0.26, 0.44), "splitter": Color(0.20, 0.32, 0.42),
 	"forge": Color(0.30, 0.16, 0.10), "lab": Color(0.20, 0.16, 0.32), "vent": Color(0.22, 0.08, 0.04),
 	"bunk": Color(0.34, 0.26, 0.20), "workshop": Color(0.22, 0.26, 0.30), "cutter": Color(0.20, 0.24, 0.26),
+	"fusion": Color(0.10, 0.12, 0.18), "reclaimer": Color(0.16, 0.22, 0.16), "fab": Color(0.24, 0.24, 0.26),
+	"dronebay": Color(0.22, 0.22, 0.24), "rescue": Color(0.30, 0.16, 0.14), "academy": Color(0.26, 0.22, 0.18),
+	"hazlab": Color(0.10, 0.16, 0.08), "garden": Color(0.14, 0.30, 0.14), "lounge": Color(0.18, 0.10, 0.24),
 }
 ## Dome size (radius, as a fraction of a tile) for each building.
 const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.40, "vent": 0.34, "forge": 0.34, "lab": 0.44,
-	"vat": 0.44, "bunk": 0.36, "cutter": 0.38, "workshop": 0.30}
+	"vat": 0.44, "bunk": 0.36, "cutter": 0.38, "workshop": 0.30,
+	"fusion": 0.36, "catcher": 0.16, "reclaimer": 0.30, "fab": 0.32, "dronebay": 0.28, "mast": 0.22,
+	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.44, "lounge": 0.34}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+
+## The newer buildings' fittings, drones and satellites live in sprites_more.gd.
+## It is loaded on first use (it preloads this script, so this can't preload it).
+static var _more_script: Script = null
+
+
+static func more() -> Script:
+	if _more_script == null:
+		_more_script = load("res://scripts/ui/sprites_more.gd")
+	return _more_script
 
 
 # ============================================================ helpers
@@ -247,6 +265,7 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			ci.draw_rect(rover, _fade(Color(0.88, 0.62, 0.28), state))
 			ci.draw_rect(Rect2(rover.position + Vector2(s * 0.02, s * 0.02), Vector2(s * 0.05, s * 0.07)), _fade(CYAN, state).darkened(0.3))
 			ci.draw_rect(Rect2(rover.position + Vector2(s * 0.09, s * 0.015), Vector2(s * 0.06, s * 0.08)), md)
+	more().top_pre(ci, type, c, s, rad, state)
 	_top_dome(ci, c, rad, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
 	# Every side without a tunnel still has a capped orange port, ready for one.
 	for d in DIRS:
@@ -347,6 +366,7 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			ci.draw_circle(c, rad * 0.4, Color(0.02, 0.02, 0.04, a.a))
 			for i in 4:
 				_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.62, s * 0.03, a, state)
+	more().top_post(ci, type, c, s, rad, state)
 	if not state.get("built", true):
 		ci.draw_arc(c, rad, 0, TAU, 32, Color(acc.r, acc.g, acc.b, 0.8), 1.5)
 
@@ -668,6 +688,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			ci.draw_line(_iso(c, tw, 0.36, -0.36, 0.33), _iso(c, tw, 0.36, -0.24, 0.45), md, 1.5)
 			ci.draw_line(jib, _iso(c, tw, 0.36, -0.10, 0.24), m, 1.0)
 			_box(ci, c, tw, 0.31, -0.15, 0.41, -0.05, 0.07, _fade(Color(0.55, 0.58, 0.62), state), Color(0, 0, 0, 0), 0.17)
+	more().iso_pre(ci, type, c, tw, r, h, state)
 	_iso_dome(ci, c, tw, r, h, acc, INTERIOR.get(type, Color(0.26, 0.28, 0.32)), state)
 	var apex := _iso(c, tw, 0, 0, 0.05 + h)
 	# Features on or through the dome.
@@ -791,6 +812,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			for i in 4:
 				var q := Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * 0.22
 				_glow(ci, _iso(c, tw, q.x, q.y, 0.07), tw * 0.02, a, state)
+	more().iso_post(ci, type, c, tw, r, h, state)
 	for d in links:
 		if d.x > 0 or d.y > 0:
 			_iso_link(ci, c, tw, d, r, state)

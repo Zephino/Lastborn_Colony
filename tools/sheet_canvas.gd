@@ -19,16 +19,20 @@ func _text(t: String, p: Vector2, sz: int, col: Color = Color.WHITE) -> void:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.06, 0.07, 0.09))
 	if page == "buildings":
-		_buildings()
+		_buildings(0, 16)
+	elif page == "buildings2":
+		_buildings(16, 99)
+	elif page == "units":
+		_units()
 	elif page == "tunnels":
 		_tunnels()
 	else:
 		_world()
 
 
-func _buildings() -> void:
-	_text("Lastborn Colony: domes joined by tunnels, with an airlock at each dome. Left: top-down. Right: angled. Small: under construction / idle.", Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
-	var ids: Array = GameData.building_ids()
+func _buildings(from: int, to: int) -> void:
+	_text("Lastborn Colony buildings (%s). Left: top-down. Right: angled. Small: under construction / idle." % ("1 of 2" if from == 0 else "2 of 2"), Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
+	var ids: Array = GameData.building_ids().slice(from, to)
 	var cols := 4
 	var cw := 470.0
 	var ch := 250.0
@@ -135,3 +139,27 @@ func _tunnels() -> void:
 		var c := o + Vector2(320, 150)
 		Sprites.terrain_iso(self, "regolith", c, 220.0)
 		Sprites.draw_iso(self, "main", c, 220.0, {"links": links})
+
+
+## Drones (on a patch of ground) and satellites (in space), angled.
+func _units() -> void:
+	_text("Drones (built at a Drone Bay) and satellites (launched from a Launch Rail). Angled view.", Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
+	const Fleet = preload("res://scripts/sim/fleet.gd")
+	var more: Script = Sprites.more()
+	var cw := 470.0
+	for i in 4:
+		var t: String = Fleet.drone_order()[i]
+		var o := Vector2(20 + i * cw, 70)
+		draw_rect(Rect2(o, Vector2(cw - 12, 420)), Color(0.10, 0.11, 0.14))
+		_text(Fleet.drone_def(t)["name"], o + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
+		var c := o + Vector2(cw * 0.5 - 6, 260)
+		Sprites.terrain_iso(self, "regolith", c, 360.0)
+		more.draw_unit(self, t, c, 360.0)
+	for i in 3:
+		var t: String = Fleet.sat_order()[i]
+		var o := Vector2(20 + i * cw, 510)
+		draw_rect(Rect2(o, Vector2(cw - 12, 440)), Color(0.02, 0.03, 0.06))
+		for k in 40:
+			draw_circle(o + Vector2(fmod(k * 97.0, cw - 20) + 6, fmod(k * 53.0, 420) + 10), 1.0, Color(1, 1, 1, 0.5))
+		_text(Fleet.sat_def(t)["name"], o + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
+		more.draw_unit(self, t, o + Vector2(cw * 0.5 - 6, 300), 360.0)

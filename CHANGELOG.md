@@ -2,6 +2,30 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.27
+Date: 11/01/2026
+Time: 3:40 PM
+
+### Changes
+Sprite concepts for everything added in 00.01.26 (still not used in the game; the map keeps its simple icons for now). They're drawn top-down and angled, in the dome-and-tunnel style, in the new `scripts/ui/sprites_more.gd`:
+- **Fusion Core:** a glowing plasma ring held by magnet coils, with two steaming cooling towers.
+- **Beam Catcher:** four fields of receiving mesh round a small receiver, with a shaft of light coming down from orbit.
+- **Reclaimer:** chasing green recycling arrows, a hopper of junk, a water tank and an ore bin.
+- **Fab Shop:** a print bed under a yellow gantry with a glowing nozzle, alloy coming in on a belt, and crates of parts.
+- **Drone Bay:** docked drones inside, a landing pad with a drone, and a charging rack.
+- **Signal Mast:** a lattice mast with dishes, a red light, signal waves and guy wires.
+- **Rescue Station:** a life ring, red warning beacons, a rescue rover and brace beams.
+- **Academy:** rows of desks facing a glowing board, a flag and a tree.
+- **Hazard Lab:** a glowing green orb inside a hazard-striped blast wall.
+- **Garden Cavern:** trees, a pond, a path and flowers under the glass.
+- **Lounge:** a glowing dance floor, a bar and a neon sign.
+- **Drones** (angled): the Grader (tracks and a wide blade), the Borer (tracks and a drill cone), the Prospector (six wheels, sensor mast and sample arm) and the Hauler (a truck full of ore).
+- **Satellites** (angled, in space): weather (solar wings and a sensor eye), relay (a big dish) and power (a gold mirror sail beaming power down).
+- The sprite sheet tool (`tools/`) now draws two building pages, a units page, tunnels and the world.
+
+### Reason
+The owner asked to see sprites for all units and buildings.
+
 ## Version 00.01.26
 Date: 11/01/2026
 Time: 3:05 PM

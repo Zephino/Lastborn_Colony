@@ -7,7 +7,7 @@ const Canvas = preload("res://tools/sheet_canvas.gd")
 var canvas: Control
 var frames := 0
 var out_dir := "user://"
-var pages := ["buildings", "tunnels", "world"]
+var pages := ["buildings", "buildings2", "units", "tunnels", "world"]
 
 
 func _init() -> void:
