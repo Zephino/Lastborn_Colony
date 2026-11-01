@@ -45,7 +45,7 @@ const INTERIOR := {
 	"forge": Color(0.30, 0.16, 0.10), "lab": Color(0.20, 0.16, 0.32),
 }
 ## Dome size (radius, as a fraction of a tile) for each building.
-const DOME_SIZE := {"hull": 0.44, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.30}
+const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.30}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 
@@ -166,6 +166,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	var rad: float = float(DOME_SIZE.get(type, 0.38)) * s
 	for d in links:
 		_top_link(ci, c, s, d, rad, state)
+	if type == "hull":
+		_top_pad(ci, c, s, rad, links, state)
+		return
 	# Fittings outside the dome, drawn first so the dome sits on top.
 	match type:
 		"mirror":
@@ -259,6 +262,37 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 				_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.62, s * 0.03, a, state)
 	if not state.get("built", true):
 		ci.draw_arc(c, rad, 0, TAU, 32, Color(acc.r, acc.g, acc.b, 0.8), 1.5)
+
+
+## The Landing Hull as a landing pad, like a helipad: a round platform with a
+## painted ring, a big H, landing lights around the edge, and a small control
+## dome at one corner.
+static func _top_pad(ci: CanvasItem, c: Vector2, s: float, rad: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var paint := _fade(Color(0.96, 0.82, 0.30), state)
+	var orange := _fade(ORANGE, state)
+	ci.draw_circle(c + Vector2(rad * 0.08, rad * 0.10), rad * 1.02, Color(0, 0, 0, 0.28 * paint.a))
+	ci.draw_circle(c, rad, md)
+	ci.draw_circle(c, rad * 0.92, m.darkened(0.25))
+	ci.draw_arc(c, rad * 0.94, 0, TAU, 40, orange, maxf(1.5, s * 0.02))
+	ci.draw_arc(c, rad * 0.62, 0, TAU, 36, paint, maxf(2.0, s * 0.03))
+	# The H.
+	var hw := rad * 0.30
+	var hh := rad * 0.42
+	var bar := maxf(2.0, rad * 0.11)
+	ci.draw_rect(Rect2(c + Vector2(-hw, -hh), Vector2(bar, hh * 2.0)), paint)
+	ci.draw_rect(Rect2(c + Vector2(hw - bar, -hh), Vector2(bar, hh * 2.0)), paint)
+	ci.draw_rect(Rect2(c + Vector2(-hw, -bar * 0.5), Vector2(hw * 2.0, bar)), paint)
+	# Landing lights around the edge.
+	for i in 12:
+		_glow(ci, c + Vector2.from_angle(i * TAU / 12.0) * rad * 0.80, s * 0.018, orange, state)
+	# Ports on every side (open where a tunnel joins).
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * rad * 0.97, s, state, not (d in links))
+	# The control dome at the back-left corner.
+	_top_dome(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.12, orange, Color(0.30, 0.26, 0.22), state)
+	_glow(ci, c + Vector2(-s * 0.36, -s * 0.36), s * 0.025, orange, state)
 
 
 ## What shape a tunnel piece is, from its links: "none", "end", "straight",
@@ -432,6 +466,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 		return
 	var r: float = float(DOME_SIZE.get(type, 0.38))
 	var h := r * 0.75
+	if type == "hull":
+		_iso_pad(ci, c, tw, r, links, state)
+		return
 	# Tunnels toward the back go behind the dome; toward the front, in front of it.
 	for d in links:
 		if d.x < 0 or d.y < 0:
@@ -547,6 +584,42 @@ static func _iso_port(ci: CanvasItem, p: Vector2, tw: float, state: Dictionary, 
 	ci.draw_polyline(_ellipse(p, tw * 0.05, tw * 0.04), orange, 2.0)
 	if capped:
 		ci.draw_circle(p, tw * 0.01, orange)
+
+
+## The landing pad at an angle: a low round platform with a painted ring and H
+## lying flat on it, landing lights, a control dome at the back corner, and
+## tunnels to its edge.
+static func _iso_pad(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var paint := _fade(Color(0.96, 0.82, 0.30), state)
+	var orange := _fade(ORANGE, state)
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, r, state)
+	# The control dome sits behind the pad, at the back corner.
+	var dome_c := _iso(c, tw, -0.36, -0.36)
+	_iso_dome(ci, dome_c, tw, 0.13, 0.11, orange, Color(0.30, 0.26, 0.22), state)
+	_glow(ci, _iso(dome_c, tw, 0, 0, 0.17), tw * 0.018, orange, state)
+	_cyl(ci, c, tw, 0, 0, r, 0.05, md, m.darkened(0.2))
+	var top := 0.05
+	ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, top), r * tw * 0.66, r * tw * 0.33), orange, 2.0)
+	ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, top), r * tw * 0.45, r * tw * 0.225), paint, 3.0)
+	# The H, painted flat on the platform along the tile's axes.
+	var hw := r * 0.30
+	var hh := r * 0.42
+	var bar := r * 0.11
+	for rect in [[-hw, -hh, -hw + bar, hh], [hw - bar, -hh, hw, hh], [-hw, -bar * 0.5, hw, bar * 0.5]]:
+		ci.draw_colored_polygon(PackedVector2Array([_iso(c, tw, rect[0], rect[1], top), _iso(c, tw, rect[2], rect[1], top), _iso(c, tw, rect[2], rect[3], top), _iso(c, tw, rect[0], rect[3], top)]), paint)
+	for i in 12:
+		var q := Vector2.from_angle(i * TAU / 12.0) * r * 0.80
+		_glow(ci, _iso(c, tw, q.x, q.y, top), tw * 0.014, orange, state)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, r, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links):
+			_iso_port(ci, _iso(c, tw, d.x * r * 0.97, d.y * r * 0.97, 0.03), tw, state, true)
 
 
 static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> void:

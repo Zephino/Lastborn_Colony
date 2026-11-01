@@ -2,6 +2,20 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.18
+Date: 11/01/2026
+Time: 8:53 AM
+
+### Changes
+- **The Landing Hull looks like a landing pad**, similar to a helipad (sprite concepts in `scripts/ui/sprites.gd`, still not used in the game).
+  - It is a round, low platform with an orange edge ring and a painted yellow ring.
+  - A big painted **H** lies flat in the middle, with 12 landing lights around the edge and a small control dome at the back corner.
+  - Its orange tube ports and tunnels work like every other building's.
+  - Drawn both top-down and angled; in the angled style the H and ring lie flat on the platform.
+
+### Reason
+The owner asked for the landing pad to look similar to a helicopter landing pad.
+
 ## Version 00.01.17
 Date: 11/01/2026
 Time: 8:51 AM
