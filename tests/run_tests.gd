@@ -16,6 +16,7 @@ const Research = preload("res://scripts/sim/research.gd")
 const TestOnline = preload("res://tests/test_online.gd")
 const Manifest = preload("res://scripts/sim/manifest.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
+const ColonyText = preload("res://scripts/ui/colony_text.gd")
 
 var checks := 0
 var failures := 0
@@ -24,12 +25,14 @@ var failures := 0
 
 func _init() -> void:
 	test_rng()
+	test_scripts_load()
 	test_data()
 	test_new_game()
 	test_placement()
 	test_determinism()
 	test_save_round_trip()
 	test_manifest()
+	test_colony_text()
 	test_planets_and_sites()
 	test_research()
 	test_life_stages()
@@ -156,6 +159,37 @@ func test_save_round_trip() -> void:
 	if typeof(upgraded) == TYPE_DICTIONARY:
 		Turn.end_turn(upgraded)
 		check(int(upgraded["turn"]) == 2, "an older save plays on")
+
+
+## Loads every script in the game, so a script with an error fails the tests
+## even when no test calls into it (the interface scripts especially).
+func test_scripts_load() -> void:
+	print("Scripts")
+	var dirs := ["res://scripts/sim", "res://scripts/ui", "res://scripts/net"]
+	for dir in dirs:
+		for file in DirAccess.get_files_at(dir):
+			if not file.ends_with(".gd"):
+				continue
+			var script: Script = load(dir + "/" + file)
+			check(script != null and script.can_instantiate(), "%s/%s loads" % [dir.trim_prefix("res://"), file])
+
+
+func test_colony_text() -> void:
+	print("Inspector and report text")
+	var s := _colony_with(["vat", "splitter", "drill"])
+	s["adults"] = 2.0
+	Turn.end_turn(s)
+	var reasons: Dictionary = s["report"]["idle_reasons"]
+	check(not reasons.is_empty(), "buildings without workers are recorded as idle")
+	var any: String = reasons.keys()[0]
+	check(reasons[any] == "workers", "the idle reason is the missing workers")
+	var st: Dictionary = s["structures"][any]
+	check(ColonyText.problem(s, st).begins_with("Idle last turn: not enough free workers"), "the inspector explains why it's idle")
+	var text := ColonyText.report(s)
+	for part in ["POWER", "STOCK", "PEOPLE", "IDLE OR STARVED", "RESEARCH", "DEBT"]:
+		check(text.contains(part), "the report has a %s section" % part)
+	check(ColonyText.tile(s, Vector2i(int(st["x"]), int(st["y"]))).contains("Idle last turn"), "the tile text shows the problem")
+	check(ColonyText.summary(s).contains("idle"), "the summary points to idle buildings")
 
 
 func test_manifest() -> void:

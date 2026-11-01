@@ -15,8 +15,9 @@ const Online = preload("res://scripts/net/online.gd")
 const OnlineConfig = preload("res://scripts/net/online_config.gd")
 const ScoreEntry = preload("res://scripts/net/score_entry.gd")
 const SetupFlow = preload("res://scripts/ui/setup_flow.gd")
+const ColonyText = preload("res://scripts/ui/colony_text.gd")
+const Menus = preload("res://scripts/ui/menus.gd")
 
-const PROFILE_PATH := "user://profile.json"
 
 
 const BG := Color(0.06, 0.07, 0.09)
@@ -46,6 +47,7 @@ var toast: Label
 var toast_left := 0.0
 var player_name := ""
 var settings_open := false
+var menus: RefCounted
 
 
 func _ready() -> void:
@@ -61,15 +63,16 @@ func _ready() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	menus = Menus.new(self)
 	online = Online.new()
 	add_child(online)
-	online.board_loaded.connect(_on_board_loaded)
+	online.board_loaded.connect(menus._on_board_loaded)
 	online.score_submitted.connect(func(_ok: bool, message: String) -> void: _toast(message))
 	online.sign_in_message.connect(_toast)
-	online.account_changed.connect(_on_account_changed)
+	online.account_changed.connect(menus._on_account_changed)
 	online.cloud_saved.connect(func(_ok: bool, message: String) -> void: _toast(message))
-	online.cloud_loaded.connect(_on_cloud_loaded)
-	player_name = _load_profile().get("name", "")
+	online.cloud_loaded.connect(menus._on_cloud_loaded)
+	player_name = menus._load_profile().get("name", "")
 	show_title()
 
 
@@ -135,7 +138,7 @@ func show_title() -> void:
 	player_edit.text = player_name
 	player_edit.max_length = ScoreEntry.MAX_NAME_LENGTH
 	player_edit.placeholder_text = "Letters, numbers, spaces, - and _"
-	player_edit.text_changed.connect(_on_player_name_changed)
+	player_edit.text_changed.connect(menus._on_player_name_changed)
 	box.add_child(player_edit)
 	box.add_child(_button("New colony", _on_new_colony.bind(name_edit, seed_box)))
 	for slot in ["manual", "autosave"]:
@@ -302,6 +305,7 @@ func show_game() -> void:
 	buttons.add_child(end_turn_button)
 	run_button = _button("Run 5 turns", func() -> void: _run_turns(5))
 	buttons.add_child(run_button)
+	buttons.add_child(_button("Colony report", show_report))
 	buttons.add_child(_button("Save", _on_save))
 	buttons.add_child(_button("Menu", _on_menu))
 
@@ -364,7 +368,7 @@ func _on_menu() -> void:
 	show_modal("Menu", "Unsaved progress since your last save or autosave will be lost.", [
 		["Save and quit to title", _save_and_quit, true],
 		["Quit to title without saving", show_title, true],
-		["Retire: post this colony's progress to the leaderboard", _post_score.bind("retired"), OnlineConfig.enabled()],
+		["Retire: post this colony's progress to the leaderboard", menus._post_score.bind("retired"), OnlineConfig.enabled()],
 		["Settings", show_settings, true],
 		["Back to the colony", close_modal, true],
 	], true)
@@ -418,7 +422,7 @@ func _show_ending() -> void:
 	var st: Dictionary = state["stats"]
 	var body := "%s\n\nTurn %d. Population %d. Born %d, died %d, arrived %d. Alloy exported: %d." % [
 		e["body"], int(state["turn"]) - 1, int(_pop()), int(st["births"]), int(st["deaths"]), int(st["arrivals"]), int(st["exported"])]
-	show_modal(e["title"], body, [["Post score to the leaderboard", _post_score.bind(""), OnlineConfig.enabled()], ["Look around", close_modal, true], ["Back to title", show_title, true]])
+	show_modal(e["title"], body, [["Post score to the leaderboard", menus._post_score.bind(""), OnlineConfig.enabled()], ["Look around", close_modal, true], ["Back to title", show_title, true]])
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -449,12 +453,11 @@ func _pop() -> float:
 
 
 func _fmt(v: float) -> String:
-	return str(int(round(v)))
+	return ColonyText.fmt(v)
 
 
 func _signed(v: float) -> String:
-	var n := int(round(v))
-	return ("+%d" % n) if n >= 0 else str(n)
+	return ColonyText.signed(v)
 
 
 func refresh() -> void:
@@ -533,81 +536,13 @@ func _selected_structure() -> Dictionary:
 
 func _refresh_inspector() -> void:
 	var c: Vector2i = map_view.selected
-	var lines := PackedStringArray()
 	var s := _selected_structure()
 	demolish_button.visible = not s.is_empty() and s["type"] != "hull"
-	if c.x < 0:
-		lines.append("[b]%s[/b], on %s" % [state["colony_name"], GameData.planet(state["planet"])["name"]])
-		lines.append("Adults %s, children %s, elders %s." % [_fmt(float(state["adults"])), _fmt(float(state["children"])), _fmt(float(state["elders"]))])
-		lines.append("Crime %s." % _fmt(float(state["crime"])))
-		if state["plague"]["active"]:
-			lines.append("[color=#ff6a5a]Plague! Cure %d of %d, %d turns left.[/color]" % [int(state["plague"]["cure"]), int(state["plague"]["need"]), int(state["plague"]["turns_left"])])
-		lines.append("Production efficiency %d%% (from morale)." % int(round(Turn.efficiency(state) * 100.0)))
-		lines.append("Storage %s per resource." % _fmt(float(state["report"].get("storage", GameData.balance()["base_storage"]))))
-		lines.append("Payments made %d. Missed in a row: %d of %d." % [int(state["payments_made"]), int(state["missed_in_row"]), int(GameData.balance()["max_missed"])])
-		if int(state["storm"]) > 0:
-			lines.append("[color=#e8b04a]Grit front: mirrors weakened for %d more turns.[/color]" % int(state["storm"]))
-		if int(state["surge"]) > 0:
-			lines.append("[color=#e8b04a]Vent surge: %d more turns.[/color]" % int(state["surge"]))
-		lines.append("\nSelect a tile to inspect it.")
-		inspector.text = "\n".join(lines)
-		return
-	var terrain := Actions.terrain_at(state, c.x, c.y)
-	lines.append("[b]%s[/b]  (%d, %d)" % [terrain.capitalize(), c.x, c.y])
-	lines.append("Light %.2f   Heat factor %.2f" % [GameData.light_at(c.x, state["planet"]), GameData.cold_at(c.x, state["planet"])])
-	if s.is_empty():
-		inspector.text = "\n".join(lines)
-		return
-	var def := GameData.building(s["type"])
-	lines.append("")
-	lines.append("[b][color=#f29e4c]%s[/color][/b]" % def["name"])
-	var status := ""
-	if not s["built"]:
-		status = "Under construction: %d of %d turns." % [int(s["progress"]), int(GameData.num(def, "turns"))]
-	elif int(s["damaged"]) > 0:
-		status = "Damaged: back in %d turns." % int(s["damaged"])
-	elif def.get("conduit", false):
-		status = "Carrying heat." if Turn.connectivity(state).has(s["id"]) else "Not connected to the hull."
-	elif s["active"]:
-		status = "Running."
-	elif not Turn.connectivity(state).has(s["id"]):
-		status = "[color=#ff6a5a]Not connected to the hull.[/color]"
-	else:
-		status = "[color=#ff6a5a]Idle: not enough workers, power or heat.[/color]"
-	lines.append(status)
-	lines.append(def["desc"])
-	var needs := PackedStringArray()
-	if GameData.num(def, "workers") > 0.0:
-		needs.append("%d workers" % int(GameData.num(def, "workers")))
-	if GameData.num(def, "power_use") > 0.0:
-		needs.append("%s power" % GameData.num(def, "power_use"))
-	if GameData.num(def, "heat_need") > 0.0:
-		needs.append("%.1f heat" % (GameData.num(def, "heat_need") * GameData.cold_at(int(s["x"]), state["planet"])))
-	var inputs: Dictionary = def.get("inputs", {})
-	for k in inputs:
-		needs.append("%s %s" % [inputs[k], k])
-	if not needs.is_empty():
-		lines.append("Uses: " + ", ".join(needs))
-	var gives := PackedStringArray()
-	if GameData.num(def, "power_gen") > 0.0:
-		var pg := GameData.num(def, "power_gen")
-		if def.get("solar", false):
-			pg *= GameData.light_at(int(s["x"]), state["planet"])
-		gives.append("%.1f power" % pg)
-	if GameData.num(def, "heat_gen") > 0.0:
-		gives.append("%s heat" % GameData.num(def, "heat_gen"))
-	var outputs: Dictionary = def.get("outputs", {})
-	for k in outputs:
-		gives.append("%s %s" % [outputs[k], k])
-	if GameData.num(def, "housing") > 0.0:
-		gives.append("housing %d" % int(GameData.num(def, "housing")))
-	if GameData.num(def, "storage") > 0.0:
-		gives.append("storage +%d" % int(GameData.num(def, "storage")))
-	if GameData.num(def, "export") > 0.0:
-		gives.append("exports up to %d alloy" % int(GameData.num(def, "export")))
-	if not gives.is_empty():
-		lines.append("Gives: " + ", ".join(gives))
-	inspector.text = "\n".join(lines)
+	inspector.text = ColonyText.summary(state) if c.x < 0 else ColonyText.tile(state, c)
+
+
+func show_report() -> void:
+	show_modal("Colony report, turn %d" % (int(state["turn"]) - 1), ColonyText.report(state), [["Back", close_modal, true]], true)
 
 
 func _refresh_log() -> void:
@@ -617,194 +552,18 @@ func _refresh_log() -> void:
 	log_view.text = "\n".join(lines)
 
 
-# ---------------------------------------------------------------- Research
+# ---------------------------------------------------------------- Menus (scripts/ui/menus.gd)
 
 func show_research() -> void:
-	var options: Array = []
-	for t in Research.available(state):
-		var label := "%s (%d): %s" % [t["name"], int(t["cost"]), t["desc"]]
-		options.append([label, _choose_research.bind(t["id"]), true])
-	var done := PackedStringArray()
-	for id in Research.done(state):
-		done.append(GameData.topic(id)["name"])
-	var body := "Survey Labs produce research toward one topic at a time. Changing topic loses progress on the old one."
-	if state["plague"]["active"]:
-		body += "\n\nDuring the plague, all research goes to the cure first."
-	body += "\n\nFinished: " + (", ".join(done) if not done.is_empty() else "none yet") + "."
-	if options.is_empty():
-		body += "\n\nEverything has been researched."
-	options.append(["Back", close_modal, true])
-	show_modal("Research", body, options, true)
+	menus.show_research()
 
-
-func _choose_research(id: String) -> void:
-	Actions.set_research(state, id)
-	close_modal()
-	refresh()
-
-
-# ---------------------------------------------------------------- Settings
 
 func show_settings() -> void:
-	var notes := PackedStringArray()
-	var options: Array = []
-	if AppActions.can_fullscreen():
-		options.append(["Fullscreen: %s" % ("On" if AppActions.is_fullscreen() else "Off"), _on_fullscreen, true])
-	if AppActions.is_web():
-		var install := AppActions.install_state()
-		match install:
-			"installed":
-				options.append(["Installed as an app", _on_install, false])
-			"ios":
-				options.append(["Install app", _on_install, true])
-				notes.append("On iPhone or iPad: tap Share, then Add to Home Screen.")
-			"ready":
-				options.append(["Install app", _on_install, true])
-			_:
-				options.append(["Install app", _on_install, false])
-				notes.append("Install app works in Chrome and Edge (and on phones) once the page has loaded.")
-		options.append(["Update app", _on_update, true])
-		notes.append("Update app reloads the newest version from the internet. Your saved games are kept.")
-	if OnlineConfig.enabled():
-		if online.is_signed_in():
-			notes.append("Signed in as %s. Cloud save keeps one game for your account, so you can carry on from another device." % online.account_name())
-			options.append(["Save this game to the cloud" if not state.is_empty() else "Save my last saved game to the cloud", _cloud_upload, not state.is_empty() or SaveGame.exists("manual")])
-			options.append(["Load my game from the cloud", online.download_save, true])
-			options.append(["Sign out", online.sign_out, true])
-		elif online.is_signing_in():
-			notes.append("Finish signing in with Google in your browser.")
-			options.append(["Cancel sign-in", online.cancel_sign_in, true])
-		else:
-			options.append(["Sign in with Google", online.start_sign_in, true])
-			notes.append("Signing in lets you keep a cloud save and carry on from another device. It's optional.")
-	options.append(["Back", _close_settings, true])
-	var body := "Lastborn Colony v%s" % str(ProjectSettings.get_setting("application/config/version", ""))
-	if not notes.is_empty():
-		body += "\n\n" + "\n".join(notes)
-	show_modal("Settings", body, options, true)
-	settings_open = true
-
-
-func _close_settings() -> void:
-	close_modal()
-
-
-func _on_fullscreen() -> void:
-	AppActions.toggle_fullscreen()
-	show_settings.call_deferred()
-
-
-func _on_install() -> void:
-	if AppActions.install_state() == "ready":
-		AppActions.install()
-	show_settings.call_deferred()
-
-
-func _on_update() -> void:
-	if state.size() > 0 and state.get("ending", "") == "":
-		SaveGame.save(state, "autosave")
-	AppActions.update_now()
-
-
-# ---------------------------------------------------------------- Online
-
-func _on_account_changed() -> void:
-	if settings_open:
-		show_settings()
-
-
-func _on_player_name_changed(text: String) -> void:
-	player_name = text
-	_save_profile()
-
-
-func _load_profile() -> Dictionary:
-	if not FileAccess.file_exists(PROFILE_PATH):
-		return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PROFILE_PATH))
-	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
-
-
-func _save_profile() -> void:
-	var f := FileAccess.open(PROFILE_PATH, FileAccess.WRITE)
-	if f != null:
-		f.store_string(JSON.stringify({"name": player_name}))
-
-
-func _post_score(ending_override: String) -> void:
-	if state.is_empty():
-		return
-	var entry := ScoreEntry.from_state(state, player_name, ending_override)
-	var problem := ScoreEntry.problem(entry)
-	if problem != "":
-		_toast(problem)
-		return
-	online.submit_score(entry)
-	_toast("Sending score…")
-
-
-var board_planet := GameData.DEFAULT_PLANET
+	menus.show_settings()
 
 
 func show_leaderboard(planet_id: String = "") -> void:
-	if planet_id != "":
-		board_planet = planet_id
-	show_modal("Leaderboard: %s" % GameData.planet(board_planet)["name"], "Loading…", _board_options(), true)
-	online.fetch_board(board_planet)
-
-
-func _board_options() -> Array:
-	var options: Array = []
-	for p in GameData.planets():
-		if p["id"] != board_planet:
-			options.append(["Show %s" % p["name"], show_leaderboard.bind(p["id"]), true])
-	options.append(["Back", close_modal, true])
-	return options
-
-
-func _on_board_loaded(entries: Array, error: String) -> void:
-	if modal == null:
-		return
-	var lines := PackedStringArray()
-	if error != "":
-		lines.append(error)
-	elif entries.is_empty():
-		lines.append("No scores yet. Finish a colony and post your score to be the first.")
-	else:
-		lines.append("Free charters first (fewest turns), then the most debt paid.\n")
-		var rank := 1
-		for e in entries.slice(0, 25):
-			var how := ""
-			if e.get("ending", "") == "free":
-				how = "bought out the charter in %d turns" % int(e.get("turn", 0))
-			else:
-				var endings := {"receivership": "taken by the Company", "silent": "went silent", "retired": "retired"}
-				how = "paid %d of %d marks, %s on turn %d" % [int(e.get("debt_paid", 0)), int(e.get("debt_total", 0)), endings.get(e.get("ending", ""), "ended"), int(e.get("turn", 0))]
-			lines.append("%d. %s (%s): %s" % [rank, e.get("name", "?"), e.get("colony", "?"), how])
-			rank += 1
-	show_modal("Leaderboard: %s" % GameData.planet(board_planet)["name"], "\n".join(lines), _board_options(), true)
-
-
-func _cloud_upload() -> void:
-	if not state.is_empty():
-		online.upload_save(SaveGame.to_text(state))
-	elif SaveGame.exists("manual"):
-		online.upload_save(FileAccess.get_file_as_string(SaveGame.path_for("manual")))
-
-
-func _on_cloud_loaded(text: String, error: String) -> void:
-	if error != "":
-		_toast(error)
-		return
-	var loaded: Variant = SaveGame.from_text(text)
-	if typeof(loaded) == TYPE_STRING:
-		_toast(loaded)
-		return
-	state = loaded
-	SaveGame.save(state, "manual")
-	show_game()
-	_after_turn()
-	_toast("Loaded your game from the cloud.")
+	menus.show_leaderboard(planet_id)
 
 
 ## A short message along the bottom of the screen that fades after a few seconds.

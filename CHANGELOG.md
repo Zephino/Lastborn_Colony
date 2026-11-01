@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.06
+Date: 11/01/2026
+Time: 2:06 AM
+
+### Changes
+- **Idle buildings explain themselves.** Each turn records why a building didn't run (not enough free workers, power or heat) and which input a running building was out of. Selecting the building says what's wrong and how to fix it. The colony summary points out idle buildings.
+- **Colony report** (new button by End turn): power, heat and workers in use; each resource's stock and change last turn; people, housing, births, deaths, morale and crime; any shortages; which buildings are idle or starved and why; research progress; and the next three Company payments.
+- Inspector numbers now include research bonuses (heat needed, output, housing, exports).
+- **Code tidy-up:** inspector and report text moved to `scripts/ui/colony_text.gd`, and the Research, Settings, Leaderboard and cloud-save dialogs moved to `scripts/ui/menus.gd`. `main.gd` went from about 880 to 640 lines (still above the ~400 aim; noted as an exception).
+- **Tests:** 200 checks pass (30 new). A new check loads every game script, because two interface scripts had errors that no test touched; Godot's own check caught them before this push. New checks also cover idle reasons and the report text.
+- Played in a browser here: the whole setup with the keyboard only (Enter through every page), the game, the Colony report, the Menu, Settings and Research.
+
+### Reason
+The owner asked to continue with the interface improvements (step 3). This continues the same request as 00.01.05; it gets its own version so the web version's updater picks it up.
+
 ## Version 00.01.05
 Date: 11/01/2026
 Time: 2:00 AM

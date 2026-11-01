@@ -135,6 +135,8 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 	var power_gen := 0.0
 	var heat_gen := 0.0
 	var idle := 0
+	## Why each building that should run didn't: "workers", "power" or "heat".
+	var idle_reasons := {}
 	var eligible: Array = []
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
@@ -156,6 +158,7 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 				continue
 			var need := int(GameData.num(def, "workers"))
 			if workers < need:
+				idle_reasons[id] = "workers"
 				continue
 			workers -= need
 			s["active"] = true
@@ -197,6 +200,12 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 				s["active"] = true
 			else:
 				idle += 1
+				if workers < need:
+					idle_reasons[id] = "workers"
+				elif power < pu:
+					idle_reasons[id] = "power"
+				else:
+					idle_reasons[id] = "heat"
 
 	var housing := 0.0
 	var storage := float(b["base_storage"])
@@ -221,6 +230,8 @@ static func _allocate(state: Dictionary, connected: Dictionary) -> Dictionary:
 		"heat_gen": heat_gen,
 		"heat_free": heat,
 		"idle": idle,
+		"idle_reasons": idle_reasons,
+		"starved": {},
 		"housing": housing,
 		"storage": storage,
 		"morale_bonus": minf(morale_bonus, float(b["morale_building_cap"])),
@@ -254,6 +265,7 @@ static func _produce(state: Dictionary, rep: Dictionary) -> void:
 			for k in inputs:
 				if float(stock[k]) < float(inputs[k]):
 					ok = false
+					rep["starved"][id] = k
 			if ok:
 				for k in inputs:
 					stock[k] = float(stock[k]) - float(inputs[k])

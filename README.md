@@ -68,6 +68,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Crime** grows with population, crowding and low morale. It steals alloy and marks and lowers morale. Warden Posts hold it down.
 - **Plague** can break out in a larger colony. Survey Labs must research a cure before time runs out, or about a tenth of the colony dies.
 - **Events** happen at random: grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
+- **Colony report** (button by End turn) shows where power, heat and workers go, how each resource changed, which buildings are idle and why, and the next payments. Selecting a building also says why it isn't running.
 - **Settings** (title screen, or Menu in a game): fullscreen, and for the web version Install app and Update app.
 - **Keys:** Enter ends the turn. Esc cancels building or closes a dialog that can be closed. Right-drag pans the map and the mouse wheel zooms. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
 
@@ -86,6 +87,8 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/research.gd` | Research topics and their effects. |
 | `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
 | `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd` | The screens before landing, and the small map previews. |
+| `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
+| `scripts/ui/menus.gd` | Research, Settings, Leaderboard and cloud-save dialogs. |
 | `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |
 | `scripts/ui/main.gd` | All screens, built in code. |
 | `scripts/ui/map_view.gd` | Map drawing and mouse input. |
@@ -127,7 +130,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- All 170 headless test checks pass in Godot 4.3, and the Worker's 29 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
+- All 200 headless test checks pass in Godot 4.3, and the Worker's 29 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 101 turns on Brume, 116 on Cinder and 137 on Hollow (one loss on Hollow). The scripted player pays off the debt on 16 of 16 test maps, between turns 83 and 120, and a colony that builds nothing dies out. Headless tests are not playtesting: play it to judge how it feels.
 - Ideas: underground levels, a rival faction, changing trade prices, difficulty settings, and sound.
 
 ## License
