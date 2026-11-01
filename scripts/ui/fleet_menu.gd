@@ -1,5 +1,5 @@
 ## The Drones & Orbit dialog: build work drones at a Drone Bay, launch
-## satellites from a Launch Rail, and call supply pods down from the ship.
+## satellites from a Spin Launcher, and call supply pods down from the ship.
 ## `main` is the main screen (scripts/ui/main.gd), which owns the state and
 ## the dialog layer.
 extends RefCounted

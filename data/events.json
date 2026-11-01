@@ -30,7 +30,7 @@
     "id": "seismic",
     "title": "Shifting Ice",
     "weight": 2,
-    "body": "An icequake split a ridge and exposed loose ore near the hull. A work crew hauls it in.",
+    "body": "An icequake split a ridge and exposed loose ore near the landing pad. A work crew hauls it in.",
     "effects": {
       "ore": 15
     }

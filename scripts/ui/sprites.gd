@@ -554,7 +554,7 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			ci.draw_arc(c, rad, 0, TAU, 32, Color(acc.r, acc.g, acc.b, 0.8), 1.5)
 
 
-## The Landing Hull as a landing pad, like a helipad: a round platform with a
+## The Landing Pad, like a helipad: a round platform with a
 ## painted ring, a big H, landing lights around the edge, and a small control
 ## dome at one corner.
 static func _top_pad(ci: CanvasItem, c: Vector2, s: float, rad: float, links: Array, state: Dictionary) -> void:
@@ -1866,7 +1866,7 @@ static func _iso_forge(ci: CanvasItem, c: Vector2, tw: float, r: float, links: A
 		_iso_port(ci, _iso(c, tw, r * 0.98, 0, 0.12), tw, state, true, Vector2i(1, 0))
 
 
-## The Launch Rail as a spin launcher, seen from above: a big sealed vacuum
+## The Spin Launcher as a spin launcher, seen from above: a big sealed vacuum
 ## drum with a spinning arm inside (motion trails glowing), a launch tube
 ## leaving its rim, and a small control dome at the front corner.
 static func _top_spin(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:

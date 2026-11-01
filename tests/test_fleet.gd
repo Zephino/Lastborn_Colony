@@ -156,7 +156,7 @@ static func _free_regolith(s: Dictionary) -> Vector2i:
 static func _satellites_and_pods(check: Callable) -> void:
 	var s := _colony()
 	var r := Actions.launch_satellite(s, "relay")
-	check.call(not r["ok"] and str(r["reason"]).contains("Launch Rail"), "satellites need a working Launch Rail")
+	check.call(not r["ok"] and str(r["reason"]).contains("Spin Launcher"), "satellites need a working Spin Launcher")
 	_put(s, "rail")
 	for _i in 2:
 		_put(s, "mirror")

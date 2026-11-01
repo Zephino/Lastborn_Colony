@@ -151,7 +151,7 @@ static func demolish(state: Dictionary, id: String) -> Dictionary:
 		return result(false, "Nothing to demolish.")
 	var s: Dictionary = state["structures"][id]
 	if s["type"] == "hull":
-		return result(false, "The hull cannot be demolished.")
+		return result(false, "The Landing Pad cannot be demolished.")
 	if s["type"] == "shaft_base":
 		return result(false, "Demolish the Shaft on the surface to close this landing.")
 	var def := GameData.building(s["type"])
@@ -218,7 +218,7 @@ static func build_drone(state: Dictionary, type: String) -> Dictionary:
 	return result(true)
 
 
-## Launches a satellite from a Launch Rail that worked last turn.
+## Launches a satellite from a Spin Launcher that worked last turn.
 static func check_satellite(state: Dictionary, type: String) -> Dictionary:
 	if state["ending"] != "":
 		return result(false, "The game is over.")
@@ -231,7 +231,7 @@ static func check_satellite(state: Dictionary, type: String) -> Dictionary:
 	if Fleet.sats(state, type) >= int(def["max"]):
 		return result(false, "You already have %d in orbit, the most that helps." % int(def["max"]))
 	if not _has_built(state, "rail", true):
-		return result(false, "Needs a working Launch Rail.")
+		return result(false, "Needs a working Spin Launcher.")
 	var missing := _missing(state, def)
 	return result(missing == "", missing)
 
@@ -242,7 +242,7 @@ static func launch_satellite(state: Dictionary, type: String) -> Dictionary:
 		return check
 	_spend(state, Fleet.sat_def(type))
 	state["satellites"][type] = Fleet.sats(state, type) + 1
-	state["log"].append({"turn": int(state["turn"]), "text": "The Launch Rail flings a %s into orbit." % str(Fleet.sat_def(type)["name"]).to_lower()})
+	state["log"].append({"turn": int(state["turn"]), "text": "The Spin Launcher flings a %s into orbit." % str(Fleet.sat_def(type)["name"]).to_lower()})
 	return result(true)
 
 
@@ -256,7 +256,7 @@ static func call_pod(state: Dictionary) -> Dictionary:
 	var pod: Dictionary = GameData.balance()["pod"]
 	for k in pod:
 		state["stock"][k] = float(state["stock"][k]) + float(pod[k])
-	state["log"].append({"turn": int(state["turn"]), "text": "A supply pod streaks down from the ship and lands by the hull."})
+	state["log"].append({"turn": int(state["turn"]), "text": "A supply pod streaks down from the ship and lands by the landing pad."})
 	return result(true)
 
 

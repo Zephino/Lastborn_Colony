@@ -68,19 +68,19 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Each turn, every building needs its workers, power and heat.** Generators get resources first, then other buildings take them in priority order (water, then oxygen and food, housing, ore, alloy, export, civic). Anything that can't be fully supplied sits idle, marked with a red dot.
 - **Keep people alive.** Each person uses 0.1 food, 0.1 oxygen and 0.05 water per turn. Shortages kill people, and oxygen shortages kill fastest.
 - **Morale** sets production efficiency (50–130%). Commons and the Clinic raise it. Shortages, overcrowding and missed payments lower it. Below 20, people leave.
-- **Money:** Forges turn ore into alloy, and Launch Rails sell alloy for 20 marks each. Rails never sell below your export reserve, which you set in the right panel. You can also pay the debt early from there.
+- **Money:** Forges turn ore into alloy, and Spin Launchers sell alloy for 20 marks each. Spin Launchers never sell below your export reserve, which you set in the right panel. You can also pay the debt early from there.
 - **The Deep:** a second level under the surface. Build a **Shaft** (surface, 15 alloy, 3 turns); when it's finished, a landing opens below it. Build outward from the landing. Switch levels with the **Surface/Deep** buttons (or **Q** and **E**; on phones, the Deep/Surface button).
   - Open caverns cost the normal price. Solid rock must be dug out: +4 alloy and +2 turns. Bedrock can't be built on.
   - Ore veins make Seam Cutters 50% more productive, deep vents give Vent Taps 50% more heat, and aquifers let Ice Drills work underground.
   - Buildings underground need a steady, low amount of heat (factor 0.5), which helps on cold worlds. Icequakes never reach them.
-  - Mirror Fields and Launch Rails need the sky, so they stay on the surface.
+  - Mirror Fields and Spin Launchers need the sky, so they stay on the surface.
 - **Parts:** a **Fab Shop** machines alloy into parts. Drones, satellites and the most advanced buildings need parts as well as alloy.
 - **Drones** (Drones & orbit button): a **Drone Bay** builds and runs work drones, 4 per working bay (Drone Swarms research adds 2). Drones beyond that sit idle.
   - **Grader:** adds a turn of progress to one surface building under construction.
   - **Borer:** does the same for a Shaft or a Deep building, and while you own one, digging into rock costs no extra alloy.
   - **Prospector:** brings back 2 loose ore a turn.
   - **Hauler:** two working Seam Cutters make 25% more ore.
-- **Orbit** (Drones & orbit button): a working Launch Rail can launch satellites, paid in alloy, parts and marks.
+- **Orbit** (Drones & orbit button): a working Spin Launcher can launch satellites, paid in alloy, parts and marks.
   - **Weather satellite:** grit fronts hurt mirrors half as much, and icequakes reach less far.
   - **Relay satellite:** morale +3.
   - **Power satellites** (after Power Beaming research): each beams 10 power to a **Beam Catcher**.
@@ -150,7 +150,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 1. Construction
 2. Repairs
-3. Connectivity to the hull
+3. Connectivity to the Landing Pad
 4. Allocation of workers, power and heat
 5. Production and export
 6. Research (or the plague cure)

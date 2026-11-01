@@ -70,16 +70,16 @@ static func problem(state: Dictionary, s: Dictionary) -> String:
 	if int(s["damaged"]) > 0:
 		return "Damaged: back in %d turns." % int(s["damaged"])
 	if def.get("conduit", false):
-		return "" if Turn.connectivity(state).has(s["id"]) else "Not connected to the hull."
+		return "" if Turn.connectivity(state).has(s["id"]) else "Not connected to the Landing Pad."
 	if not Turn.connectivity(state).has(s["id"]):
-		return "Not connected to the hull. Join it to the colony with buildings or heat mains."
+		return "Not connected to the Landing Pad. Join it to the colony with buildings or heat mains."
 	var reasons: Dictionary = state["report"].get("idle_reasons", {})
 	if reasons.has(s["id"]):
 		var why: String = reasons[s["id"]]
 		var fix := {"workers": "Free up workers (fewer buildings) or grow the colony.",
 			"power": "Build more Mirror Fields or stop other buildings.",
 			"heat": "Build a Vent Tap or a Forge (it gives off heat), or research Insulated Mains.",
-			"marks": "Sell more alloy through a Launch Rail."}
+			"marks": "Sell more alloy through a Spin Launcher."}
 		return "Idle last turn: %s. %s" % [IDLE_TEXT.get(why, why), fix.get(why, "")]
 	if state["report"].get("holding", {}).has(s["id"]):
 		return "Paused: the colony already holds %d parts. It starts again when parts are used." % int(GameData.num(GameData.building(s["type"]), "max_stock"))
@@ -273,6 +273,6 @@ static func fleet_summary(state: Dictionary) -> String:
 		lines.append("Your working Drone Bays control %d drones; any more sit idle. Drones work in this order: Graders, Borers, Prospectors, Haulers." % Fleet.slots(state))
 	else:
 		lines.append("Drones need a working Drone Bay (Industry). Each one controls 4 drones.")
-	lines.append("Satellites are launched from a working Launch Rail. Parts come from a Fab Shop. You have %d alloy, %d parts and %d marks." % [int(state["stock"]["alloy"]), int(state["stock"]["parts"]), int(state["stock"]["credits"])])
+	lines.append("Satellites are launched from a working Spin Launcher. Parts come from a Fab Shop. You have %d alloy, %d parts and %d marks." % [int(state["stock"]["alloy"]), int(state["stock"]["parts"]), int(state["stock"]["credits"])])
 	lines.append(fleet_line(state).trim_prefix("COLONY SYSTEMS: "))
 	return "\n\n".join(lines)

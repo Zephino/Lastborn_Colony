@@ -225,7 +225,7 @@ func _set_manifest(m: Dictionary) -> void:
 func show_sites() -> void:
 	var box := _new_page("Choose a landing site", 900.0)
 	var planet := GameData.planet(planet_id)
-	box.add_child(_label("%s. The orange dot is where the hull lands. Ice is pale blue, vents orange, ore seams teal, and dark rock can't be built on." % planet["name"], 0, MUTED, true))
+	box.add_child(_label("%s. The orange dot is where the ship lands. Ice is pale blue, vents orange, ore seams teal, and dark rock can't be built on." % planet["name"], 0, MUTED, true))
 	var grid := GridContainer.new()
 	grid.columns = 2 if _width() >= 900.0 else 1
 	grid.add_theme_constant_override("h_separation", 12)

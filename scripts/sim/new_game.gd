@@ -77,7 +77,7 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 	Manifest.apply(state, manifest)
 	var hull: Array = map["hull"]
 	add_structure(state, "hull", int(hull[0]), int(hull[1]), true)
-	state["log"].append({"turn": 1, "text": "The hull settles onto the pad at %s. Payments to the Company begin on turn %d." % [colony_name, int(b["first_payment_turn"])]})
+	state["log"].append({"turn": 1, "text": "The ship settles onto the landing pad at %s. Payments to the Company begin on turn %d." % [colony_name, int(b["first_payment_turn"])]})
 	return state
 
 

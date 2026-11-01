@@ -39,7 +39,7 @@ static func act(state: Dictionary) -> void:
 			if Actions.choice_allowed(state, choices[i]):
 				Actions.resolve_event(state, i)
 				break
-	# Rails sell alloy above the reserve. While the next payment is not covered,
+	# Spin Launchers sell alloy above the reserve. While the next payment is not covered,
 	# keep the reserve low so alloy is sold, and build only essentials.
 	var saving := _saving(state)
 	Actions.set_export_reserve(state, SAVING_RESERVE if saving else BUILD_RESERVE)

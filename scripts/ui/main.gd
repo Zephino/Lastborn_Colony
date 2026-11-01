@@ -260,7 +260,7 @@ func _start_new(options: Dictionary, seed_value: int, colony: String) -> void:
 	var kits := PackedStringArray()
 	for k in state["kits"]:
 		kits.append("%d × %s" % [int(state["kits"][k]), GameData.building(k)["name"]])
-	var body := "The hull is down on %s. Starting debt: %d marks. The first payment is due on turn %d." % [planet["name"], int(state["debt"]), int(GameData.balance()["first_payment_turn"])]
+	var body := "The ship is down on the landing pad on %s. Starting debt: %d marks. The first payment is due on turn %d." % [planet["name"], int(state["debt"]), int(GameData.balance()["first_payment_turn"])]
 	if not kits.is_empty():
 		body += "\n\nPrefab kits in the hold (free to place, shown on the left): " + ", ".join(kits) + "."
 	show_modal("Landed", body, [["Begin", close_modal, true]], true)
@@ -809,7 +809,7 @@ func _demolish_and_close() -> void:
 
 
 func show_company() -> void:
-	var body := "Debt: %s marks. Next payment: %s on turn %d.\nMarks: %s.\nExport reserve: %d alloy (Launch Rails never sell below this)." % [
+	var body := "Debt: %s marks. Next payment: %s on turn %d.\nMarks: %s.\nExport reserve: %d alloy (Spin Launchers never sell below this)." % [
 		_fmt(float(state["debt"])), _fmt(Turn.next_payment_amount(state)), Turn.next_payment_turn(state),
 		_fmt(float(state["stock"]["credits"])), int(state["export_reserve"])]
 	show_modal("Company account", body, [

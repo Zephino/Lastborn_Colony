@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.51
+Date: 11/01/2026
+Time: 10:55 PM
+
+### Changes
+- **Renamed the Landing Hull to Landing Pad.** Its description now says it's where the ship came down: a landing pad with its control dome and airlocks.
+  - Player-facing text that meant the building says "landing pad" now: the first log line, the "Landed" message, the landing-site screen, the "not connected" hint, the demolish message, the supply-pod message, one event, one story event and two endings.
+- **Renamed the Launch Rail to Spin Launcher.** Its description now says it spins alloy up to speed inside a sealed vacuum drum and flings it to orbit. The "SpinLaunch" trademark is not used.
+  - Its research topic is now Magnetic Bearings (was Magnetic Rails).
+  - Every other mention was updated: the guide, the README, the Signal Mast's description, the Company account and Drones & orbit text, log messages and tests.
+- Internal ids (`hull`, `rail`, `mag_rail`) are unchanged, so saved games load as before.
+
+### Reason
+The owner approved "Landing Pad" and chose "Spin Launcher".
+
 ## Version 00.01.50
 Date: 11/01/2026
 Time: 10:45 PM

@@ -1,5 +1,5 @@
 ## Drones, satellites, supply pods, waste and specialists: the systems that came
-## with the Drone Bay, Fab Shop, Reclaimer, Academy and the Launch Rail's
+## with the Drone Bay, Fab Shop, Reclaimer, Academy and the Spin Launcher's
 ## satellites. Pure rules on the state Dictionary, like the rest of scripts/sim.
 ## Numbers live in data/balance.json ("drones", "satellites", "waste",
 ## "training", "pod").

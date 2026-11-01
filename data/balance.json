@@ -175,7 +175,7 @@
     }
   },
   "satellites": {
-    "_comment": "Launched from a working Launch Rail. Costs are alloy, parts and marks.",
+    "_comment": "Launched from a working Spin Launcher. Costs are alloy, parts and marks.",
     "order": [
       "weather",
       "relay",
