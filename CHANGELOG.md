@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.13
+Date: 11/01/2026
+Time: 8:40 AM
+
+### Changes
+- **New sprite concepts, not yet used in the game.** `scripts/ui/sprites.gd` draws every building with its own silhouette, in two styles: top-down for today's square map, and angled ("isometric") for a diamond-tile map. It also draws all 13 terrain types both ways.
+  - The look is dark metal, glass roofs and a glowing accent colour per building group: energy cyan and gold, life support green and teal, industry orange, civic violet.
+  - Under-construction (faint) and idle (dimmed) versions are included.
+  - Heat Mains join only toward the neighbours they connect to.
+  - Everything is original and drawn in code; nothing comes from Cold Ledger.
+- `tools/sprite_sheet.gd` renders concept sheets to PNG files: every building both ways, and a sample colony drawn both ways. It needs a display, for example `xvfb-run`. The `tools/` folder is left out of the web build.
+- Reviewed Cold Ledger's new code-drawn sprites: legally reusable, but drawn for its own Outpost-derived buildings, angled only, and about 20 of them are the same box in different colours. So the owner decided to remake Lastborn's sprites instead.
+
+### Reason
+The owner said the sprites might all need remaking, and asked to see both styles side by side before choosing.
+
 ## Version 00.01.12
 Date: 11/01/2026
 Time: 8:35 AM
