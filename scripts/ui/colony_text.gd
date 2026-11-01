@@ -31,7 +31,7 @@ static func signed(v: float) -> String:
 static func summary(state: Dictionary) -> String:
 	var b := GameData.balance()
 	var lines := PackedStringArray()
-	lines.append("[b]%s[/b], on %s" % [TextRules.escape_bbcode(str(state["colony_name"])), GameData.planet(state["planet"])["name"]])
+	lines.append("[b]%s[/b], on %s (%s)" % [TextRules.escape_bbcode(str(state["colony_name"])), GameData.planet(state["planet"])["name"], GameData.difficulty(state["difficulty"])["name"]])
 	lines.append("Adults %s, children %s, elders %s." % [fmt(float(state["adults"])), fmt(float(state["children"])), fmt(float(state["elders"]))])
 	lines.append("Crime %s." % fmt(float(state["crime"])))
 	if state["plague"]["active"]:
@@ -192,7 +192,7 @@ static func report(state: Dictionary) -> String:
 	for i in 3:
 		if debt <= 0.0:
 			break
-		var a := minf(float(b["payment_base"]) + float(b["payment_step"]) * (made + i), debt) if i > 0 else amount
+		var a := minf(Turn.payment_for(state, made + i), debt) if i > 0 else amount
 		schedule.append("turn %d: %s" % [turn + i * int(b["payment_interval"]), fmt(a)])
 		debt -= a
 	lines.append("DEBT %s marks. Next payments: %s." % [fmt(float(state["debt"])), ", ".join(schedule)])

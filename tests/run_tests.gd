@@ -18,6 +18,7 @@ const Manifest = preload("res://scripts/sim/manifest.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
 const ColonyText = preload("res://scripts/ui/colony_text.gd")
 const TextRules = preload("res://scripts/sim/text_rules.gd")
+const ScoreEntry = preload("res://scripts/net/score_entry.gd")
 
 var checks := 0
 var failures := 0
@@ -34,6 +35,7 @@ func _init() -> void:
 	test_save_round_trip()
 	test_input_rules()
 	test_manifest()
+	test_difficulty()
 	test_colony_text()
 	test_planets_and_sites()
 	test_research()
@@ -228,6 +230,24 @@ func test_input_rules() -> void:
 	check(not ColonyText.summary(loaded).contains("[img]"), "the summary never shows a typed tag")
 
 
+func test_difficulty() -> void:
+	print("Difficulty")
+	check(GameData.difficulties().size() == 3, "3 difficulties loaded")
+	var normal := NewGame.create(1, "Margin")
+	check(normal["difficulty"] == "normal" and float(normal["debt"]) == 6000.0, "Normal is the default and keeps the 6,000-mark debt")
+	var easy := NewGame.create(1, "Margin", {"difficulty": "easy"})
+	var hard := NewGame.create(1, "Margin", {"difficulty": "hard"})
+	check(float(easy["debt"]) == 4500.0 and float(hard["debt"]) == 7500.0, "Easy and Hard scale the debt (4,500 and 7,500)")
+	check(Turn.payment_for(normal, 3) == 180.0 and Turn.payment_for(easy, 3) == 150.0 and Turn.payment_for(hard, 3) == 210.0, "payments grow faster on Hard and slower on Easy")
+	check(not NewGame.create(1, "Margin", {"difficulty": "nightmare"})["difficulty"] != "normal", "an unknown difficulty falls back to Normal")
+	var old: Dictionary = JSON.parse_string(SaveGame.to_text(normal))
+	old.erase("difficulty")
+	var loaded: Dictionary = SaveGame.from_text(JSON.stringify(old))
+	check(loaded["difficulty"] == "normal", "a save from before difficulty levels loads as Normal")
+	var e := ScoreEntry.from_state(hard, "Ari", "")
+	check(e["difficulty"] == "hard" and ScoreEntry.problem(e) == "", "scores carry their difficulty")
+
+
 func test_manifest() -> void:
 	print("Ship manifest")
 	var rec := Manifest.recommended()
@@ -392,6 +412,15 @@ func test_bot_colonies() -> void:
 		var pop := float(s["adults"]) + float(s["children"])
 		print("    seed %d: turn %d, ending '%s', population %d, debt %d, structures %d" % [seed_value, int(s["turn"]), s["ending"], int(pop), int(s["debt"]), s["structures"].size()])
 		check(s["ending"] == "free", "seed %d: the bot buys out the charter" % seed_value)
+	for diff_id in ["easy", "hard"]:
+		var dwins := 0
+		for seed_value in [1, 2, 3]:
+			var s := NewGame.create(seed_value, "Margin", {"difficulty": diff_id})
+			play(s, 300, true)
+			print("    %s seed %d: turn %d, ending '%s'" % [diff_id, seed_value, int(s["turn"]), s["ending"]])
+			if s["ending"] == "free":
+				dwins += 1
+		check(dwins >= 2, "%s: the bot wins at least 2 of 3 games (%d)" % [diff_id, dwins])
 	for planet_id in ["cinder", "hollow"]:
 		var wins := 0
 		for seed_value in [1, 2, 3]:

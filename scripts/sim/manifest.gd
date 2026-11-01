@@ -22,12 +22,13 @@ static func bays_used(manifest: Dictionary) -> int:
 	return n
 
 
-## The debt the colony starts with: the bare ship plus every unit of cargo.
-static func debt_of(manifest: Dictionary) -> float:
+## The debt the colony starts with: the bare ship plus every unit of cargo,
+## scaled by the difficulty (Easy is cheaper, Hard dearer).
+static func debt_of(manifest: Dictionary, difficulty_id: String = GameData.DEFAULT_DIFFICULTY) -> float:
 	var debt := float(GameData.cargo()["base_debt"])
 	for id in manifest:
 		debt += float(GameData.cargo_item(id).get("debt", 0)) * int(manifest[id])
-	return debt
+	return round(debt * float(GameData.difficulty(difficulty_id)["debt"]))
 
 
 ## {"ok": bool, "reason": String}
@@ -61,5 +62,5 @@ static func apply(state: Dictionary, manifest: Dictionary) -> void:
 		if item.has("kit"):
 			var kits: Dictionary = state["kits"]
 			kits[item["kit"]] = int(kits.get(item["kit"], 0)) + n
-	state["debt"] = debt_of(manifest)
+	state["debt"] = debt_of(manifest, str(state.get("difficulty", GameData.DEFAULT_DIFFICULTY)))
 	state["debt_total"] = state["debt"]

@@ -1,16 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import worker from "../src/index.js";
-import {
-  MAX_ENTRIES,
-  MAX_PLANETS,
-  addEntry,
-  emptyBoard,
-  normalizeBoard,
-  qualifies,
-  sanitizeName,
-  validateScore,
-} from "../src/board.js";
+import { MAX_ENTRIES, MAX_PLANETS, addEntry, emptyBoard, normalizeBoard, qualifies, sanitizeName, validateScore, boardKey, planetEntries } from "../src/board.js";
 
 function score(overrides = {}) {
   return {
@@ -32,7 +23,29 @@ const entry = (o) => validateScore(score(o)).entry;
 test("a normal score is accepted as is", () => {
   const { entry: e, error } = validateScore(score());
   assert.equal(error, undefined);
-  assert.deepEqual(e, score());
+  assert.deepEqual(e, { ...score(), difficulty: "normal" });
+});
+
+test("difficulty: missing means normal; easy and hard get their own boards", () => {
+  assert.equal(validateScore(score()).entry.difficulty, "normal");
+  assert.equal(validateScore(score({ difficulty: "hard" })).entry.difficulty, "hard");
+  for (const bad of ["Hard", "nightmare", "", 3, null, ["hard"], { d: "hard" }, "hard; DROP TABLE"]) {
+    assert.equal(validateScore(score({ difficulty: bad })).error, "invalid difficulty", JSON.stringify(bad));
+  }
+  assert.equal(boardKey({ planet: "brume", difficulty: "normal" }), "brume");
+  assert.equal(boardKey({ planet: "brume" }), "brume");
+  assert.equal(boardKey({ planet: "brume", difficulty: "hard" }), "brume_hard");
+  let board = emptyBoard();
+  board = addEntry(board, entry({ difficulty: "hard" }), "2026-11-01T00:00:00Z").board;
+  board = addEntry(board, entry({ name: "Bo" }), "2026-11-01T00:00:00Z").board;
+  assert.deepEqual(Object.keys(board.planets).sort(), ["brume", "brume_hard"]);
+  assert.equal(planetEntries(board, "brume_hard")[0].name, "Ari");
+  assert.equal(planetEntries(board, "brume")[0].name, "Bo");
+  // A row filed under the wrong board is dropped when the file is re-read.
+  const moved = normalizeBoard({ planets: { brume: [{ ...board.planets.brume_hard[0] }] } });
+  assert.deepEqual(moved.planets, {});
+  // A planet id can't contain "_", so it can't pose as another board.
+  assert.equal(validateScore(score({ planet: "brume_hard" })).error, "invalid planet");
 });
 
 test("names keep only safe characters and are cut to size", () => {
@@ -91,7 +104,7 @@ test("each planet has its own board of the best 100", () => {
 test("there's a limit on how many planets can have a board", () => {
   let board = emptyBoard();
   for (let i = 0; i < MAX_PLANETS; i++) board = addEntry(board, entry({ planet: `p${i}` }), "2026-11-01T00:00:00Z").board;
-  assert.equal(qualifies(board, entry({ planet: "one_too_many" })), false);
+  assert.equal(qualifies(board, entry({ planet: "onetoomany" })), false);
   assert.equal(qualifies(board, entry({ planet: "p0", debt_paid: 5000 })), true);
 });
 

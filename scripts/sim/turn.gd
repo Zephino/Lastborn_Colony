@@ -386,7 +386,7 @@ static func _population(state: Dictionary, rep: Dictionary) -> void:
 # 10. Morale drifts toward a target set by comfort, shortages and debt.
 static func _morale(state: Dictionary, rep: Dictionary) -> void:
 	var b := GameData.balance()
-	var target := float(b["morale_base"]) + float(rep["morale_bonus"])
+	var target := float(b["morale_base"]) + float(rep["morale_bonus"]) + GameData.diff(state, "morale")
 	var ls: Dictionary = b["life_support"]
 	for k in rep["shortages"]:
 		target += float(ls[k]["morale"])
@@ -413,7 +413,7 @@ static func _crime(state: Dictionary, rep: Dictionary) -> void:
 	var pop := population(state)
 	var raw := pop * float(b["crime_per_person"]) * (1.5 - float(state["morale"]) / 100.0)
 	raw += float(b["crime_overcrowding"]) * float(rep["overcrowding"])
-	raw *= Research.mult(state, "crime")
+	raw *= Research.mult(state, "crime") * GameData.diff(state, "crime")
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
 		if s["active"]:
@@ -436,7 +436,7 @@ static func _crime(state: Dictionary, rep: Dictionary) -> void:
 # 12. Machines wear out and break down at random.
 static func _wear(state: Dictionary) -> void:
 	var b := GameData.balance()
-	var scale := float(b["wear_scale"]) * Research.mult(state, "wear")
+	var scale := float(b["wear_scale"]) * Research.mult(state, "wear") * GameData.diff(state, "wear")
 	for id in state["structures"]:
 		var s: Dictionary = state["structures"][id]
 		if not s["active"]:
@@ -455,7 +455,7 @@ static func _plague(state: Dictionary, rep: Dictionary) -> void:
 	if not plague["active"]:
 		if int(state["turn"]) < int(b["plague_start_turn"]) or pop < float(b["plague_min_pop"]):
 			return
-		if not Rng.chance(state, float(b["plague_chance"]) * Research.mult(state, "plague")):
+		if not Rng.chance(state, float(b["plague_chance"]) * Research.mult(state, "plague") * GameData.diff(state, "plague_chance")):
 			return
 		var window := int(b["plague_window_clinic"]) if float(rep["health"]) < 1.0 else int(b["plague_window"])
 		plague["active"] = true
@@ -494,9 +494,13 @@ static func next_payment_turn(state: Dictionary) -> int:
 
 
 static func next_payment_amount(state: Dictionary) -> float:
+	return minf(payment_for(state, int(state["payments_made"])), float(state["debt"]))
+
+
+## The size of the Nth Company payment (0 = the first), before capping at the debt left.
+static func payment_for(state: Dictionary, index: int) -> float:
 	var b := GameData.balance()
-	var amount := float(b["payment_base"]) + float(b["payment_step"]) * int(state["payments_made"])
-	return minf(amount, float(state["debt"]))
+	return round(float(b["payment_base"]) + float(b["payment_step"]) * GameData.diff(state, "payment_step") * index)
 
 
 # 14. Company payments.
@@ -538,7 +542,7 @@ static func _events(state: Dictionary) -> void:
 	var b := GameData.balance()
 	if int(state["turn"]) < int(b["event_grace_turns"]):
 		return
-	if not Rng.chance(state, float(b["event_chance"])):
+	if not Rng.chance(state, float(b["event_chance"]) * GameData.diff(state, "event_chance")):
 		return
 	var list := GameData.events()
 	var weights: Array = []

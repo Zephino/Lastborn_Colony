@@ -43,6 +43,7 @@ static func from_state(state: Dictionary, player_name: String, ending_override: 
 		"name": clean_name(player_name, MAX_NAME_LENGTH),
 		"colony": colony,
 		"planet": str(state.get("planet", DEFAULT_PLANET)),
+		"difficulty": str(state.get("difficulty", "normal")),
 		"ending": ending,
 		"turn": clampi(int(state.get("turn", 1)), 1, MAX_TURN),
 		"debt_paid": debt_paid,
@@ -74,6 +75,8 @@ static func problem(entry: Dictionary) -> String:
 		return "invalid colony"
 	if not _is_id(str(entry.get("planet", ""))):
 		return "invalid planet"
+	if not (str(entry.get("difficulty", "normal")) in ["easy", "normal", "hard"]):
+		return "invalid difficulty"
 	var ending := str(entry.get("ending", ""))
 	if not (ending in ENDINGS):
 		return "invalid ending"
@@ -98,13 +101,13 @@ static func problem(entry: Dictionary) -> String:
 	return ""
 
 
-## Lower-case letters, digits and _, 1 to 24 long (planet ids).
+## Lower-case letters and digits, 1 to 24 long (planet ids; "_" marks a difficulty on the server).
 static func _is_id(text: String) -> bool:
 	if text.length() < 1 or text.length() > 24:
 		return false
 	for ch in text:
 		var c := ch.unicode_at(0)
-		if not ((c >= 97 and c <= 122) or (c >= 48 and c <= 57) or ch == "_"):
+		if not ((c >= 97 and c <= 122) or (c >= 48 and c <= 57)):
 			return false
 	return true
 

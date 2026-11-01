@@ -11,7 +11,7 @@ const TextRules = preload("res://scripts/sim/text_rules.gd")
 const SAVE_VERSION := 1
 
 
-## options (all optional): "planet" (id), "site" (landing site index),
+## options (all optional): "planet" (id), "difficulty" (id), "site" (landing site index),
 ## "manifest" (cargo, see manifest.gd; defaults to the recommended load).
 static func create(game_seed: int, colony_name: String, options: Dictionary = {}) -> Dictionary:
 	colony_name = TextRules.clean_colony_name(colony_name)
@@ -19,6 +19,9 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 	var start: Dictionary = b["start"]
 	var planet_id: String = str(options.get("planet", GameData.DEFAULT_PLANET))
 	var site: int = int(options.get("site", 0))
+	var difficulty_id: String = str(options.get("difficulty", GameData.DEFAULT_DIFFICULTY))
+	if not GameData.has_difficulty(difficulty_id):
+		difficulty_id = GameData.DEFAULT_DIFFICULTY
 	var manifest: Dictionary = options.get("manifest", Manifest.recommended())
 	var map := MapGen.generate(game_seed, planet_id, site)
 	var state := {
@@ -29,6 +32,7 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 		"turn": 1,
 		"colony_name": colony_name,
 		"planet": planet_id,
+		"difficulty": difficulty_id,
 		"site": site,
 		"manifest": manifest.duplicate(),
 		"kits": {},

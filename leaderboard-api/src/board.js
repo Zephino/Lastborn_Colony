@@ -6,7 +6,9 @@
  * A score (one row) says how far a colony got, on which planet:
  *   name        the player's name: letters, numbers, space, _ and - only, up to 16
  *   colony      the colony's name, same characters, up to 24
- *   planet      planet id, e.g. "brume" (lower-case letters, numbers, _)
+ *   planet      planet id, e.g. "brume" (lower-case letters and numbers)
+ *   difficulty  "easy", "normal" or "hard" (games from before difficulty
+ *               levels existed send none and count as "normal")
  *   ending      "free" (paid off the Charter), "receivership" (the Company took
  *               over), "silent" (everyone died) or "retired" (the player left)
  *   turn        turns played, 1..5000
@@ -16,9 +18,13 @@
  *   version     game version, "XX.XX.XX"
  *   date        set by the Worker, never by the game
  *
- * Ranking (per planet): "free" endings first, fewest turns first; then
+ * Each planet and difficulty has its own board. Normal boards are stored
+ * under the planet id ("brume", as before difficulty levels existed); Easy and
+ * Hard under "brume_easy" and "brume_hard" (see boardKey).
+ *
+ * Ranking (per board): "free" endings first, fewest turns first; then
  * everyone else by most marks paid, then most turns survived; ties go to
- * the earlier date. Each planet keeps its best 100.
+ * the earlier date. Each board keeps its best 100.
  */
 
 export const MAX_ENTRIES = 100;
@@ -27,13 +33,22 @@ export const MAX_COLONY_LENGTH = 24;
 export const MAX_TURN = 5000;
 export const MAX_DEBT_TOTAL = 1_000_000;
 export const MAX_POPULATION = 100_000;
-/** No more planets than this can have a board (stops junk planet ids filling KV). */
+/** No more boards than this (stops junk planet ids filling KV). */
 export const MAX_PLANETS = 16;
+export const DIFFICULTIES = ["easy", "normal", "hard"];
 export const ENDINGS = ["free", "receivership", "silent", "retired"];
 export const ABOUT =
   "Lastborn Colony shared leaderboard. Written only by the leaderboard Worker; edits by hand are overwritten.";
 
-export const PLANET_PATTERN = /^[a-z0-9_]{1,24}$/;
+export const PLANET_PATTERN = /^[a-z0-9]{1,24}$/;
+/** A board's key: the planet, plus "_easy" or "_hard" for those difficulties. */
+export const BOARD_KEY_PATTERN = /^[a-z0-9]{1,24}(_(easy|hard))?$/;
+
+/** Where a score (or a planet + difficulty) is filed. */
+export function boardKey(entry) {
+  const difficulty = entry.difficulty ?? "normal";
+  return difficulty === "normal" ? entry.planet : `${entry.planet}_${difficulty}`;
+}
 const VERSION_PATTERN = /^\d{2}\.\d{2}\.\d{2}$/;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/;
 /** Script / markup characters: a name containing any of these is refused outright. */
@@ -81,6 +96,8 @@ export function validateScore(body) {
   if (!colony) return { error: "invalid colony" };
   const planet = typeof body.planet === "string" ? body.planet : "";
   if (!PLANET_PATTERN.test(planet)) return { error: "invalid planet" };
+  const difficulty = body.difficulty === undefined ? "normal" : body.difficulty;
+  if (typeof difficulty !== "string" || !DIFFICULTIES.includes(difficulty)) return { error: "invalid difficulty" };
   const ending = typeof body.ending === "string" ? body.ending : "";
   if (!ENDINGS.includes(ending)) return { error: "invalid ending" };
   const turn = wholeNumber(body.turn, 1, MAX_TURN);
@@ -94,7 +111,7 @@ export function validateScore(body) {
   if (population === null) return { error: "invalid population" };
   const version = typeof body.version === "string" ? body.version : "";
   if (!VERSION_PATTERN.test(version)) return { error: "invalid version" };
-  return { entry: { name, colony, planet, ending, turn, debt_paid, debt_total, population, version } };
+  return { entry: { name, colony, planet, difficulty, ending, turn, debt_paid, debt_total, population, version } };
 }
 
 /** Negative when `a` ranks above `b` (see the ranking at the top of this file). */
@@ -118,6 +135,7 @@ export function isDuplicate(entries, entry) {
       e.name === entry.name &&
       e.colony === entry.colony &&
       e.planet === entry.planet &&
+      (e.difficulty ?? "normal") === (entry.difficulty ?? "normal") &&
       e.ending === entry.ending &&
       e.turn === entry.turn &&
       e.debt_paid === entry.debt_paid &&
@@ -145,11 +163,11 @@ function sortedRows(list) {
 export function normalizeBoard(raw) {
   const planets = {};
   const source = raw && typeof raw.planets === "object" && !Array.isArray(raw.planets) ? raw.planets : {};
-  for (const [planet, list] of Object.entries(source)) {
-    if (!PLANET_PATTERN.test(planet) || Object.keys(planets).length >= MAX_PLANETS) continue;
-    // Rows sit under their own planet only.
-    const rows = sortedRows((Array.isArray(list) ? list : []).filter((r) => r && r.planet === planet));
-    if (rows.length > 0) planets[planet] = rows;
+  for (const [key, list] of Object.entries(source)) {
+    if (!BOARD_KEY_PATTERN.test(key) || Object.keys(planets).length >= MAX_PLANETS) continue;
+    // Rows sit under their own board only.
+    const rows = sortedRows((Array.isArray(list) ? list : []).filter((r) => r && typeof r === "object" && boardKey(r) === key));
+    if (rows.length > 0) planets[key] = rows;
   }
   return { _about: ABOUT, updated: typeof raw?.updated === "string" ? raw.updated : "", planets };
 }
@@ -158,14 +176,14 @@ export function emptyBoard() {
   return { _about: ABOUT, updated: "", planets: {} };
 }
 
-/** One planet's rows (empty if nobody has played there yet). */
-export function planetEntries(board, planet) {
-  return board.planets[planet] ?? [];
+/** One board's rows (empty if nobody has played there yet). `key` is from boardKey. */
+export function planetEntries(board, key) {
+  return board.planets[key] ?? [];
 }
 
 /** True when `entry` would make its planet's board (and there's room for its planet). */
 export function qualifies(board, entry) {
-  const rows = board.planets[entry.planet];
+  const rows = board.planets[boardKey(entry)];
   if (!rows) return Object.keys(board.planets).length < MAX_PLANETS;
   if (rows.length < MAX_ENTRIES) return true;
   return compareEntries(entry, rows[rows.length - 1]) < 0;
@@ -174,12 +192,12 @@ export function qualifies(board, entry) {
 /** Adds `entry` (with its date); returns { board, rank } (rank 1 = top, 0 = fell off). */
 export function addEntry(board, entry, nowIso) {
   const row = { ...entry, date: nowIso };
-  const rows = [...planetEntries(board, entry.planet), row];
+  const rows = [...planetEntries(board, boardKey(entry)), row];
   rows.sort(compareEntries);
   const kept = rows.slice(0, MAX_ENTRIES);
   const rank = kept.indexOf(row) + 1;
   return {
-    board: { _about: ABOUT, updated: nowIso, planets: { ...board.planets, [entry.planet]: kept } },
+    board: { _about: ABOUT, updated: nowIso, planets: { ...board.planets, [boardKey(entry)]: kept } },
     rank,
   };
 }

@@ -52,8 +52,9 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 1. **Briefing:** the story so far.
 2. **Choose a planet.** Brume (Standard) has ice, vents and sunlight all within reach. Cinder (Harder) is bright and hot, but ice is rare. Hollow (Hardest) is icy and full of vents, but the sun is weak. Each planet has its own leaderboard.
-3. **Pack the ship.** The hold has 10 cargo bays. Choose colonists, alloy, food, oxygen, water, starting funds, or prefab buildings (placed later for free). Everything is bought on credit, so each bay adds to the debt you must pay off. **Recommended load** is a balanced start that costs 6,000 marks.
-4. **Choose a landing site.** Four sites on the same map, each with a preview and a count of the ice, vents and ore seams nearby.
+3. **Choose a difficulty.** Easy has a smaller debt, gentler payments, fewer disasters and no plague. Hard has a bigger debt, steeper payments, more disasters and plague, faster wear and more crime. Every planet has a leaderboard for each difficulty.
+4. **Pack the ship.** The hold has 10 cargo bays. Choose colonists, alloy, food, oxygen, water, starting funds, or prefab buildings (placed later for free). Everything is bought on credit, so each bay adds to the debt you must pay off. **Recommended load** is a balanced start that costs 6,000 marks.
+5. **Choose a landing site.** Four sites on the same map, each with a preview and a count of the ice, vents and ore seams nearby.
 
 ### In the colony
 
@@ -78,7 +79,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 | Path | What it is |
 | --- | --- |
-| `data/*.json` | All numbers and text: balance, buildings, research, events, story, planets, cargo, online messages. Tune the game here. |
+| `data/*.json` | All numbers and text: balance, buildings, research, events, story, planets, difficulty, cargo, online messages. Tune the game here. |
 | `scripts/sim/` | The rules. Has no scene or node dependencies, so it runs headless. |
 | `scripts/sim/game_data.gd` | Loads the JSON once. Also has the climate functions `light_at` and `cold_at`. |
 | `scripts/sim/rng.gd` | mulberry32 random numbers. The generator state is kept in `state["rng"]`, so saves replay exactly. |

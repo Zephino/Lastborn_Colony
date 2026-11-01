@@ -16,6 +16,7 @@ const MUTED := Color(0.72, 0.76, 0.82)
 
 var game_seed := 1
 var planet_id := GameData.DEFAULT_PLANET
+var difficulty_id := GameData.DEFAULT_DIFFICULTY
 var manifest: Dictionary = {}
 var page: Control
 
@@ -128,13 +129,31 @@ func show_planets() -> void:
 
 func _pick_planet(id: String) -> void:
 	planet_id = id
+	show_difficulty()
+
+
+func show_difficulty() -> void:
+	var box := _new_page("Choose a difficulty")
+	box.add_child(_label("Each difficulty has its own leaderboard on every planet.", 0, MUTED, true))
+	for d in GameData.difficulties():
+		var b := _button("%s\n%s" % [d["name"], d["desc"]], _pick_difficulty.bind(d["id"]))
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.custom_minimum_size = Vector2(0, 80)
+		box.add_child(b)
+		if d["id"] == difficulty_id:
+			b.grab_focus.call_deferred()
+	box.add_child(_button("Back", show_planets))
+
+
+func _pick_difficulty(id: String) -> void:
+	difficulty_id = id
 	show_manifest()
 
 
 func show_manifest() -> void:
 	var box := _new_page("Pack the ship")
 	var used := Manifest.bays_used(manifest)
-	var debt := Manifest.debt_of(manifest)
+	var debt := Manifest.debt_of(manifest, difficulty_id)
 	box.add_child(_label("Everything in the hold is bought on credit from the Company: more cargo makes the start easier, but adds to the debt you must pay off.", 0, MUTED, true))
 	var summary := _label("Hold: %d / %d bays    Starting debt: %d marks" % [used, Manifest.bays(), int(debt)], 18, ACCENT)
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -149,13 +168,13 @@ func show_manifest() -> void:
 		var narrow := _narrow()
 		var text := "%s\n%s" % [item["name"], item["desc"]]
 		if narrow:
-			text += "\n+%d marks each" % int(item["debt"])
+			text += "\n+%d marks each" % _item_debt(item)
 		var item_label := _label(text, 0, Color.WHITE, true)
 		item_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		item_label.custom_minimum_size = Vector2(minf(300.0, _width() - 190.0), 0)
 		grid.add_child(item_label)
 		if not narrow:
-			grid.add_child(_label("+%d marks" % int(item["debt"]), 0, MUTED))
+			grid.add_child(_label("+%d marks" % _item_debt(item), 0, MUTED))
 		var minus := _button(" − ", _change.bind(id, -1))
 		minus.disabled = n <= 0
 		minus.custom_minimum_size = Vector2(44, 44)
@@ -174,7 +193,12 @@ func show_manifest() -> void:
 	var empty := _button("Empty the hold", _set_manifest.bind({}))
 	empty.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	presets.add_child(empty)
-	_nav(box, show_planets, "Choose a landing site", show_sites)
+	_nav(box, show_difficulty, "Choose a landing site", show_sites)
+
+
+## What one unit of cargo adds to the debt at this difficulty.
+func _item_debt(item: Dictionary) -> int:
+	return int(round(float(item["debt"]) * float(GameData.difficulty(difficulty_id)["debt"])))
 
 
 func _change(id: String, delta: int) -> void:
@@ -235,4 +259,4 @@ func _site_note(map: Dictionary) -> String:
 
 
 func _finish(site: int) -> void:
-	finished.emit({"planet": planet_id, "site": site, "manifest": manifest.duplicate()})
+	finished.emit({"planet": planet_id, "difficulty": difficulty_id, "site": site, "manifest": manifest.duplicate()})

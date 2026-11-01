@@ -96,12 +96,12 @@ func _make_request(on_done: Callable) -> HTTPRequest:
 # --- Leaderboard ----------------------------------------------------------------
 
 ## Asks for one planet's board (e.g. "brume"); answers with board_loaded.
-func fetch_board(planet: String) -> void:
+func fetch_board(planet: String, difficulty: String = "normal") -> void:
 	if not OnlineConfig.enabled():
 		board_loaded.emit.call_deferred([], OnlineConfig.text("offline"))
 		return
 	_board_http.cancel_request()
-	var err := _board_http.request(OnlineConfig.leaderboard_url(planet), PackedStringArray(["Accept: application/json"]))
+	var err := _board_http.request(OnlineConfig.leaderboard_url(planet, difficulty), PackedStringArray(["Accept: application/json"]))
 	if err != OK:
 		board_loaded.emit.call_deferred([], OnlineConfig.text("no_connection"))
 

@@ -1,6 +1,7 @@
 /**
  * Lastborn Colony online services (a Cloudflare Worker).
- *   GET  /leaderboard?planet=brume   one planet's board, best first: { planet, updated, entries }
+ *   GET  /leaderboard?planet=brume[&difficulty=hard]
+ *                                    one board, best first: { planet, difficulty, updated, entries }
  *   GET  /leaderboard                every planet's board: { updated, planets: { brume: [...] } }
  *   POST /leaderboard                send one score; it is checked, then saved:
  *                                    { accepted, rank, planet, entries }
@@ -27,7 +28,7 @@
  * Vars:     GITHUB_OWNER, GITHUB_REPO, GITHUB_PATH, GITHUB_BRANCH (see wrangler.toml)
  */
 
-import { PLANET_PATTERN, addEntry, emptyBoard, isDuplicate, normalizeBoard, planetEntries, qualifies, validateScore } from "./board.js";
+import { DIFFICULTIES, PLANET_PATTERN, addEntry, boardKey, emptyBoard, isDuplicate, normalizeBoard, planetEntries, qualifies, validateScore } from "./board.js";
 import { handleCloud } from "./cloud.js";
 import { handleAuth } from "./accounts.js";
 import { corsHeaders } from "./cors.js";
@@ -151,7 +152,10 @@ async function handleGet(request, env, url) {
   const planet = url.searchParams.get("planet");
   if (planet === null || planet === "") return jsonResponse(request, { updated: board.updated, planets: board.planets });
   if (!PLANET_PATTERN.test(planet)) return jsonResponse(request, { error: "invalid planet" }, 400);
-  return jsonResponse(request, { planet, updated: board.updated, entries: planetEntries(board, planet) });
+  const difficulty = url.searchParams.get("difficulty") || "normal";
+  if (!DIFFICULTIES.includes(difficulty)) return jsonResponse(request, { error: "invalid difficulty" }, 400);
+  const key = boardKey({ planet, difficulty });
+  return jsonResponse(request, { planet, difficulty, updated: board.updated, entries: planetEntries(board, key) });
 }
 
 async function handlePost(request, env, ip) {
@@ -166,12 +170,13 @@ async function handlePost(request, env, ip) {
   }
   const entry = checked.entry;
   const board = await loadBoard(env);
-  if (isDuplicate(planetEntries(board, entry.planet), entry) || !qualifies(board, entry)) {
-    return jsonResponse(request, { accepted: false, rank: 0, planet: entry.planet, entries: planetEntries(board, entry.planet) });
+  const key = boardKey(entry);
+  if (isDuplicate(planetEntries(board, key), entry) || !qualifies(board, entry)) {
+    return jsonResponse(request, { accepted: false, rank: 0, planet: entry.planet, difficulty: entry.difficulty, entries: planetEntries(board, key) });
   }
   const { board: updated, rank } = addEntry(board, entry, new Date().toISOString());
   await saveBoard(env, updated);
-  return jsonResponse(request, { accepted: true, rank, planet: entry.planet, entries: planetEntries(updated, entry.planet) });
+  return jsonResponse(request, { accepted: true, rank, planet: entry.planet, difficulty: entry.difficulty, entries: planetEntries(updated, key) });
 }
 
 export default {

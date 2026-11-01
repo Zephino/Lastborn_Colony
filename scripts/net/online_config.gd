@@ -36,13 +36,16 @@ static func enabled() -> bool:
 
 
 ## GET (with ?planet=) and POST scores (leaderboard-api/src/board.js); "" when off.
-static func leaderboard_url(planet: String = "") -> String:
+static func leaderboard_url(planet: String = "", difficulty: String = "normal") -> String:
 	var base := api_base()
 	if base == "":
 		return ""
 	if planet == "":
 		return base + "/leaderboard"
-	return base + "/leaderboard?planet=" + planet.uri_encode()
+	var url := base + "/leaderboard?planet=" + planet.uri_encode()
+	if difficulty != "" and difficulty != "normal":
+		url += "&difficulty=" + difficulty.uri_encode()
+	return url
 
 
 ## Cloud saves (leaderboard-api/src/cloud.js); "" when off.

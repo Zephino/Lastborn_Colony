@@ -35,6 +35,7 @@ static func from_text(text: String) -> Variant:
 ## Fields added after the first release, with the value an older save means.
 const DEFAULTS := {
 	"planet": "brume",
+	"difficulty": "normal",
 	"site": 0,
 	"manifest": {},
 	"kits": {},
@@ -55,6 +56,8 @@ static func normalize(state: Dictionary) -> void:
 	state["colony_name"] = TextRules.clean_colony_name(str(state.get("colony_name", "")))
 	if not GameData.has_planet(str(state["planet"])):
 		state["planet"] = GameData.DEFAULT_PLANET
+	if not GameData.has_difficulty(str(state["difficulty"])):
+		state["difficulty"] = GameData.DEFAULT_DIFFICULTY
 	for k in INT_FIELDS:
 		state[k] = int(state[k])
 	var occupancy := {}

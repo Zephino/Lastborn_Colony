@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.08
+Date: 11/01/2026
+Time: 7:59 AM
+
+### Changes
+- **Difficulty levels.** A new page after the planet choice lets you pick Easy, Normal or Hard (`data/difficulty.json`). Normal is the game as before.
+  - **Easy:** 25% smaller debt, payments grow half as fast, 40% fewer random events, no plague, half the wear, 30% less crime, morale +5.
+  - **Hard:** 25% bigger debt, payments grow 50% faster, 50% more random events, twice the plague chance, 50% more wear, 30% more crime, morale −5.
+  - The manifest page shows prices and the starting debt at the chosen difficulty. The colony summary shows the planet and difficulty, and the report's payment schedule follows the difficulty.
+- **Leaderboards per planet and difficulty.** Scores carry their difficulty, and the Leaderboard screen switches between planets and difficulties. On the server, Normal boards keep their old place (so existing scores stay where they are), Easy and Hard get their own, and scores from older game versions count as Normal. A planet id can no longer contain `_`, so it can't pose as another board.
+- Older saves load as Normal.
+- **Tests:** 278 game checks (9 new) and 54 server tests pass. The scripted player wins all 3 test games on Easy (81–115 turns) and on Hard (121–136 turns). The difficulty page and Hard's 7,500-mark debt were checked in a browser here.
+
+### Reason
+The owner chose difficulty levels as the first of three next features (then story and factions, then underground levels).
+
 ## Version 00.01.07
 Date: 11/01/2026
 Time: 2:24 AM

@@ -10,6 +10,7 @@ static var _story: Dictionary = {}
 static var _research: Array = []
 static var _planets: Array = []
 static var _cargo: Dictionary = {}
+static var _difficulties: Array = []
 
 
 static func _load_json(path: String) -> Variant:
@@ -33,6 +34,7 @@ static func ensure_loaded() -> void:
 	_research = _load_json("res://data/research.json")
 	_planets = _load_json("res://data/planets.json")
 	_cargo = _load_json("res://data/cargo.json")
+	_difficulties = _load_json("res://data/difficulty.json")
 
 
 static func balance() -> Dictionary:
@@ -110,6 +112,33 @@ static func planet(id: String) -> Dictionary:
 		if p["id"] == id:
 			return p
 	return planets()[0]
+
+
+const DEFAULT_DIFFICULTY := "normal"
+
+
+static func difficulties() -> Array:
+	ensure_loaded()
+	return _difficulties
+
+
+static func has_difficulty(id: String) -> bool:
+	for d in difficulties():
+		if d["id"] == id:
+			return true
+	return false
+
+
+static func difficulty(id: String) -> Dictionary:
+	for d in difficulties():
+		if d["id"] == id:
+			return d
+	return difficulty(DEFAULT_DIFFICULTY)
+
+
+## A difficulty modifier for this game (data/difficulty.json), e.g. "debt".
+static func diff(state: Dictionary, key: String) -> float:
+	return float(difficulty(str(state.get("difficulty", DEFAULT_DIFFICULTY))).get(key, 1.0))
 
 
 static func cargo() -> Dictionary:

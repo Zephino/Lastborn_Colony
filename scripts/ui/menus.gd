@@ -17,6 +17,7 @@ const PROFILE_PATH := "user://profile.json"
 
 var main  # the main screen (scripts/ui/main.gd); untyped so its own methods can be called
 var board_planet := GameData.DEFAULT_PLANET
+var board_difficulty := GameData.DEFAULT_DIFFICULTY
 
 
 func _init(owner_screen: Object) -> void:
@@ -155,18 +156,27 @@ func _post_score(ending_override: String) -> void:
 
 
 
-func show_leaderboard(planet_id: String = "") -> void:
+func show_leaderboard(planet_id: String = "", difficulty_id: String = "") -> void:
 	if planet_id != "":
 		board_planet = planet_id
-	main.show_modal("Leaderboard: %s" % GameData.planet(board_planet)["name"], "Loading…", _board_options(), true)
-	main.online.fetch_board(board_planet)
+	if difficulty_id != "":
+		board_difficulty = difficulty_id
+	main.show_modal(_board_title(), "Loading…", _board_options(), true)
+	main.online.fetch_board(board_planet, board_difficulty)
+
+
+func _board_title() -> String:
+	return "Leaderboard: %s, %s" % [GameData.planet(board_planet)["name"], GameData.difficulty(board_difficulty)["name"]]
 
 
 func _board_options() -> Array:
 	var options: Array = []
 	for p in GameData.planets():
 		if p["id"] != board_planet:
-			options.append(["Show %s" % p["name"], show_leaderboard.bind(p["id"]), true])
+			options.append(["Show %s" % p["name"], show_leaderboard.bind(p["id"], ""), true])
+	for d in GameData.difficulties():
+		if d["id"] != board_difficulty:
+			options.append(["Show %s" % d["name"], show_leaderboard.bind("", d["id"]), true])
 	options.append(["Back", Callable(main, "close_modal"), true])
 	return options
 
@@ -189,9 +199,12 @@ func _on_board_loaded(entries: Array, error: String) -> void:
 			else:
 				var endings := {"receivership": "taken by the Company", "silent": "went silent", "retired": "retired"}
 				how = "paid %d of %d marks, %s on turn %d" % [int(e.get("debt_paid", 0)), int(e.get("debt_total", 0)), endings.get(e.get("ending", ""), "ended"), int(e.get("turn", 0))]
-			lines.append("%d. %s (%s): %s" % [rank, e.get("name", "?"), e.get("colony", "?"), how])
+			# Names come from the server: clean them again before showing them.
+			var who := TextRules.clean_name(str(e.get("name", "?")), TextRules.MAX_PLAYER_NAME)
+			var colony := TextRules.clean_name(str(e.get("colony", "?")), TextRules.MAX_COLONY_NAME)
+			lines.append("%d. %s (%s): %s" % [rank, who, colony, how])
 			rank += 1
-	main.show_modal("Leaderboard: %s" % GameData.planet(board_planet)["name"], "\n".join(lines), _board_options(), true)
+	main.show_modal(_board_title(), "\n".join(lines), _board_options(), true)
 
 
 func _cloud_upload() -> void:
