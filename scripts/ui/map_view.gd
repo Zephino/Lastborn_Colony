@@ -1,6 +1,7 @@
 ## Draws the colony map with simple shapes (no image assets) and turns mouse
 ## input into tile clicks. Click or tap: select or build. Drag (any button or
-## one finger): pan. Wheel: zoom.
+## one finger): pan, and a drag never selects or builds. Wheel, two-finger
+## pinch, or zoom_by(): zoom. Arrow keys / WASD pan (handled by main.gd).
 extends Control
 
 signal tile_clicked(cell: Vector2i)
@@ -31,6 +32,10 @@ const DRAG_THRESHOLD := 10.0
 var _left_down := false
 var _left_panning := false
 var _left_from := Vector2.ZERO
+## Fingers on the screen (index -> position), for two-finger pinch and pan.
+var _touches := {}
+var _pinch_distance := 0.0
+var _pinch_center := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -60,6 +65,13 @@ func cell_at(pos: Vector2) -> Vector2i:
 
 func _gui_input(event: InputEvent) -> void:
 	if state.is_empty():
+		return
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		_touch(event)
+		return
+	if event is InputEventMagnifyGesture:
+		_zoom((event as InputEventMagnifyGesture).factor, (event as InputEventMagnifyGesture).position)
+		accept_event()
 		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
@@ -98,9 +110,64 @@ func _gui_input(event: InputEvent) -> void:
 			queue_redraw()
 
 
+## Two fingers: pinch to zoom, move both to pan. A second finger also cancels
+## the tap the first finger started, so pinching never selects or builds.
+func _touch(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var t := event as InputEventScreenTouch
+		if t.pressed:
+			_touches[t.index] = t.position
+		else:
+			_touches.erase(t.index)
+		if _touches.size() >= 2:
+			_left_down = false
+			_left_panning = true
+			_start_pinch()
+	elif event is InputEventScreenDrag:
+		var d := event as InputEventScreenDrag
+		_touches[d.index] = d.position
+		if _touches.size() >= 2:
+			var pts: Array = _touches.values()
+			var a: Vector2 = pts[0]
+			var b: Vector2 = pts[1]
+			var dist := a.distance_to(b)
+			var center := (a + b) * 0.5
+			if _pinch_distance > 0.0:
+				_zoom(dist / _pinch_distance, center)
+				pan += center - _pinch_center
+				queue_redraw()
+			_pinch_distance = dist
+			_pinch_center = center
+	accept_event()
+
+
+func _start_pinch() -> void:
+	var pts: Array = _touches.values()
+	_pinch_distance = (pts[0] as Vector2).distance_to(pts[1])
+	_pinch_center = ((pts[0] as Vector2) + (pts[1] as Vector2)) * 0.5
+
+
+## Zoom in (>1) or out (<1) around the middle of the map view.
+func zoom_by(factor: float) -> void:
+	_zoom(factor, size * 0.5)
+
+
+func pan_by(delta: Vector2) -> void:
+	pan += delta
+	queue_redraw()
+
+
+## Moves the view so this tile is in the middle.
+func center_on(cell: Vector2i) -> void:
+	var w := float(state.get("width", 0)) * tile_size
+	var h := float(state.get("height", 0)) * tile_size
+	pan = Vector2(w, h) * 0.5 - (Vector2(cell) + Vector2(0.5, 0.5)) * tile_size
+	queue_redraw()
+
+
 func _zoom(factor: float, at: Vector2) -> void:
 	var before := (at - _origin()) / tile_size
-	tile_size = clampf(tile_size * factor, 14.0, 56.0)
+	tile_size = clampf(tile_size * factor, 14.0, 64.0)
 	var after := (at - _origin()) / tile_size
 	pan += (after - before) * tile_size
 	queue_redraw()

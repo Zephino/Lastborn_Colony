@@ -2,6 +2,25 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.09
+Date: 11/01/2026
+Time: 8:08 AM
+
+### Changes
+- **The game screen on phones** (screens narrower than 760 points):
+  - The map takes the whole width and starts centered on the hull, with bigger tiles.
+  - A new **Build** button opens the buildings as a dialog with large buttons, prices and descriptions. Choosing one starts placing it, and the next tap places it **once**, then placing ends, so a stray tap can't build again.
+  - New **−** and **+** zoom buttons, and two-finger pinch to zoom and move the map. A second finger cancels the first finger's tap, so pinching never selects or builds.
+  - Less urgent numbers (power, heat, workers, ore, next payment) move to the Report, so the top bar is shorter.
+  - Text is larger on phones (17 instead of 15), and all buttons are at least 44 points tall.
+- **Moving the map never builds**, on any screen. A press that moves more than a few points is a drag, not a tap. A new **placing bar** shows what you're placing, with a **Cancel** button. On a computer, the arrow keys or WASD also move the map.
+- **Readable dialog buttons:** buttons with long text are now sized to fit it. Before, on a phone, the lines overlapped the next button, for example in the Build list and the research topics. This applies to every dialog and the setup pages (new `scripts/ui/ui_util.gd`).
+- Fixed: on phones the short message bubble measured itself one word wide and covered most of the screen.
+- Tests: 279 game checks pass. Played in a phone-sized browser here (390×844, touch): the Build dialog, choosing a Mirror Field, dragging the map with nothing built, tapping to place it once, and the message bubble. The desktop layout was also rechecked.
+
+### Reason
+The owner asked to make all the menus easier to use on a phone, said the game was hard to see and scroll, and asked for a way to scroll without placing anything.
+
 ## Version 00.01.08
 Date: 11/01/2026
 Time: 7:59 AM

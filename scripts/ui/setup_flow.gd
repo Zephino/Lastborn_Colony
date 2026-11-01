@@ -7,6 +7,7 @@ const GameData = preload("res://scripts/sim/game_data.gd")
 const Manifest = preload("res://scripts/sim/manifest.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
 const Minimap = preload("res://scripts/ui/minimap.gd")
+const UiUtil = preload("res://scripts/ui/ui_util.gd")
 
 signal finished(options: Dictionary)
 signal cancelled()
@@ -83,6 +84,11 @@ func _button(text: String, action: Callable) -> Button:
 	return b
 
 
+## Makes a wrapping button tall enough for its text (see ui_util.gd).
+func _fit(b: Button) -> void:
+	UiUtil.fit_button_height(b, minf(760.0, _width() - 32.0) - 16.0)
+
+
 func _nav(box: VBoxContainer, back: Callable, next_label: String, next: Callable) -> Button:
 	var row: BoxContainer = HBoxContainer.new() if not _narrow() else VBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
@@ -119,7 +125,7 @@ func show_planets() -> void:
 		var b := _button("%s  ·  %s\n%s\n%s" % [p["name"], p["difficulty"], p["tagline"], p["desc"]], _pick_planet.bind(p["id"]))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		b.custom_minimum_size = Vector2(0, 110)
+		_fit(b)
 		box.add_child(b)
 		if p["id"] == planet_id:
 			b.grab_focus.call_deferred()
@@ -138,7 +144,7 @@ func show_difficulty() -> void:
 	for d in GameData.difficulties():
 		var b := _button("%s\n%s" % [d["name"], d["desc"]], _pick_difficulty.bind(d["id"]))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.custom_minimum_size = Vector2(0, 80)
+		_fit(b)
 		box.add_child(b)
 		if d["id"] == difficulty_id:
 			b.grab_focus.call_deferred()
@@ -238,6 +244,7 @@ func show_sites() -> void:
 		cell.add_child(mini)
 		mini.show_map(map)
 		var b := _button("Land at site %s  (%s)" % [char(65 + i), _site_note(map)], _finish.bind(i))
+		_fit(b)
 		cell.add_child(b)
 		if i == 0:
 			b.grab_focus.call_deferred()

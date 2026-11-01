@@ -12,7 +12,10 @@ The code is built around one plain state object, rule functions that take that s
 
 The web version is rebuilt and published automatically every time something is pushed to `main` (`.github/workflows/web.yml`). The game's tests run first; if any fail, the old version stays online.
 
-- It runs in any modern browser on a computer, and on phones and tablets. On a phone the interface scales to the screen: menus are full-size and scroll when long, the side panel's contents open from the **Info**, **Research** and **Company** buttons, and you drag the map with one finger.
+- It runs in any modern browser on a computer, and on phones and tablets. On a phone the interface scales to the screen, with larger text, and menus scroll when long. The map gets the whole width:
+  - **Build** opens the list of buildings. Choose one, then tap a tile; it places once.
+  - **Info**, **Research** and **Company** open what the side panel shows on a computer.
+  - Drag the map with one finger, pinch or use **−** and **+** to zoom. Dragging never builds.
 - Saved games are kept in your browser on that device.
 - **Install app** (Settings) installs it like an app in Chrome and Edge, or on Android. On iPhone or iPad: tap **Share**, then **Add to Home Screen**.
 - **Updates:** for 30 seconds after the game opens, it checks for a newer version and switches to it. **Update app** (Settings) does the same at any time. Your saves are kept.
@@ -73,7 +76,8 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **Events** happen at random: grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
 - **Colony report** (button by End turn) shows where power, heat and workers go, how each resource changed, which buildings are idle and why, and the next payments. Selecting a building also says why it isn't running.
 - **Settings** (title screen, or Menu in a game): fullscreen, and for the web version Install app and Update app.
-- **Keys:** Enter ends the turn. Esc cancels building or closes a dialog that can be closed. Right-drag pans the map and the mouse wheel zooms. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
+- **Placing a building:** a bar shows what you're placing, with **Cancel**. Dragging the map never places anything.
+- **Keys:** Enter ends the turn. Arrow keys or WASD move the map. Esc cancels building or closes a dialog that can be closed. Drag the map to move it and use the mouse wheel to zoom. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
 
 ## Layout
 

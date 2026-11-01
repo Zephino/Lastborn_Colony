@@ -17,6 +17,7 @@ const ScoreEntry = preload("res://scripts/net/score_entry.gd")
 const SetupFlow = preload("res://scripts/ui/setup_flow.gd")
 const ColonyText = preload("res://scripts/ui/colony_text.gd")
 const Menus = preload("res://scripts/ui/menus.gd")
+const UiUtil = preload("res://scripts/ui/ui_util.gd")
 const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 
@@ -51,6 +52,9 @@ var settings_open := false
 var menus: RefCounted
 var signed_in_label: Label
 var narrow_game := false
+var ui_theme: Theme
+var placing_bar: PanelContainer
+var placing_label: Label
 
 
 func _ready() -> void:
@@ -58,11 +62,13 @@ func _ready() -> void:
 	get_window().size_changed.connect(_apply_ui_scale)
 	var t := Theme.new()
 	t.default_font_size = 15
+	ui_theme = t
 	var panel_style := StyleBoxFlat.new()
 	panel_style.bg_color = PANEL
 	panel_style.set_content_margin_all(8)
 	t.set_stylebox("panel", "PanelContainer", panel_style)
 	theme = t
+	_apply_ui_scale()
 	var bg := ColorRect.new()
 	bg.color = BG
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -94,6 +100,9 @@ func _apply_ui_scale() -> void:
 	win.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
 	win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
 	win.content_scale_size = Vector2i(maxi(1, int(win.size.x / ratio)), maxi(1, int(win.size.y / ratio)))
+	# Phones: slightly bigger text everywhere.
+	if ui_theme != null:
+		ui_theme.default_font_size = 17 if win.content_scale_size.x < 600 else 15
 
 
 func _clear_screen() -> void:
@@ -266,6 +275,7 @@ func show_game() -> void:
 	add_child(root)
 	screen = root
 
+	narrow_game = _view_size().x < 760.0
 	# Top bar.
 	var top := PanelContainer.new()
 	root.add_child(top)
@@ -273,21 +283,25 @@ func show_game() -> void:
 	stats.add_theme_constant_override("h_separation", 18)
 	top.add_child(stats)
 	stat_labels.clear()
+	stats.add_theme_constant_override("h_separation", 12 if narrow_game else 18)
 	for key in STAT_KEYS:
 		var l := _label("")
 		stats.add_child(l)
 		stat_labels[key] = l
+		# On phones the less urgent numbers live in the Report instead.
+		l.visible = not (narrow_game and key in ["power", "heat", "workers", "ore", "payment"])
 
 	# Middle: build menu | map | inspector.
 	var middle := HBoxContainer.new()
 	middle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(middle)
 
-	# Phones: a narrow build list, no side panel (its contents open as dialogs
-	# from the Info, Research and Company buttons), and wrapping buttons.
-	narrow_game = _view_size().x < 760.0
+	# Phones: the map gets the whole width. The build list opens from a Build
+	# button, the side panel's contents from Info, Research and Company, and
+	# the buttons wrap.
 	var left := PanelContainer.new()
-	left.custom_minimum_size = Vector2(150 if narrow_game else 220, 0)
+	left.custom_minimum_size = Vector2(220, 0)
+	left.visible = not narrow_game
 	middle.add_child(left)
 	var left_scroll := ScrollContainer.new()
 	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -351,6 +365,20 @@ func show_game() -> void:
 	reserve_row.add_child(_button("-10", func() -> void: _change_reserve(-10.0)))
 	reserve_row.add_child(_button("+10", func() -> void: _change_reserve(10.0)))
 
+	# Shown while a building is chosen: what is being placed, and Cancel.
+	placing_bar = PanelContainer.new()
+	placing_bar.visible = false
+	root.add_child(placing_bar)
+	var placing_row := HBoxContainer.new()
+	placing_bar.add_child(placing_row)
+	placing_label = _label("", 0, ACCENT)
+	placing_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	placing_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	placing_row.add_child(placing_label)
+	var cancel := _button("Cancel", func() -> void: _set_build(""))
+	cancel.custom_minimum_size = Vector2(88, 44)
+	placing_row.add_child(cancel)
+
 	# Bottom: log and turn controls.
 	var bottom := PanelContainer.new()
 	bottom.custom_minimum_size = Vector2(0, 150 if narrow_game else 170)
@@ -381,6 +409,9 @@ func show_game() -> void:
 	run_button = _button("Run 5 turns", func() -> void: _run_turns(5))
 	buttons.add_child(run_button)
 	if narrow_game:
+		buttons.add_child(_button("Build", show_build_menu))
+		buttons.add_child(_button("−", func() -> void: map_view.zoom_by(1.0 / 1.25)))
+		buttons.add_child(_button("+", func() -> void: map_view.zoom_by(1.25)))
 		buttons.add_child(_button("Info", show_info))
 		buttons.add_child(_button("Research", show_research))
 		buttons.add_child(_button("Company", show_company))
@@ -389,10 +420,44 @@ func show_game() -> void:
 	buttons.add_child(_button("Menu", _on_menu))
 	if narrow_game:
 		for b in buttons.get_children():
-			(b as Button).custom_minimum_size = Vector2(72, 40)
+			(b as Button).custom_minimum_size = Vector2(44 if (b as Button).text.length() <= 1 else 76, 44)
+		end_turn_button.text = "End turn"
 
 	map_view.set_state(state)
+	if narrow_game:
+		map_view.tile_size = 34.0
+	map_view.center_on(_hull_cell())
 	refresh()
+
+
+func _hull_cell() -> Vector2i:
+	for id in state["structures"]:
+		var st: Dictionary = state["structures"][id]
+		if st["type"] == "hull":
+			return Vector2i(int(st["x"]), int(st["y"]))
+	return Vector2i(int(state["width"]) / 2, int(state["height"]) / 2)
+
+
+## Phones: the build list as a dialog with big buttons. Choosing a building
+## starts placing it; the next tap on the map places it once.
+func show_build_menu() -> void:
+	var options: Array = []
+	for cat in CATEGORIES:
+		for id in GameData.building_ids():
+			var def := GameData.building(id)
+			if def["category"] != cat[0] or not def.get("buildable", true):
+				continue
+			var kits := int(state["kits"].get(id, 0))
+			var price := ("prefab ×%d" % kits) if kits > 0 else ("%d alloy" % int(GameData.num(def, "cost")))
+			var can := kits > 0 or float(state["stock"]["alloy"]) >= GameData.num(def, "cost")
+			options.append(["%s (%s)\n%s" % [def["name"], price, def["desc"]], _pick_build.bind(id), can and state["ending"] == ""])
+	options.append(["Back", close_modal, true])
+	show_modal("Build", "You have %d alloy. Choose a building, then tap a tile next to the colony. Dragging the map never builds." % int(state["stock"]["alloy"]), options, true)
+
+
+func _pick_build(id: String) -> void:
+	close_modal()
+	_set_build(id)
 
 
 func _set_build(id: String) -> void:
@@ -401,6 +466,10 @@ func _set_build(id: String) -> void:
 	map_view.build_type = id
 	for key in build_buttons:
 		build_buttons[key].button_pressed = key == id
+	if placing_bar != null:
+		placing_bar.visible = id != ""
+		if id != "":
+			placing_label.text = "Placing %s: tap a green tile next to the colony. Drag to move the map." % GameData.building(id)["name"] if narrow_game else "Placing %s: click a green tile next to the colony. Drag to move the map, Esc to stop." % GameData.building(id)["name"]
 	map_view.queue_redraw()
 	_refresh_hint()
 
@@ -411,13 +480,23 @@ func _on_tile_clicked(cell: Vector2i) -> void:
 		refresh()
 		return
 	if map_view.build_type != "":
-		var r := Actions.place(state, map_view.build_type, cell.x, cell.y)
+		var placed_type: String = map_view.build_type
+		var r := Actions.place(state, placed_type, cell.x, cell.y)
 		if not r["ok"]:
 			hint_label.text = r["reason"]
+			if narrow_game:
+				_toast(r["reason"])
 			return
+		map_view.selected = cell
+		if narrow_game:
+			# One building per choice on phones, so a stray tap can't build again.
+			_set_build("")
+			_toast("%s placed. It will be built in %d turns." % [GameData.building(placed_type)["name"], int(GameData.num(GameData.building(placed_type), "turns"))])
+		refresh()
+		return
 	map_view.selected = cell
 	refresh()
-	if narrow_game and map_view.build_type == "":
+	if narrow_game:
 		show_info()
 
 
@@ -519,6 +598,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if map_view == null:
 		return
 	var key := (event as InputEventKey).keycode
+	var step := 48.0
+	var pan_keys := {KEY_LEFT: Vector2(step, 0), KEY_A: Vector2(step, 0), KEY_RIGHT: Vector2(-step, 0), KEY_D: Vector2(-step, 0),
+		KEY_UP: Vector2(0, step), KEY_W: Vector2(0, step), KEY_DOWN: Vector2(0, -step), KEY_S: Vector2(0, -step)}
+	if modal == null and pan_keys.has(key) and not (get_viewport().gui_get_focus_owner() is LineEdit):
+		map_view.pan_by(pan_keys[key])
+		get_viewport().set_input_as_handled()
+		return
 	if (key == KEY_ENTER or key == KEY_KP_ENTER) and modal == null:
 		_run_turns(1)
 		get_viewport().set_input_as_handled()
@@ -608,7 +694,7 @@ func _refresh_hint() -> void:
 				text += "  Heat here: %.1f." % (GameData.num(def, "heat_need") * GameData.cold_at(h.x, state["planet"]))
 		hint_label.text = text
 	else:
-		hint_label.text = "Tap a tile to inspect it. Choose a building on the left to place it. Drag the map to move it." if narrow_game else "Click a tile to inspect it. Choose a building on the left to place it. Drag the map to move it; wheel to zoom."
+		hint_label.text = "Tap a tile to inspect it. Tap Build to choose a building. Drag the map to move it; pinch or use − and + to zoom." if narrow_game else "Click a tile to inspect it. Choose a building on the left to place it. Drag the map to move it; wheel to zoom."
 
 
 func _selected_structure() -> Dictionary:
@@ -711,9 +797,13 @@ func _toast(message: String) -> void:
 	toast.text = message
 	toast.visible = true
 	move_child(toast, get_child_count() - 1)
-	toast.custom_minimum_size = Vector2(minf(640.0, size.x - 32.0), 0)
-	toast.reset_size()
-	toast.position = Vector2((size.x - toast.size.x) * 0.5, size.y - toast.size.y - 24.0)
+	# Size it for its text at a fixed width (an auto-wrapping label otherwise
+	# measures itself one word wide and becomes very tall).
+	var w := minf(640.0, _view_size().x - 32.0)
+	toast.custom_minimum_size = Vector2(w, 0)
+	toast.size = Vector2(w, 0)
+	toast.size = Vector2(w, toast.get_minimum_size().y)
+	toast.position = Vector2((_view_size().x - w) * 0.5, _view_size().y - toast.size.y - 24.0)
 	toast_left = 5.0
 
 
@@ -767,8 +857,8 @@ func show_modal(title: String, body: String, options: Array, can_cancel: bool = 
 	for opt in options:
 		var b := _button(opt[0], opt[1])
 		b.disabled = not opt[2]
-		b.custom_minimum_size = Vector2(0, 44)
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		UiUtil.fit_button_height(b, width - 24.0)
 		box.add_child(b)
 		if first == null and not b.disabled:
 			first = b
