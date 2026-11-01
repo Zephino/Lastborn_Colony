@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.48
+Date: 11/01/2026
+Time: 10:25 PM
+
+### Changes
+- **Workers look like a site crew** (`scripts/ui/people.gd`):
+  - a yellow hard-hat shell over the helmet, with a brim, a ridge and a headlamp;
+  - a hi-vis orange vest with silver reflective stripes;
+  - a brown tool belt with pouches;
+  - a yellow power drill in the forward hand.
+  - The pickaxe and coiled hose stay on the back.
+
+### Reason
+The owner said the worker needed to look better.
+
 ## Version 00.01.47
 Date: 11/01/2026
 Time: 10:15 PM

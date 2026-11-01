@@ -35,11 +35,30 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 	# Body with its job stripe.
 	ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 6.8), Vector2(u * 3.0, u * 3.8)), suit)
 	ci.draw_rect(Rect2(feet + Vector2(u * 0.6, -u * 6.8), Vector2(u * 0.9, u * 3.8)), shade)
-	ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 5.2), Vector2(u * 3.0, u * 0.7)), stripe)
+	if job == "worker":
+		# A hi-vis vest with silver reflective stripes, and a tool belt with pouches.
+		var vest := JOBS["worker"]
+		ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 6.8), Vector2(u * 3.0, u * 3.0)), vest)
+		ci.draw_rect(Rect2(feet + Vector2(-u * 0.3, -u * 6.8), Vector2(u * 0.6, u * 3.0)), suit)
+		ci.draw_rect(Rect2(feet + Vector2(u * 0.6, -u * 6.8), Vector2(u * 0.9, u * 3.0)), vest.darkened(0.2))
+		for y in [-u * 5.6, -u * 4.6]:
+			ci.draw_line(feet + Vector2(-u * 1.5, y), feet + Vector2(u * 1.5, y), Color(0.86, 0.88, 0.92), maxf(1.0, u * 0.35))
+		ci.draw_rect(Rect2(feet + Vector2(-u * 1.6, -u * 3.6), Vector2(u * 3.2, u * 0.6)), Color(0.42, 0.30, 0.18))
+		for x in [-u * 1.3, u * 0.5]:
+			ci.draw_rect(Rect2(feet + Vector2(x, -u * 3.3), Vector2(u * 0.8, u * 0.9)), Color(0.50, 0.36, 0.22))
+	else:
+		ci.draw_rect(Rect2(feet + Vector2(-u * 1.5, -u * 5.2), Vector2(u * 3.0, u * 0.7)), stripe)
 	# Arms, swinging a little when walking.
 	var swing := u * 0.8 if stride else 0.2 * u
 	ci.draw_line(feet + Vector2(-u * 1.6, -u * 6.4), feet + Vector2(-u * 1.9 + swing * facing, -u * 4.0), shade, u * 1.0)
 	ci.draw_line(feet + Vector2(u * 1.6, -u * 6.4), feet + Vector2(u * 1.9 - swing * facing, -u * 4.0), suit, u * 1.0)
+	if job == "worker":
+		# A yellow power drill in the forward hand.
+		var grip := feet + Vector2(facing * (u * 1.9 - swing), -u * 4.0)
+		ci.draw_rect(Rect2(grip + Vector2(-u * 0.35, -u * 0.2), Vector2(u * 0.7, u * 1.0)), Color(0.20, 0.20, 0.24))
+		var body_x := grip.x if facing > 0.0 else grip.x - u * 1.8
+		ci.draw_rect(Rect2(Vector2(body_x, grip.y - u * 0.9), Vector2(u * 1.8, u * 0.8)), Color(0.98, 0.80, 0.18))
+		ci.draw_line(grip + Vector2(facing * u * 1.8, -u * 0.5), grip + Vector2(facing * u * 2.6, -u * 0.5), Color(0.70, 0.72, 0.76), maxf(1.0, u * 0.3))
 	if job == "warden":
 		# A gold badge on the chest, and a torch in the forward hand shining ahead.
 		var badge := feet + Vector2(-facing * u * 0.6, -u * 6.1)
@@ -56,6 +75,18 @@ static func draw_colonist(ci: CanvasItem, feet: Vector2, hgt: float, job: String
 	ci.draw_colored_polygon(_oval(head + Vector2(facing * u * 0.45, u * 0.05), u * 1.05, u * 0.75), VISOR)
 	ci.draw_circle(head + Vector2(facing * u * 0.15 - u * 0.25, -u * 0.25), u * 0.28, Color(1, 1, 1, 0.75))
 	ci.draw_line(head + Vector2(-u * 1.75, -u * 0.2), head + Vector2(-u * 1.95, -u * 1.6), shade, maxf(1.0, u * 0.3))
+	if job == "worker":
+		# A yellow hard-hat shell over the helmet, with a brim and a headlamp.
+		var cap := PackedVector2Array()
+		for i in 13:
+			var a := deg_to_rad(180.0 + i * 15.0)
+			cap.append(head + Vector2(cos(a) * u * 1.9, sin(a) * u * 1.9 - u * 0.15))
+		ci.draw_colored_polygon(cap, Color(0.98, 0.80, 0.18))
+		ci.draw_line(head + Vector2(-u * 2.2, -u * 0.15), head + Vector2(u * 2.2, -u * 0.15), Color(0.85, 0.66, 0.10), maxf(1.0, u * 0.45))
+		ci.draw_line(head + Vector2(0, -u * 2.0), head + Vector2(0, -u * 0.3), Color(0.85, 0.66, 0.10), maxf(1.0, u * 0.3))
+		var lamp := head + Vector2(facing * u * 1.5, -u * 0.9)
+		ci.draw_circle(lamp, u * 0.42, Color(0.25, 0.25, 0.28))
+		ci.draw_circle(lamp + Vector2(facing * u * 0.1, 0), u * 0.26, Color(1.0, 0.97, 0.80))
 
 
 ## Gear that sticks up behind the backpack, by job (drawn before the pack).
