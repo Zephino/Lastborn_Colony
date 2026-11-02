@@ -63,6 +63,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 - **The map is shown at an angle.** Buildings are sealed domes, rounded halls and towers joined by tunnels, with airlocks at their doors.
 - **Build** by choosing a building on the left and clicking a tile. Lay **Heat Mains** (1 alloy each) to reach further out.
+- **The lander:** your lander stands on the Landing Pad when you arrive, and comes down again for a turn whenever settlers arrive with a Company payment or you call down a supply pod.
 - **Doors:** buildings join only where their doors meet. Hubs (Landing Pad, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern, Shaft) have 4 doors; workplaces have 2, on opposite sides; outlying machines (Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Signal Mast, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have 1. Heat Mains join on every side. A new building needs a door facing a door or Heat Main; it turns itself to fit, or press **R** / **Rotate** to turn it. Saves from before door rules still join on any side.
 - **Terrain matters.** Ice Drills go on ice, Vent Taps on vents (orange), and Seam Cutters on ore seams (teal streaks). Ridges, deep ice and scorched ground can't be built on.
 - **The climate band is the core trade-off.** Mirror Fields make more power the further east they are. Buildings need more heat the further west they are. Ice and vents are mostly in the west, so the best sites pull you in both directions. Selecting a tile shows its light and heat factor.

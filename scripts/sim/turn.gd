@@ -624,7 +624,9 @@ static func _payments(state: Dictionary, rep: Dictionary) -> void:
 		elif population(state) + arriving <= housing:
 			state["adults"] = float(state["adults"]) + arriving
 			state["stats"]["arrivals"] = float(state["stats"]["arrivals"]) + arriving
-			log_msg(state, "Paid the Company %d marks. %d new colonists came down on the supply drop." % [int(amount), int(arriving)])
+			log_msg(state, "Paid the Company %d marks. %d new colonists came down on the supply lander." % [int(amount), int(arriving)])
+			# The lander stands on the pad until the end of the next turn.
+			state["lander"] = 2
 		else:
 			log_msg(state, "Paid the Company %d marks. No room for new colonists this time." % int(amount))
 	else:
@@ -642,6 +644,11 @@ static func _timers(state: Dictionary) -> void:
 	for k in ["storm", "surge", "rest"]:
 		if int(state[k]) > 0:
 			state[k] = int(state[k]) - 1
+	# A lander on the pad lifts off again when its time is up.
+	if int(state.get("lander", 0)) > 0:
+		state["lander"] = int(state["lander"]) - 1
+		if int(state["lander"]) == 0:
+			log_msg(state, "The lander lifts off from the landing pad and climbs back to orbit.")
 
 
 # 16. Random events. Events with choices pause the game until resolved.

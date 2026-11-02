@@ -7,7 +7,7 @@ const TextRules = preload("res://scripts/sim/text_rules.gd")
 const GameData = preload("res://scripts/sim/game_data.gd")
 
 const DIR := "user://saves"
-const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "story_cooldown", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest", "pods"]
+const INT_FIELDS := ["version", "seed", "rng", "turn", "site", "story_cooldown", "width", "height", "next_id", "payments_made", "missed_in_row", "storm", "surge", "rest", "pods", "lander"]
 const STRUCT_INT_FIELDS := ["x", "y", "progress", "damaged"]
 
 
@@ -48,6 +48,7 @@ const DEFAULTS := {
 	"story_done": [],
 	"story_cooldown": 0,
 	"pods": 0,
+	"lander": 0,
 	"drones": {},
 	"satellites": {},
 	"waste": 0.0,

@@ -38,6 +38,8 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 		"kits": {},
 		"door_rules": true,
 		"pods": 0,
+		# Turns the lander stays on the pad (it's there when you land).
+		"lander": 1,
 		"drones": {},
 		"satellites": {},
 		"waste": 0.0,

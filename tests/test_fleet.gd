@@ -30,6 +30,7 @@ static func run(check: Callable) -> void:
 	_map_taps(check)
 	_help(check)
 	_doors(check)
+	_lander(check)
 
 
 ## A fresh colony with plenty of everything, and no random events.
@@ -324,3 +325,25 @@ static func _doors(check: Callable) -> void:
 	old["structures"][away]["rot"] = 0
 	var loaded: Variant = SaveGame.from_text(JSON.stringify(old))
 	check.call(typeof(loaded) == TYPE_DICTIONARY and not Actions.door_rules(loaded) and Turn.connectivity(loaded).has(away), "a save from before door rules still joins on any side")
+
+
+## The lander comes down on the pad when you land, with settlers and with a
+## supply pod, and lifts off again after a turn.
+static func _lander(check: Callable) -> void:
+	var s := NewGame.create(5, "Margin")
+	check.call(int(s["lander"]) == 1, "the lander is on the pad when the colony lands")
+	_turn(s)
+	check.call(int(s["lander"]) == 0, "it lifts off after the first turn")
+	var m := Manifest.recommended()
+	m.erase("water")
+	m["pod"] = 1
+	var p := NewGame.create(5, "Margin", {"manifest": m})
+	p["lander"] = 0
+	Actions.call_pod(p)
+	check.call(int(p["lander"]) == 1, "calling a supply pod brings the lander down")
+	var q := NewGame.create(5, "Margin")
+	q["lander"] = 0
+	q["turn"] = int(GameData.balance()["first_payment_turn"])
+	q["stock"]["credits"] = 5000.0
+	_turn(q)
+	check.call(int(q["lander"]) == 1, "settlers arriving with a payment bring the lander, and it stays for the next turn")

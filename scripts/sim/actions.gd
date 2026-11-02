@@ -320,7 +320,8 @@ static func call_pod(state: Dictionary) -> Dictionary:
 	var pod: Dictionary = GameData.balance()["pod"]
 	for k in pod:
 		state["stock"][k] = float(state["stock"][k]) + float(pod[k])
-	state["log"].append({"turn": int(state["turn"]), "text": "A supply pod streaks down from the ship and lands by the landing pad."})
+	state["log"].append({"turn": int(state["turn"]), "text": "A supply lander comes down from the ship onto the landing pad with the pod's cargo."})
+	state["lander"] = 1
 	return result(true)
 
 

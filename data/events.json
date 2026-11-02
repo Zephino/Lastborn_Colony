@@ -39,7 +39,7 @@
     "id": "auditor",
     "title": "The Auditor",
     "weight": 2,
-    "body": "A Company auditor arrives on the supply drop and asks to see every account.",
+    "body": "A Company auditor arrives on the supply lander and asks to see every account.",
     "choices": [
       {
         "label": "Open the books (morale -4)",

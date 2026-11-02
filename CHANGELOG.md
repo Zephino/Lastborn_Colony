@@ -2,6 +2,23 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.56
+Date: 11/02/2026
+Time: 12:30 AM
+
+### Changes
+- **The lander comes and goes on the Landing Pad** (new state field `lander`: how many more turns it stays):
+  - it stands on the pad when the colony lands, and lifts off after the first turn;
+  - it comes down when settlers arrive with a Company payment, and stays until the end of the next turn;
+  - it comes down when you call a supply pod, and stays until the end of that turn.
+- When it leaves, the log says "The lander lifts off from the landing pad and climbs back to orbit."
+- Messages now speak of the supply lander: settlers "came down on the supply lander", a called pod "comes down from the ship onto the landing pad", and the auditor event "arrives on the supply lander".
+- Saves from before load with no lander on the pad.
+- New tests for when the lander arrives and leaves (464 checks pass).
+
+### Reason
+The owner chose a lander that comes and goes.
+
 ## Version 00.01.55
 Date: 11/02/2026
 Time: 12:15 AM
