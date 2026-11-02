@@ -14,6 +14,9 @@ const COLORS := {
 
 var tiles: Array = []
 var hull := Vector2i(-1, -1)
+## True for a site no probe has scouted: only a rough outline shows (rock that
+## can't be built on, and the landing spot), not the ice, vents or seams.
+var fog := false
 
 
 func show_map(map: Dictionary) -> void:
@@ -32,7 +35,11 @@ func _draw() -> void:
 	var origin := (size - Vector2(cols, rows) * cell) * 0.5
 	for y in rows:
 		for x in cols:
-			draw_rect(Rect2(origin + Vector2(x, y) * cell, Vector2(cell, cell)), COLORS.get(tiles[y][x], Color.MAGENTA))
+			var t: String = tiles[y][x]
+			var col: Color = COLORS.get(t, Color.MAGENTA)
+			if fog:
+				col = COLORS["ridge"] if t in ["ridge", "deepice", "scorch"] else Color(0.30, 0.30, 0.32)
+			draw_rect(Rect2(origin + Vector2(x, y) * cell, Vector2(cell, cell)), col)
 	if hull.x >= 0:
 		var c := origin + (Vector2(hull) + Vector2(0.5, 0.5)) * cell
 		draw_circle(c, cell * 1.6, Color(1, 1, 1))

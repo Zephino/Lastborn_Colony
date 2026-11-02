@@ -123,7 +123,7 @@
     {
       "id": "probe",
       "name": "Survey probes",
-      "desc": "Dropped ahead of the ship. The landing-site screen also shows what lies in the Deep under each site.",
+      "desc": "Two extra scouting probes, on top of the three every ship carries. Use them on the landing-site screen to scout more sites before you land.",
       "debt": 150,
       "max": 1
     }

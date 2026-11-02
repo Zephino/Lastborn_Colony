@@ -30,9 +30,16 @@ Payments start on **turn 30** and come every **10 turns**, each a little bigger 
    - **Brume** (Standard): ice, vents and sunlight all within reach. Start here.
    - **Cinder** (Harder): bright and hot, but ice is rare.
    - **Hollow** (Hardest): icy and full of vents, but the sun is weak.
-3. **Pick a difficulty.** Easy has a smaller debt, gentler payments, fewer disasters and no plague. Hard has a bigger debt, steeper payments, more disasters, faster wear and more crime.
-4. **Pack the ship.** You have 10 cargo bays: colonists, alloy, food, oxygen, water, starting money, prefab buildings, supply pods or survey probes. Everything is bought on credit, so each bay adds to your debt. **Recommended load** is a good balanced start.
-5. **Pick a landing site.** Each preview counts the ice, vents and ore nearby. Survey probes also show what's in the caves underneath.
+3. **Send probes (optional).** Your ship carries **3 scouting probes**. Under each planet, **Send a probe** lets you pick a landing site and land a probe there. Its report shows:
+   - a picture of the ground around the site;
+   - how much sunlight and cold there is;
+   - the ice, vents and ore nearby, and what's in the Deep below;
+   - how often grit storms and icequakes hit;
+   - any **lucky find**: a crashed wreck (25 alloy and 5 parts), a supply cache (40 food and 40 oxygen) or a rich ore seam beside the pad.
+   Then choose **Settle here** or **Look elsewhere**. About half the sites have a lucky find, and you get it whether you scouted the site or not; probing just lets you know.
+4. **Pick a difficulty.** Easy has a smaller debt, gentler payments, fewer disasters and no plague. Hard has a bigger debt, steeper payments, more disasters, faster wear and more crime.
+5. **Pack the ship.** You have 10 cargo bays: colonists, alloy, food, oxygen, water, starting money, prefab buildings, supply pods or survey probes (2 extra scouting probes). Everything is bought on credit, so each bay adds to your debt. **Recommended load** is a good balanced start.
+6. **Pick a landing site.** Sites you've scouted show everything. The others show only a rough outline until you send a probe (you can still send one from here if you have any left).
 
 ---
 

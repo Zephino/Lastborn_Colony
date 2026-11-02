@@ -6,6 +6,7 @@ const GameData = preload("res://scripts/sim/game_data.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
 const Rng = preload("res://scripts/sim/rng.gd")
 const Manifest = preload("res://scripts/sim/manifest.gd")
+const Probe = preload("res://scripts/sim/probe.gd")
 const TextRules = preload("res://scripts/sim/text_rules.gd")
 
 const SAVE_VERSION := 1
@@ -85,6 +86,10 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 	Manifest.apply(state, manifest)
 	var hull: Array = map["hull"]
 	add_structure(state, "hull", int(hull[0]), int(hull[1]), true)
+	# A lucky find at the landing site (see scripts/sim/probe.gd), when the
+	# setup screens pass one.
+	if str(options.get("find", "")) != "":
+		Probe.apply_find(state, str(options["find"]))
 	state["log"].append({"turn": 1, "text": "The ship settles onto the landing pad at %s. Payments to the Company begin on turn %d." % [colony_name, int(b["first_payment_turn"])]})
 	return state
 

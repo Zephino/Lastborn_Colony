@@ -311,5 +311,37 @@
     },
     "swing": 0.3,
     "period": 16
+  },
+  "probes": {
+    "_comment": "Scouting probes sent before landing. 'free' come with every ship; each 'Survey probes' cargo bay adds 'per_cargo'. A site has a lucky find when its hash lands in the first few of 'find_slots' slots (one slot per find, so 3 finds in 6 slots is half the sites).",
+    "free": 3,
+    "per_cargo": 2,
+    "find_slots": 6,
+    "finds": {
+      "cache": {
+        "name": "Supply cache",
+        "desc": "An old supply drop lies by the site: 40 food and 40 oxygen to start with.",
+        "stock": {
+          "food": 40,
+          "oxygen": 40
+        },
+        "log": "The crew finds an old supply drop by the pad: 40 food and 40 oxygen."
+      },
+      "seam": {
+        "name": "Rich ore seam",
+        "desc": "Ore breaks the surface right beside the site: two more seams next to the pad.",
+        "seams": 2,
+        "log": "Ore breaks the surface right beside the pad."
+      },
+      "wreck": {
+        "name": "Crashed wreck",
+        "desc": "A wrecked lander lies nearby: 25 alloy and 5 parts to salvage.",
+        "stock": {
+          "alloy": 25,
+          "parts": 5
+        },
+        "log": "The crew salvages a wrecked lander near the pad: 25 alloy and 5 parts."
+      }
+    }
   }
 }

@@ -46,8 +46,9 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/research.gd` | Research topics and their effects. |
 | `scripts/sim/fleet.gd` | Drones, satellites, supply pods, waste and specialists. |
 | `scripts/sim/text_rules.gd` | Cleaning rules for everything a player types. |
+| `scripts/sim/probe.gd` | Scouting probes before landing: site reports and lucky finds (fixed by seed, planet and site). |
 | `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
-| `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd` | The screens before landing, and the small map previews. |
+| `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd`, `scripts/ui/probe_view.gd` | The screens before landing (with probe scouting), the small map previews (fogged until scouted), and the probe report picture. |
 | `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
 | `scripts/ui/people.gd`, `scripts/ui/stat_icon.gd` | Colonists in space suits, and the resource icons in the top bar. |
 | `scripts/ui/sprite_icon.gd` | A small picture of one building, for the build list, Build menu and Info panel. |
@@ -62,7 +63,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `leaderboard-api/` | The Cloudflare Worker behind the online features (not part of the game build). |
 | `web/update.js`, `.github/workflows/web.yml` | The web version's self-updater, and the workflow that builds and publishes it. |
 | `tests/` | Headless test runner (`run_tests.gd`, with `test_fleet.gd` and `test_new.gd` for the newer content), the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
-| `tools/` | Developer tools, not part of the game: `sprite_sheet.gd` draws the sprite sheets, `ui_shot.gd` takes screenshots of the game screens, `balance.gd` plays many bot games (optionally for one planet and difficulty) and prints wins and turns. |
+| `tools/` | Developer tools, not part of the game: `sprite_sheet.gd` draws the sprite sheets, `ui_shot.gd` takes screenshots of the game screens, `setup_shot.gd` of the screens before landing (with probes), `balance.gd` plays many bot games (optionally for one planet and difficulty) and prints wins and turns. |
 | `.cursor/rules/`, `AGENTS.md`, `CLAUDE.md` | Rules for AI assistants working on the project. |
 | `CHANGELOG.md`, `VERSION` | What changed in each version, and the current version. |
 

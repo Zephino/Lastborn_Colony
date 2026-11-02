@@ -2,6 +2,33 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.79
+Date: 11/02/2026
+Time: 12:30 PM
+
+### Changes
+- **Scouting probes before you land.** Every ship carries 3 probes.
+  - Under each planet on the planet list, **Send a probe** lets you pick one of its landing sites to scout.
+  - The **probe report** shows a picture of the ground around the site, drawn like the game map, with the probe standing where the ship would land. It also gives:
+    - the sunlight and cold there;
+    - the ice, vents, ore seams and ridges nearby;
+    - the ore veins, underground water and deep vents in the Deep below;
+    - how often grit storms and icequakes hit that planet;
+    - any lucky find.
+  - Then choose **Settle here** (which goes on to difficulty and packing, with that site picked) or **Look elsewhere**.
+- **Landing sites stay hidden until scouted.** The landing-site screen shows unscouted sites only as a rough grey outline (unbuildable rock and the landing spot), marked "not scouted". It has a **Send a probe here** button while probes last. Scouted sites list everything, and **See the probe report** reopens a report.
+- **Lucky finds.** About half the sites have one:
+  - a **crashed wreck** (25 alloy and 5 parts);
+  - a **supply cache** (40 food and 40 oxygen);
+  - a **rich ore seam** (two more seams beside the pad).
+  - Finds are fixed by the map seed, planet and site, so they're the same for everyone and fair on the leaderboard. You get a site's find whether you scouted it or not. It shows in the report's picture and in the game's first log line.
+- The **Survey probes** cargo now gives 2 extra scouting probes. Scouted sites already include what's in the Deep.
+- New `scripts/sim/probe.gd` (rules), `scripts/ui/probe_view.gd` (report picture) and `tools/setup_shot.gd` (screenshots of these screens). The README's "Before you land" covers it.
+- 13 new test checks for probes and finds (554 in all).
+
+### Reason
+The owner asked for a way to send a probe to a planet's surface near the start of the game, to decide whether to live there. They chose 3 free probes, site details hidden until probed, and lucky finds.
+
 ## Version 00.01.78
 Date: 11/02/2026
 Time: 12:23 PM

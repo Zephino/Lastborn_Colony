@@ -15,6 +15,8 @@ const Turn = preload("res://scripts/sim/turn.gd")
 const SaveGame = preload("res://scripts/sim/save_game.gd")
 const Fleet = preload("res://scripts/sim/fleet.gd")
 const TestFleet = preload("res://tests/test_fleet.gd")
+const Probe = preload("res://scripts/sim/probe.gd")
+const Manifest = preload("res://scripts/sim/manifest.gd")
 
 
 static func run(check: Callable) -> void:
@@ -28,6 +30,7 @@ static func run(check: Callable) -> void:
 	_rovers(check)
 	_survey(check)
 	_saves(check)
+	_probes(check)
 
 
 ## A colony with plenty of power and heat (a Fusion Core) and everything stocked.
@@ -191,3 +194,40 @@ static func _saves(check: Callable) -> void:
 	old.erase("heat_bank")
 	var loaded: Variant = SaveGame.from_text(SaveGame.to_text(old))
 	check.call(loaded is Dictionary and float(loaded["battery"]) == 0.0 and float(loaded["heat_bank"]) == 0.0, "older saves load with nothing saved")
+
+
+static func _probes(check: Callable) -> void:
+	check.call(Probe.carried({}) == 3, "every ship carries 3 probes")
+	check.call(Probe.carried({"probe": 1}) == 5, "a Survey probes cargo bay adds 2 more")
+	var r := Probe.report(7, "brume", 2)
+	check.call(r.has("near") and r.has("below") and r.has("storms") and r.has("find"), "a probe report has the ground, the Deep, the hazards and any find")
+	check.call(Probe.report(7, "brume", 2)["near"] == r["near"] and Probe.find_for(7, "brume", 2) == r["find"], "the same site always gives the same report")
+	check.call(Probe.how_often("hollow", "dust_storm") == "rarely" and Probe.how_often("hollow", "icequake") == "often", "storm and quake words come from the planet")
+	# About half the sites have a find, and every kind turns up.
+	var seen := {}
+	var with_find := 0
+	var total := 0
+	for seed_value in range(1, 41):
+		for site in 4:
+			var f := Probe.find_for(seed_value, "brume", site)
+			total += 1
+			if f != "":
+				with_find += 1
+				seen[f] = true
+	check.call(with_find > total / 4 and with_find < total * 3 / 4, "about half the sites have a lucky find (%d of %d)" % [with_find, total])
+	check.call(seen.size() == 3, "every kind of find turns up")
+	# Finds are given to the new colony.
+	var plain := NewGame.create(3, "Margin")
+	var wreck := NewGame.create(3, "Margin", {"find": "wreck"})
+	check.call(float(wreck["stock"]["alloy"]) == float(plain["stock"]["alloy"]) + 25.0 and float(wreck["stock"]["parts"]) == float(plain["stock"]["parts"]) + 5.0, "a crashed wreck gives 25 alloy and 5 parts")
+	var cache := NewGame.create(3, "Margin", {"find": "cache"})
+	check.call(float(cache["stock"]["food"]) == float(plain["stock"]["food"]) + 40.0, "a supply cache gives 40 food")
+	var seam := NewGame.create(3, "Margin", {"find": "seam"})
+	var before := 0
+	var after := 0
+	for y in plain["tiles"].size():
+		for x in plain["tiles"][y].size():
+			before += 1 if plain["tiles"][y][x] == "seam" else 0
+			after += 1 if seam["tiles"][y][x] == "seam" else 0
+	check.call(after > before, "a rich ore seam adds seams by the pad (%d more)" % (after - before))
+	check.call(NewGame.create(3, "Margin", {"find": ""})["stock"] == plain["stock"], "no find, no change")

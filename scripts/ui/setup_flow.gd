@@ -7,6 +7,8 @@ const GameData = preload("res://scripts/sim/game_data.gd")
 const Manifest = preload("res://scripts/sim/manifest.gd")
 const MapGen = preload("res://scripts/sim/map_gen.gd")
 const Minimap = preload("res://scripts/ui/minimap.gd")
+const ProbeView = preload("res://scripts/ui/probe_view.gd")
+const Probe = preload("res://scripts/sim/probe.gd")
 const UiUtil = preload("res://scripts/ui/ui_util.gd")
 
 signal finished(options: Dictionary)
@@ -20,6 +22,11 @@ var planet_id := GameData.DEFAULT_PLANET
 var difficulty_id := GameData.DEFAULT_DIFFICULTY
 var manifest: Dictionary = {}
 var page: Control
+## Probes used so far, and the sites they scouted ("planet:site" keys).
+var probes_used := 0
+var scouted := {}
+## The site chosen with "Settle here" in a probe report (-1 if none).
+var settle_site := -1
 
 
 func setup(seed_value: int) -> void:
@@ -129,12 +136,123 @@ func show_planets() -> void:
 		box.add_child(b)
 		if p["id"] == planet_id:
 			b.grab_focus.call_deferred()
+		var seen := _scouted_count(p["id"])
+		var probe_text := "Send a probe to %s  (%d of %d probes left)" % [p["name"], _probes_left(), Probe.carried(manifest)]
+		if seen > 0:
+			probe_text += "  ·  %d site%s scouted" % [seen, "" if seen == 1 else "s"]
+		var pb := _button(probe_text, show_probe_target.bind(p["id"]))
+		pb.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		pb.disabled = _probes_left() <= 0 and seen == 0
+		_fit(pb)
+		box.add_child(pb)
 	var back := _button("Back", show_briefing)
 	box.add_child(back)
 
 
 func _pick_planet(id: String) -> void:
+	if id != planet_id:
+		settle_site = -1
 	planet_id = id
+	show_difficulty()
+
+
+func _probes_left() -> int:
+	return maxi(0, Probe.carried(manifest) - probes_used)
+
+
+func _key(pid: String, site: int) -> String:
+	return "%s:%d" % [pid, site]
+
+
+func _scouted_count(pid: String) -> int:
+	var n := 0
+	for k in scouted:
+		if str(k).begins_with(pid + ":"):
+			n += 1
+	return n
+
+
+## Where should the probe land? The planet's landing sites, as rough outlines
+## until scouted.
+func show_probe_target(pid: String) -> void:
+	var planet := GameData.planet(pid)
+	var box := _new_page("Send a probe to %s" % planet["name"], 900.0)
+	box.add_child(_label("Choose where the probe lands. It scouts one landing site and sends back a full report. %d of %d probes left." % [_probes_left(), Probe.carried(manifest)], 0, MUTED, true))
+	var grid := GridContainer.new()
+	grid.columns = 2 if _width() >= 900.0 else 1
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
+	box.add_child(grid)
+	var sites: Array = GameData.balance()["landing_sites"]
+	for i in sites.size():
+		var cell := VBoxContainer.new()
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_child(cell)
+		var seen := scouted.has(_key(pid, i))
+		cell.add_child(_minimap(pid, i, not seen))
+		var label := ("See the report for site %s" if seen else "Probe site %s") % char(65 + i)
+		var b := _button(label, _send_probe.bind(pid, i, show_planets))
+		b.disabled = not seen and _probes_left() <= 0
+		_fit(b)
+		cell.add_child(b)
+	box.add_child(_button("Back", show_planets))
+
+
+func _minimap(pid: String, site: int, fog: bool) -> Control:
+	var mini := Minimap.new()
+	var mini_w := minf(400.0, _width() - 56.0)
+	mini.custom_minimum_size = Vector2(mini_w, mini_w * 0.75)
+	mini.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mini.fog = fog
+	mini.show_map(MapGen.generate(game_seed, pid, site))
+	return mini
+
+
+## Uses a probe on a site (or reopens its report if it was scouted already).
+func _send_probe(pid: String, site: int, back: Callable) -> void:
+	if not scouted.has(_key(pid, site)):
+		if _probes_left() <= 0:
+			return
+		probes_used += 1
+		scouted[_key(pid, site)] = true
+	show_probe_report(pid, site, back)
+
+
+## The probe's report on one site, with Settle here and Look elsewhere.
+func show_probe_report(pid: String, site: int, back: Callable) -> void:
+	var planet := GameData.planet(pid)
+	var r := Probe.report(game_seed, pid, site)
+	var box := _new_page("Probe report: %s, site %s" % [planet["name"], char(65 + site)], 900.0)
+	var view := ProbeView.new()
+	var w := minf(620.0, _width() - 40.0)
+	view.custom_minimum_size = Vector2(w, w * 0.55)
+	view.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(view)
+	view.show_map(r["map"], r["find"])
+	var near: Dictionary = r["near"]
+	var below: Dictionary = r["below"]
+	var lines := PackedStringArray()
+	lines.append("Sunlight: %d%% (Solar Arrays make this much of their best).  Cold: buildings need %.1f times the usual heat." % [int(round(float(r["light"]) * 100.0)), float(r["cold"])])
+	lines.append("Nearby: %d ice, %d vents, %d ore seams, %d ridges (can't build on ridges)." % [near["ice"], near["vent"], near["seam"], near["ridge"]])
+	lines.append("In the Deep below: %d ore veins, %d underground water, %d deep vents." % [below["vein"], below["aquifer"], below["deepvent"]])
+	lines.append("Grit storms here: %s.  Icequakes: %s." % [r["storms"], r["quakes"]])
+	box.add_child(_label("\n".join(lines), 0, Color.WHITE, true))
+	var find: String = r["find"]
+	if find != "":
+		var fd := Probe.find_def(find)
+		box.add_child(_label("Lucky find: %s. %s" % [fd["name"], fd["desc"]], 0, ACCENT, true))
+	else:
+		box.add_child(_label("No lucky finds here.", 0, MUTED, true))
+	var settle := _button("Settle here", _settle.bind(pid, site))
+	_fit(settle)
+	box.add_child(settle)
+	settle.grab_focus.call_deferred()
+	box.add_child(_button("Look elsewhere", back))
+
+
+func _settle(pid: String, site: int) -> void:
+	planet_id = pid
+	settle_site = site
 	show_difficulty()
 
 
@@ -232,30 +350,30 @@ func show_sites() -> void:
 	grid.add_theme_constant_override("v_separation", 12)
 	box.add_child(grid)
 	var sites: Array = GameData.balance()["landing_sites"]
-	# Survey probes (cargo) map the Deep under every site.
-	var probed := int(manifest.get("probe", 0)) > 0
-	var deep: Array = MapGen.generate_deep(game_seed, planet_id) if probed else []
-	if probed:
-		box.add_child(_label("Your survey probes have mapped the Deep: each site also lists the ore veins, aquifers and deep vents under it.", 0, MUTED, true))
+	box.add_child(_label("Sites you haven't scouted show only a rough outline. %d of %d probes left." % [_probes_left(), Probe.carried(manifest)], 0, MUTED, true))
+	var deep: Array = MapGen.generate_deep(game_seed, planet_id)
 	for i in sites.size():
 		var map := MapGen.generate(game_seed, planet_id, i)
+		var seen := scouted.has(_key(planet_id, i))
 		var cell := VBoxContainer.new()
 		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(cell)
-		var mini := Minimap.new()
-		var mini_w := minf(400.0, _width() - 56.0)
-		mini.custom_minimum_size = Vector2(mini_w, mini_w * 0.75)
-		mini.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		cell.add_child(mini)
-		mini.show_map(map)
-		var note := _site_note(map)
-		if probed:
-			note += "; " + _deep_note(map, deep)
+		cell.add_child(_minimap(planet_id, i, not seen))
+		var note := "%s; %s" % [_site_note(map), _deep_note(map, deep)] if seen else "not scouted"
+		if seen and Probe.find_for(game_seed, planet_id, i) != "":
+			note += "; lucky find: " + str(Probe.find_def(Probe.find_for(game_seed, planet_id, i))["name"]).to_lower()
 		var b := _button("Land at site %s  (%s)" % [char(65 + i), note], _finish.bind(i))
 		_fit(b)
 		cell.add_child(b)
-		if i == 0:
+		if i == maxi(settle_site, 0):
 			b.grab_focus.call_deferred()
+		if not seen:
+			var pb := _button("Send a probe here", _send_probe.bind(planet_id, i, show_sites))
+			pb.disabled = _probes_left() <= 0
+			_fit(pb)
+			cell.add_child(pb)
+		else:
+			cell.add_child(_button("See the probe report", show_probe_report.bind(planet_id, i, show_sites)))
 	var back := _button("Back", show_manifest)
 	box.add_child(back)
 
@@ -286,4 +404,4 @@ func _deep_note(map: Dictionary, deep: Array) -> String:
 
 
 func _finish(site: int) -> void:
-	finished.emit({"planet": planet_id, "difficulty": difficulty_id, "site": site, "manifest": manifest.duplicate()})
+	finished.emit({"planet": planet_id, "difficulty": difficulty_id, "site": site, "manifest": manifest.duplicate(), "find": Probe.find_for(game_seed, planet_id, site)})
