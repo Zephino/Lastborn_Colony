@@ -706,6 +706,82 @@ static func _iso_rover(ci: CanvasItem, c: Vector2, tw: float, at: Vector2, col: 
 	S._glow(ci, S._iso(c, tw, at.x, at.y, 0.11), tw * 0.012, _f(Color(0.4, 0.6, 1.0), state), state)
 
 
+# ============================================================ the ship
+
+## The colony's lander standing on the Landing Pad: four splayed legs with
+## footpads, a gold-foil engine section with its nozzle, a white body with an
+## orange band and a ring of lit portholes, a rounded nose with a red light,
+## and a hatch with its ramp down to the pad.
+static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary) -> void:
+	var white := _f(Color(0.92, 0.93, 0.95), state)
+	var shade := _f(Color(0.70, 0.72, 0.76), state)
+	var gold := _f(Color(0.85, 0.66, 0.25), state)
+	var orange := _f(S.ORANGE, state)
+	var md := _f(S.METAL_DARK, state)
+	var pad_z := 0.05
+	# Scorch on the pad under the engine.
+	ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0, 0, pad_z), tw * 0.16, tw * 0.08), Color(0.05, 0.05, 0.05, 0.35 * white.a))
+	# Legs: the two at the back first.
+	var legs := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
+	for k in 4:
+		var q: Vector2 = legs[k].normalized()
+		if q.x + q.y > 0.0:
+			continue
+		_lander_leg(ci, c, tw, q, pad_z, shade, md)
+	# The engine nozzle and the gold-foil engine section.
+	S._cyl(ci, c, tw, 0, 0, 0.06, 0.05, md, md.darkened(0.3), pad_z + 0.02)
+	S._cyl(ci, c, tw, 0, 0, 0.11, 0.07, gold, gold.lightened(0.15), pad_z + 0.07)
+	for k in 5:
+		var ang := deg_to_rad(20.0 + k * 35.0)
+		var base := S._iso(c, tw, 0, 0, pad_z + 0.07)
+		ci.draw_line(base + Vector2(cos(ang) * 0.11 * tw * 0.72, sin(ang) * 0.11 * tw * 0.36), base + Vector2(cos(ang) * 0.11 * tw * 0.72, sin(ang) * 0.11 * tw * 0.36 - 0.07 * tw), gold.darkened(0.25), 1.0)
+	# The body.
+	var body_z := pad_z + 0.14
+	var body_h := 0.30
+	var base_b := S._iso(c, tw, 0, 0, body_z)
+	var rx := 0.10 * tw * 0.72
+	var body := S._ellipse(base_b, rx, rx * 0.5, 0, 180, 14)
+	body.append_array(S._ellipse(base_b - Vector2(0, body_h * tw), rx, rx * 0.5, 180, 0, 14))
+	ci.draw_colored_polygon(body, white)
+	# Shade the right side so it reads as round.
+	ci.draw_colored_polygon(PackedVector2Array([base_b + Vector2(rx * 0.35, rx * 0.47), base_b + Vector2(rx, 0), base_b + Vector2(rx, -body_h * tw), base_b + Vector2(rx * 0.35, rx * 0.47 - body_h * tw)]), shade)
+	ci.draw_polyline(S._ellipse(base_b - Vector2(0, body_h * tw * 0.30), rx, rx * 0.5, 0, 180, 14), orange, maxf(2.0, tw * 0.016))
+	# Portholes round the upper body.
+	for k in 4:
+		var ang := deg_to_rad(35.0 + k * 37.0)
+		var p := base_b - Vector2(0, body_h * tw * 0.65) + Vector2(cos(ang) * rx * 0.95, sin(ang) * rx * 0.47)
+		ci.draw_circle(p, maxf(1.5, tw * 0.011), md)
+		ci.draw_circle(p, maxf(1.0, tw * 0.007), _f(Color(1.0, 0.85, 0.5), state))
+	# The rounded nose and its light.
+	var top := base_b - Vector2(0, body_h * tw)
+	var nose := S._ellipse(top, rx, rx * 0.5, 0, 180, 14)
+	nose.append_array(S._ellipse(top, rx, tw * 0.10, 180, 360, 14))
+	ci.draw_colored_polygon(nose, white)
+	ci.draw_arc(top - Vector2(rx * 0.3, tw * 0.05), rx * 0.35, deg_to_rad(200), deg_to_rad(260), 6, Color(1, 1, 1, 0.8 * white.a), 1.5)
+	S._glow(ci, top - Vector2(0, tw * 0.10), tw * 0.012, _f(Color(1.0, 0.3, 0.3), state), state)
+	# The hatch facing forward, and its ramp down to the pad.
+	var hatch := base_b + Vector2(rx * 0.25, rx * 0.47)
+	ci.draw_colored_polygon(PackedVector2Array([hatch + Vector2(-tw * 0.022, 0), hatch + Vector2(tw * 0.022, 0), hatch + Vector2(tw * 0.022, -tw * 0.07), hatch + Vector2(-tw * 0.022, -tw * 0.07)]), md)
+	ci.draw_colored_polygon(PackedVector2Array([hatch + Vector2(-tw * 0.018, -tw * 0.005), hatch + Vector2(tw * 0.018, -tw * 0.005), hatch + Vector2(tw * 0.018, -tw * 0.062), hatch + Vector2(-tw * 0.018, -tw * 0.062)]), _f(Color(1.0, 0.85, 0.5), state))
+	ci.draw_colored_polygon(PackedVector2Array([hatch + Vector2(-tw * 0.022, 0), hatch + Vector2(tw * 0.022, 0), S._iso(c, tw, 0.30, 0.30, pad_z) + Vector2(tw * 0.05, 0), S._iso(c, tw, 0.30, 0.30, pad_z) + Vector2(-tw * 0.05, 0)]), shade.darkened(0.1))
+	# The two front legs.
+	for k in 4:
+		var q: Vector2 = legs[k].normalized()
+		if q.x + q.y <= 0.0:
+			continue
+		_lander_leg(ci, c, tw, q, pad_z, shade, md)
+
+
+static func _lander_leg(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, pad_z: float, col: Color, dark: Color) -> void:
+	var hip := S._iso(c, tw, q.x * 0.09, q.y * 0.09, pad_z + 0.16)
+	var knee := S._iso(c, tw, q.x * 0.20, q.y * 0.20, pad_z + 0.10)
+	var foot := S._iso(c, tw, q.x * 0.24, q.y * 0.24, pad_z)
+	ci.draw_polyline(PackedVector2Array([hip, knee, foot]), dark, maxf(2.0, tw * 0.018))
+	ci.draw_polyline(PackedVector2Array([hip, knee, foot]), col, maxf(1.0, tw * 0.008))
+	ci.draw_line(S._iso(c, tw, q.x * 0.10, q.y * 0.10, pad_z + 0.09), knee, dark, maxf(1.0, tw * 0.008))
+	ci.draw_colored_polygon(S._ellipse(foot, tw * 0.03, tw * 0.015), dark)
+
+
 # ============================================================ units
 
 ## Draws a drone or satellite at an angle, centred on c, about tw pixels wide.

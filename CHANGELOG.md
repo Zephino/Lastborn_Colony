@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.55
+Date: 11/02/2026
+Time: 12:15 AM
+
+### Changes
+- **A lander that can stand on the Landing Pad** (`draw_lander` in `scripts/ui/sprites_more.gd`; sprite concept, not shown in the game yet):
+  - four splayed legs with footpads;
+  - a gold-foil engine section with its nozzle, and a scorch mark on the pad;
+  - a white body with an orange band and a ring of lit portholes;
+  - a rounded nose with a red light;
+  - a lit hatch with a ramp down to the pad.
+- The pad draws it, between its back and front airlock buildings, when its state has `"ship": true`. Nothing in the game sets that yet.
+
+### Reason
+The owner asked what a rocket would look like on the landing pad.
+
 ## Version 00.01.54
 Date: 11/01/2026
 Time: 11:59 PM

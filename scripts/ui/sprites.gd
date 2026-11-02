@@ -1151,8 +1151,13 @@ static func _iso_pad(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Arr
 	for i in 12:
 		var q := Vector2.from_angle(i * TAU / 12.0) * r * 0.80
 		_glow(ci, _iso(c, tw, q.x, q.y, top), tw * 0.014, orange, state)
-	# A small airlock building at each door, back ones first; tunnels run into them.
-	for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, 1)]:
+	# A small airlock building at each door, back ones first; tunnels run into
+	# them. The ship, when it's on the pad, stands between the back and front ones.
+	for d in [Vector2i(0, -1), Vector2i(-1, 0)]:
+		_iso_gatehouse(ci, c, tw, r, d, state)
+	if state.get("ship", false):
+		more().draw_lander(ci, c, tw, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		_iso_gatehouse(ci, c, tw, r, d, state)
 	for d in links:
 		if d.x > 0 or d.y > 0:
