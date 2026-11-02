@@ -152,7 +152,7 @@ func _tunnels() -> void:
 
 ## Drones (on a patch of ground) and satellites (in space), angled.
 func _units() -> void:
-	_text("Drones (built at a Drone Bay) and satellites (launched from a Launch Rail). Angled view.", Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
+	_text("Drones (built at a Drone Bay) and satellites (launched from a Spin Launcher). Angled view.", Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
 	const Fleet = preload("res://scripts/sim/fleet.gd")
 	var more: Script = Sprites.more()
 	var cw := 470.0
@@ -176,6 +176,14 @@ func _units() -> void:
 	var keys := ["pop", "morale", "power", "heat", "workers", "food", "oxygen", "water", "ore", "alloy", "parts", "marks", "debt", "payment", "turn"]
 	for k in keys.size():
 		People.draw_icon(self, keys[k], po + Vector2(40 + (k % 8) * 52, 330 + (k / 8) * 60), 40.0)
+	# The lander on the Landing Pad, docked at each of its four airlocks in turn.
+	var lo := Vector2(20, 970)
+	draw_rect(Rect2(lo, Vector2(cw * 4 - 12, 350)), Color(0.10, 0.11, 0.14))
+	_text("The lander on the Landing Pad (it docks at the next airlock round each time it lands)", lo + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
+	for k in 4:
+		var lc := lo + Vector2(cw * 0.5 - 6 + k * cw, 260)
+		Sprites.terrain_iso(self, "regolith", lc, 300.0)
+		Sprites.draw_iso(self, "hull", lc, 300.0, {"links": [], "ship": true, "ship_door": k})
 	for i in 3:
 		var t: String = Fleet.sat_order()[i]
 		var o := Vector2(20 + i * cw, 510)

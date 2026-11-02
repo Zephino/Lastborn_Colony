@@ -2,6 +2,17 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.61
+Date: 11/02/2026
+Time: 1:45 AM
+
+### Changes
+- The sprite sheet's units page (`tools/sheet_canvas.gd`) now also shows the lander on the Landing Pad, docked at each of its four airlocks. Its heading now says satellites launch from a Spin Launcher.
+- A complete sprite sheet was made for the owner: every page, plus screenshots of the surface and the Deep in the game.
+
+### Reason
+The owner asked for a complete sprite sheet.
+
 ## Version 00.01.60
 Date: 11/02/2026
 Time: 1:30 AM
