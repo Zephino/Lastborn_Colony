@@ -4,7 +4,7 @@ extends Control
 const Sprites = preload("res://scripts/ui/sprites.gd")
 const GameData = preload("res://scripts/sim/game_data.gd")
 
-var page := "buildings"
+var page := "surface"
 var font: Font
 
 
@@ -18,10 +18,12 @@ func _text(t: String, p: Vector2, sz: int, col: Color = Color.WHITE) -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.06, 0.07, 0.09))
-	if page == "buildings":
-		_buildings(0, 16)
-	elif page == "buildings2":
-		_buildings(16, 99)
+	if page == "surface":
+		_buildings("Surface buildings. Left: top-down. Right: angled. Small: under construction / idle.", _level_ids("surface"), false)
+	elif page == "deep":
+		_buildings("Deep buildings (underground). Left: top-down. Right: angled. Small: under construction / idle.", _level_ids("deep"), false)
+	elif page == "both":
+		_buildings("Buildings that go on both levels: on the surface (middle) and in the Deep (right).", _level_ids("both"), true)
 	elif page == "units":
 		_units()
 	elif page == "tunnels":
@@ -30,9 +32,32 @@ func _draw() -> void:
 		_world()
 
 
-func _buildings(from: int, to: int) -> void:
-	_text("Lastborn Colony buildings (%s). Left: top-down. Right: angled. Small: under construction / idle." % ("1 of 2" if from == 0 else "2 of 2"), Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
-	var ids: Array = GameData.building_ids().slice(from, to)
+## The building ids for one level: "surface", "deep" or "both". The Landing
+## Pad and Shaft lead the surface page; the Shaft Landing leads the Deep page.
+func _level_ids(level: String) -> Array:
+	var out: Array = []
+	if level == "deep":
+		out.append("shaft_base")
+	for id in GameData.building_ids():
+		var note := GameData.level_note(GameData.building(id))
+		var where := "surface" if note == "Surface only." else ("deep" if note == "Deep only." else "both")
+		if id in ["hull", "shaft"]:
+			where = "surface"
+		if where == level and not (id in out):
+			out.append(id)
+	return out
+
+
+## The ground a building is shown on: the first ground of that level it may use.
+func _ground(id: String, deep: bool) -> String:
+	var deep_kinds := ["cavern", "rock", "vein", "aquifer", "deepvent"]
+	for t in GameData.building(id).get("terrain", []):
+		if (t in deep_kinds) == deep:
+			return "cavern" if t == "rock" else t
+	return "cavern" if deep else "regolith"
+
+
+func _buildings(title: String, ids: Array, both: bool) -> void:
 	var cols := 4
 	var cw := 470.0
 	var ch := 250.0
@@ -41,32 +66,38 @@ func _buildings(from: int, to: int) -> void:
 		var o := Vector2(20 + (i % cols) * cw, 70 + (i / cols) * ch)
 		draw_rect(Rect2(o, Vector2(cw - 12, ch - 12)), Color(0.10, 0.11, 0.14))
 		_text(GameData.building(id)["name"], o + Vector2(12, 26), 20, Color(1.0, 0.82, 0.48))
-		# Top-down, on one ground tile.
 		var r := Rect2(o + Vector2(14, 44), Vector2(120, 120))
 		# Each building is shown with a tunnel at every door it has.
 		var doors := int(Sprites.DOORS.get(id, 2))
 		var sample := {"links": [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)].slice(0, doors)}
-		if doors == 2:
+		if doors == 2 or id == "main":
 			# Two-door buildings are passed through: in one side, out the other.
 			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
-		if id == "main":
-			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
-		else:
-			_text("%d door%s" % [doors, "" if doors == 1 else "s"], o + Vector2(cw - 90, 26), 16, Color(0.7, 0.75, 0.8))
-		# Each building sits on the ground of the level it's built on.
-		var note := GameData.level_note(GameData.building(id))
-		var ground := "cavern" if note == "Deep only." else "regolith"
+		var label := "" if id == "main" else "%d door%s" % [doors, "" if doors == 1 else "s"]
+		var deep_page := page == "deep"
+		var ground := _ground(id, deep_page)
 		Sprites.terrain_top(self, ground, r)
 		Sprites.draw_top(self, id, r, sample)
-		# Angled, on one diamond.
-		var c := o + Vector2(290, 150)
-		Sprites.terrain_iso(self, ground, c, 200.0)
-		Sprites.draw_iso(self, id, c, 200.0, sample)
-		# The level note goes on last, so a tall building can't cover it.
-		if note != "":
-			var tag := o + Vector2(cw - 214, 10)
-			draw_rect(Rect2(tag, Vector2(108, 22)), Color(0.10, 0.11, 0.14))
-			_text(note.trim_suffix("."), tag + Vector2(4, 16), 16, Color(0.55, 0.80, 0.95) if ground == "cavern" else Color(0.95, 0.80, 0.55))
+		if both:
+			# The same building on the surface and in the Deep.
+			var c1 := o + Vector2(230, 150)
+			var c2 := o + Vector2(370, 150)
+			Sprites.terrain_iso(self, _ground(id, false), c1, 140.0)
+			Sprites.draw_iso(self, id, c1, 140.0, sample)
+			Sprites.terrain_iso(self, _ground(id, true), c2, 140.0, false)
+			Sprites.draw_iso(self, id, c2, 140.0, sample)
+			_text("Surface", o + Vector2(200, ch - 30), 16, Color(0.95, 0.80, 0.55))
+			_text("Deep", o + Vector2(350, ch - 30), 16, Color(0.55, 0.80, 0.95))
+		else:
+			# The Shaft Landing's lift tube is tall, so it is drawn smaller.
+			var big := 140.0 if id == "shaft_base" else 200.0
+			var c := o + Vector2(290, 150 if big > 150.0 else 185)
+			Sprites.terrain_iso(self, ground, c, big, false)
+			Sprites.draw_iso(self, id, c, big, sample)
+		# Labels go on last, so a tall building can't cover them.
+		if label != "":
+			draw_rect(Rect2(o + Vector2(cw - 100, 8), Vector2(86, 24)), Color(0.10, 0.11, 0.14))
+			_text(label, o + Vector2(cw - 90, 26), 16, Color(0.7, 0.75, 0.8))
 		# Under construction and idle, small.
 		var y := o.y + ch - 64
 		for j in 2:
@@ -74,9 +105,13 @@ func _buildings(from: int, to: int) -> void:
 			var rr := Rect2(Vector2(o.x + 14 + j * 60, y), Vector2(44, 44))
 			Sprites.terrain_top(self, ground, rr)
 			Sprites.draw_top(self, id, rr, st)
-			var cc := Vector2(o.x + 160 + j * 70, y + 30)
-			Sprites.terrain_iso(self, ground, cc, 60.0)
-			Sprites.draw_iso(self, id, cc, 60.0, st)
+			if not both:
+				var cc := Vector2(o.x + 160 + j * 70, y + 30)
+				Sprites.terrain_iso(self, ground, cc, 60.0, false)
+				Sprites.draw_iso(self, id, cc, 60.0, st)
+	# The page title last, over anything tall.
+	draw_rect(Rect2(Vector2(0, 0), Vector2(size.x, 60)), Color(0.06, 0.07, 0.09))
+	_text(title, Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
 
 
 func _world() -> void:

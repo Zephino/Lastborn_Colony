@@ -98,11 +98,6 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 			var paint := _f(Color(0.92, 0.92, 0.88), state)
 			ci.draw_polyline(PackedVector2Array([lot.position + Vector2(s * 0.04, lot.size.y - s * 0.03), lot.position + Vector2(s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, lot.size.y - s * 0.03)]), paint, 1.5)
 			S._top_drone(ci, lot.get_center() + Vector2(0, -s * 0.01), s * 0.11, state)
-		"rescue":
-			# A stack of brace beams at the back, and the rescue rover parked by the bay door.
-			for k in 3:
-				ci.draw_rect(Rect2(c + Vector2(-s * 0.48, -s * (0.47 - k * 0.05)), Vector2(s * 0.26, s * 0.035)), _f(S.HAZARD, state).darkened(0.15))
-			_top_rover(ci, c + Vector2(0, s * 0.41), s, _f(RESCUE, state), state)
 		"academy":
 			# A fenced playground at the front-left (slide and swings), a yellow school bus at the back-right, and a flagpole.
 			var yard := Rect2(c + Vector2(-s * 0.49, s * 0.20), Vector2(s * 0.29, s * 0.29))
@@ -179,17 +174,6 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			# Two drones docked inside.
 			S._top_drone(ci, c + Vector2(0, -rad * 0.35), rad * 0.32, state)
 			S._top_drone(ci, c + Vector2(0, rad * 0.35), rad * 0.32, state)
-		"rescue":
-			# A red roll-up bay door on the front, a red stripe along the roof,
-			# and red and blue beacons on the ridge.
-			var hw := rad * 0.82
-			var door := Rect2(c + Vector2(-s * 0.14, hw - s * 0.05), Vector2(s * 0.28, s * 0.07))
-			ci.draw_rect(door, _f(RESCUE, state))
-			for k in 4:
-				ci.draw_line(Vector2(door.position.x, door.position.y + k * s * 0.018), Vector2(door.end.x, door.position.y + k * s * 0.018), _f(RESCUE, state).darkened(0.3), 1.0)
-			ci.draw_line(c + Vector2(-rad * 1.2, 0), c + Vector2(rad * 1.2, 0), _f(RESCUE, state), maxf(2.0, s * 0.025))
-			S._glow(ci, c + Vector2(-s * 0.08, -hw * 0.3), s * 0.022, _f(RESCUE, state), state)
-			S._glow(ci, c + Vector2(s * 0.08, -hw * 0.3), s * 0.022, _f(Color(0.35, 0.55, 1.0), state), state)
 		"academy":
 			# A brick roof with a ring of skylights, the bell tower in the middle, and the porch at the front-right.
 			var brick := _f(Color(0.72, 0.36, 0.26), state)
@@ -310,9 +294,6 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 			var paint := _f(Color(0.92, 0.92, 0.88), state)
 			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, 0.24, -0.23, 0.006), S._iso(c, tw, 0.24, -0.45, 0.006), S._iso(c, tw, 0.45, -0.45, 0.006), S._iso(c, tw, 0.45, -0.23, 0.006)]), paint, 1.5)
 			S._iso_drone(ci, S._iso(c, tw, 0.345, -0.345) - c + c, tw, 0.0, 0.11, state)
-		"rescue":
-			for k in 3:
-				S._box(ci, c, tw, -0.48, -0.47 + k * 0.05, -0.22, -0.44 + k * 0.05, 0.03, _f(S.HAZARD, state).darkened(0.15), Color(0, 0, 0, 0), k * 0.03)
 		"academy":
 			# A yellow school bus parked at the back-right.
 			var bus := _f(Color(0.98, 0.78, 0.15), state)
@@ -403,28 +384,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 				ci.draw_line(S._iso(c, tw, u0 + 0.04, v1, z), S._iso(c, tw, u1 - 0.04, v1, z), wall.darkened(0.2), 1.0)
 			ci.draw_line(S._iso(c, tw, u0 + 0.04, v1, 0.0), S._iso(c, tw, u1 - 0.04, v1, 0.0), _f(S.HAZARD, state), 2.0)
 			S._glow(ci, S._iso(c, tw, (u0 + u1) * 0.5, v1, 0.185), tw * 0.012, _f(S.AMBER, state), state)
-		"rescue":
-			# A red roll-up bay door in the hall's curved side, a red stripe,
-			# red and blue beacons on the roof, and the rescue rover out front.
-			var dims := Vector2(r * 1.3, r * 0.82)
-			var red := _f(RESCUE, state)
-			var z0 := 0.03
-			var pts := PackedVector2Array()
-			for k in 6:
-				var ang := deg_to_rad(70.0 * k / 5.0)
-				pts.append(S._isov(c, tw, -0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)))
-			for k in 6:
-				var ang := deg_to_rad(70.0 * (5 - k) / 5.0)
-				pts.append(S._isov(c, tw, 0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)))
-			ci.draw_colored_polygon(pts, red)
-			for k in range(1, 5):
-				var ang := deg_to_rad(70.0 * k / 5.0)
-				ci.draw_line(S._isov(c, tw, -0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)), S._isov(c, tw, 0.15, dims.y * cos(ang), z0 + dims.y * sin(ang)), red.darkened(0.3), 1.0)
-			ci.draw_line(S._isov(c, tw, -dims.x, dims.y * cos(1.1), z0 + dims.y * sin(1.1)), S._isov(c, tw, dims.x, dims.y * cos(1.1), z0 + dims.y * sin(1.1)), red, maxf(2.0, tw * 0.014))
-			var ridge := z0 + dims.y
-			S._glow(ci, S._isov(c, tw, -0.08, 0, ridge + 0.02), tw * 0.02, red, state)
-			S._glow(ci, S._isov(c, tw, 0.08, 0, ridge + 0.02), tw * 0.02, _f(Color(0.35, 0.55, 1.0), state), state)
-			_iso_rover(ci, c, tw, S._va(0.0, 0.41), red, state)
 		"academy":
 			_school(ci, c, tw, r, h, state)
 		"hazlab":

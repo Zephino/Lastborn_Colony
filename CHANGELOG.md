@@ -2,6 +2,31 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.71
+Date: 11/02/2026
+Time: 4:43 AM
+
+### Changes
+- **The Ice Drill is remade as a drilling rig.** It has:
+  - a yellow-and-black striped drilling tower over a frosty borehole, with the drill pipe going down and a winch and work light on top;
+  - a tall insulated melt tank with blue bands, a level gauge and a little steam;
+  - a pump house by the door, with the same airlock doorway as the Solar Array;
+  - water pipes joining all three.
+- **The Rescue Station is remade as an emergency station.** It has:
+  - a red station block with a white band and two roll-up garage bays, one half open;
+  - a red rescue rover with red and blue lights parked out front;
+  - a siren tower with a flashing beacon;
+  - a stack of yellow brace beams.
+  - It lines up with whichever way its two doors face.
+- **The sprite sheet is reorganised by level.** It has three building pages:
+  - **Surface buildings**, each on its own ground;
+  - **Deep buildings** on cave floor, now including the Shaft Landing;
+  - **Both levels** (Heat Main, Vent Tap, Ice Drill, Seam Cutter), each shown side by side on the surface and in the Deep.
+- The sheet tool renders at its proper size (1900 x 1340), so no page is cut off. Page titles and door labels are drawn on top.
+
+### Reason
+The owner asked to remake the Ice Drill and the Rescue Station, and for a full sprite sheet showing surface and underground buildings, and which go on both.
+
 ## Version 00.01.70
 Date: 11/02/2026
 Time: 4:36 AM
