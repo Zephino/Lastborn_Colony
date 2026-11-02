@@ -323,12 +323,12 @@ static func _doors(check: Callable) -> void:
 	var hull: Dictionary = s["structures"]["1"]
 	var hx := int(hull["x"])
 	var hy := int(hull["y"])
-	# East of the pad, a Mirror Field's single door must face west, back to the pad.
+	# East of the pad, a Solar Array's single door must face west, back to the pad.
 	check.call(Actions.auto_rot(s, "mirror", hx + 1, hy) == 1, "placing turns a building so its door faces the colony")
 	var wrong := Actions.check_place(s, "mirror", hx + 1, hy, 0, 0)
 	check.call(not wrong["ok"] and str(wrong["reason"]).contains("door"), "a building turned with no door facing the colony is refused, and says why")
 	check.call(Actions.place(s, "mirror", hx + 1, hy, 0, 1)["ok"] and int(Actions.structure_at(s, hx + 1, hy)["rot"]) == 1, "a building keeps the way it was turned")
-	# Something beyond the Mirror Field can't join through its back wall.
+	# Something beyond the Solar Array can't join through its back wall.
 	var behind := Actions.check_place(s, "main", hx + 2, hy)
 	check.call(not behind["ok"], "nothing joins through a wall without a door")
 	# Built next to each other but facing away, two buildings don't join.

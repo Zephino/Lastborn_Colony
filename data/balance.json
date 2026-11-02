@@ -192,7 +192,7 @@
         "max": 1,
         "storm": 0.5,
         "quake_radius": -1,
-        "desc": "Warns of grit fronts and quakes: storms cut mirror output half as much, and icequakes reach less far."
+        "desc": "Warns of grit fronts and quakes: storms cut solar output half as much, and icequakes reach less far."
       },
       "relay": {
         "name": "Relay satellite",

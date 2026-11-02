@@ -52,7 +52,7 @@ static func summary(state: Dictionary) -> String:
 	lines.append("Storage %s per resource." % fmt(float(state["report"].get("storage", b["base_storage"]))))
 	lines.append("Payments made %d. Missed in a row: %d of %d." % [int(state["payments_made"]), int(state["missed_in_row"]), int(b["max_missed"])])
 	if int(state["storm"]) > 0:
-		lines.append("[color=%s]Grit front: mirrors weakened for %d more turns.[/color]" % [AMBER, int(state["storm"])])
+		lines.append("[color=%s]Grit front: solar panels weakened for %d more turns.[/color]" % [AMBER, int(state["storm"])])
 	if int(state["surge"]) > 0:
 		lines.append("[color=%s]Vent surge: %d more turns.[/color]" % [AMBER, int(state["surge"])])
 	var idle: Dictionary = state["report"].get("idle_reasons", {})
@@ -77,7 +77,7 @@ static func problem(state: Dictionary, s: Dictionary) -> String:
 	if reasons.has(s["id"]):
 		var why: String = reasons[s["id"]]
 		var fix := {"workers": "Free up workers (fewer buildings) or grow the colony.",
-			"power": "Build more Mirror Fields or stop other buildings.",
+			"power": "Build more Solar Arrays or stop other buildings.",
 			"heat": "Build a Vent Tap or a Forge (it gives off heat), or research Insulated Mains.",
 			"marks": "Sell more alloy through a Spin Launcher."}
 		return "Idle last turn: %s. %s" % [IDLE_TEXT.get(why, why), fix.get(why, "")]

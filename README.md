@@ -41,7 +41,7 @@ Payments start on **turn 30** and come every **10 turns**, each a little bigger 
 You start with a **Landing Pad**, 30 settlers and some alloy. Alloy is what you build with.
 
 1. **Build a Shaft** next to the Landing Pad. It takes 3 turns and opens the **Deep**, the cave level underneath. Your homes, food and air all go down there.
-2. **Make power and heat on the surface.** Put **Mirror Fields** toward the sunny side for power. Put a **Vent Tap** on an orange vent for heat.
+2. **Make power and heat on the surface.** Put **Solar Arrays** toward the sunny side for power. Put a **Vent Tap** on an orange vent for heat.
 3. **Get water.** Put an **Ice Drill** on ice.
 4. **Go down.** Press **Deep** (or **E**). Build out from the bottom of the Shaft:
    - a **Splitter** turns water into oxygen;
@@ -78,7 +78,7 @@ On a phone the map gets the whole screen. **Build**, **Info**, **Research** and 
 
 ### Light and cold
 
-The map runs from frozen night on one side to blazing day on the other. **Mirror Fields** make more power on the sunny side. Buildings need **more heat** on the cold side. Ice and vents are mostly on the cold side, so you're always balancing the two. Select a tile to see its light and heat factor.
+The map runs from frozen night on one side to blazing day on the other. **Solar Arrays** make more power on the sunny side. Buildings need **more heat** on the cold side. Ice and vents are mostly on the cold side, so you're always balancing the two. Select a tile to see its light and heat factor.
 
 ### Ground
 
@@ -91,7 +91,7 @@ Buildings join with tunnels only where their **doors** meet.
 
 - **Hubs** (Landing Pad, Shaft, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern) have **4 doors**.
 - **Workplaces** have **2 doors**, on opposite sides.
-- **Outlying machines** (Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Radio Station, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have **1 door**.
+- **Outlying machines** (Solar Array, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Radio Station, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have **1 door**.
 - **Heat Mains** join on every side.
 
 A new building needs a door facing a door or a Heat Main. It turns itself to fit; press **R** or **Rotate** to turn it yourself. Don't wall in your Heat Mains: leave them a free side so you can keep growing.
@@ -102,7 +102,7 @@ The **Shaft** is a lift tube down to the Deep. When it's finished, a landing ope
 
 | Level | Buildings |
 | --- | --- |
-| **Surface only** | Mirror Field, Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station |
+| **Surface only** | Solar Array, Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station |
 | **Deep only** | Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat, Splitter |
 | **Either** | Heat Main, Ice Drill, Vent Tap, Seam Cutter |
 
@@ -132,7 +132,7 @@ Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Ga
 | --- | --- | --- | --- |
 | Heat Main | Either | 1 | Tunnel that extends your network. |
 | Shaft | Surface | 15 | Lift down to the Deep. |
-| Mirror Field | Surface | 6 | Power from sunlight. |
+| Solar Array | Surface | 6 | Power from sunlight. |
 | Vent Tap | Either | 10 | Lots of steady heat. Must sit on a vent. |
 | Ice Drill | Either | 6 | Water. Must sit on ice or underground water. |
 | Splitter | Deep | 10 | Turns water into oxygen. |
@@ -170,7 +170,7 @@ Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Ga
   - **Prospector:** brings back 2 ore a turn.
   - **Hauler:** makes your Seam Cutters dig more, and carries ore up the lift.
 - **Satellites** are launched from a working **Spin Launcher**.
-  - **Weather:** grit storms hurt mirrors less, and icequakes reach less far.
+  - **Weather:** grit storms hurt solar panels less, and icequakes reach less far.
   - **Relay:** +3 morale.
   - **Power** (after research): beams 10 power to a Beam Catcher.
 - **Supply pods** packed before landing wait on the ship. Call one down any time for alloy, food and oxygen.

@@ -1,6 +1,6 @@
 [
   {"id": "insulation", "name": "Insulated Mains", "cost": 12, "requires": [], "effects": {"heat_need": 0.8}, "desc": "Buildings need 20% less heat."},
-  {"id": "coatings", "name": "Mirror Coatings", "cost": 12, "requires": [], "effects": {"out:mirror": 1.25}, "desc": "Mirror Fields make 25% more power."},
+  {"id": "coatings", "name": "Panel Coatings", "cost": 12, "requires": [], "effects": {"out:mirror": 1.25}, "desc": "Solar Arrays make 25% more power."},
   {"id": "kelp", "name": "Hardy Kelp Strains", "cost": 14, "requires": [], "effects": {"out:vat": 1.25}, "desc": "Kelp Vats grow 25% more food."},
   {"id": "seals", "name": "Seal Maintenance", "cost": 14, "requires": [], "effects": {"wear": 0.5}, "desc": "Machines break down half as often."},
   {"id": "electrolysis", "name": "Efficient Electrolysis", "cost": 18, "requires": ["insulation"], "effects": {"out:splitter": 1.3}, "desc": "Splitters make 30% more oxygen."},
@@ -8,7 +8,7 @@
   {"id": "smelting", "name": "Hot Smelting", "cost": 22, "requires": ["seam_mapping"], "effects": {"out:forge": 1.25}, "desc": "Forges make 25% more alloy."},
   {"id": "mag_rail", "name": "Magnetic Bearings", "cost": 24, "requires": ["smelting"], "effects": {"export:rail": 2}, "desc": "Each Spin Launcher sells 2 more alloy a turn."},
   {"id": "bunks", "name": "Stacked Bunks", "cost": 16, "requires": ["insulation"], "effects": {"housing:bunk": 4}, "desc": "Bunkhouses hold 4 more people."},
-  {"id": "forecasting", "name": "Grit Forecasting", "cost": 16, "requires": ["coatings"], "effects": {"storm": 0.5}, "desc": "Grit fronts cut mirror output half as much."},
+  {"id": "forecasting", "name": "Grit Forecasting", "cost": 16, "requires": ["coatings"], "effects": {"storm": 0.5}, "desc": "Grit fronts cut solar output half as much."},
   {"id": "field_medicine", "name": "Field Medicine", "cost": 20, "requires": ["kelp"], "effects": {"plague": 0.5, "elder_death": 0.8}, "desc": "Halves the chance of plague and helps elders live longer."},
   {"id": "commons_charter", "name": "Commons Charter", "cost": 20, "requires": ["kelp"], "effects": {"morale": 5, "crime": 0.7}, "desc": "A written say in colony affairs. Morale +5 and crime down 30%."},
   {"id": "deep_vents", "name": "Deep Vent Bores", "cost": 26, "requires": ["insulation", "seals"], "effects": {"out:vent": 1.4}, "desc": "Vent Taps give 40% more heat."},

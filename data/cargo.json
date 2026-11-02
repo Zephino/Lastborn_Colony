@@ -66,8 +66,8 @@
     },
     {
       "id": "prefab_mirror",
-      "name": "Prefab Mirror Field",
-      "desc": "A Mirror Field you can place for free.",
+      "name": "Prefab Solar Array",
+      "desc": "A Solar Array you can place for free.",
       "debt": 150,
       "max": 3,
       "kit": "mirror"

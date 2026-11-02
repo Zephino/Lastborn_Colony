@@ -3,7 +3,7 @@
     "id": "dust_storm",
     "title": "Grit Front",
     "weight": 3,
-    "body": "A wall of grit rolls off the day side. The mirror fields will be half-blind for a few turns.",
+    "body": "A wall of grit rolls off the day side. The solar arrays will be half-blind for a few turns.",
     "effects": {
       "storm": 3
     }

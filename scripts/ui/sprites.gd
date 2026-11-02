@@ -53,7 +53,7 @@ const INTERIOR := {
 	"hazlab": Color(0.10, 0.16, 0.08), "garden": Color(0.14, 0.30, 0.14), "lounge": Color(0.18, 0.10, 0.24),
 }
 ## Dome size (radius, as a fraction of a tile) for each building.
-const DOME_SIZE := {"hull": 0.46, "mirror": 0.20, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.40, "vent": 0.34, "forge": 0.34, "lab": 0.44,
+const DOME_SIZE := {"hull": 0.46, "mirror": 0.42, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.40, "vent": 0.34, "forge": 0.34, "lab": 0.44,
 	"vat": 0.44, "bunk": 0.36, "cutter": 0.38, "workshop": 0.30,
 	"fusion": 0.36, "catcher": 0.16, "reclaimer": 0.30, "fab": 0.32, "dronebay": 0.28, "mast": 0.22,
 	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.44, "lounge": 0.34}
@@ -1296,105 +1296,131 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true, d)
 
 
-## The Mirror Field: two long curved mirror troughs bend sunlight onto a pipe
-## running along each one. The hot pipes feed a small power house in the
-## middle, where the tunnel joins.
+## The Solar Array (id "mirror"): a little control building by the door, and
+## a big field of low solar panels in rows filling the rest of the tile.
 static func _iso_mirror(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
-	var md := _fade(METAL_DARK, state)
-	var m := _fade(METAL, state)
-	var lit := _lit(state)
-	var hw := 0.11
+	var dd := _solar_door(links, state)
+	var bc := Vector2(dd) * 0.27
+	var hw := 0.15
 	for d in links:
 		if d.x < 0 or d.y < 0:
-			_iso_link(ci, c, tw, d, hw, state)
-	# The back trough first, then the power house, then the front trough.
-	_trough(ci, c, tw, -0.30, state)
-	# Hot pipes from both troughs into the power house.
-	var hot := _fade(Color(1.0, 0.55, 0.20), state)
-	for vc in [-0.30, 0.30]:
-		ci.draw_line(_iso(c, tw, 0.0, vc, 0.14), _iso(c, tw, 0.0, signf(vc) * hw, 0.10), md, maxf(2.5, tw * 0.02))
-		ci.draw_line(_iso(c, tw, 0.0, vc, 0.14), _iso(c, tw, 0.0, signf(vc) * hw, 0.10), hot if lit else m, maxf(1.0, tw * 0.008))
-	var wall := _fade(Color(0.62, 0.64, 0.70), state)
-	_box(ci, c, tw, -hw, -hw, hw, hw, 0.30, wall, wall.lightened(0.15))
-	ci.draw_polyline(PackedVector2Array([_iso(c, tw, -hw, hw, 0.30), _iso(c, tw, hw, hw, 0.30), _iso(c, tw, hw, -hw, 0.30)]), _fade(CYAN, state), maxf(1.5, tw * 0.012))
-	# A cooling vent on the roof, and a light that shows it's working.
-	_cyl(ci, c, tw, -0.03, -0.03, 0.05, 0.06, m, md, 0.30)
-	_glow(ci, _iso(c, tw, hw, -0.05, 0.24), tw * 0.016, _fade(CYAN, state), state)
-	_trough(ci, c, tw, 0.30, state)
+			_iso_link(ci, c, tw, d, 0.27 + hw, state)
+	# Panels and the building, back to front.
+	var cells: Array = []
+	for u in [-0.36, -0.12, 0.12, 0.36]:
+		for v in [-0.36, -0.12, 0.12, 0.36]:
+			if absf(u - bc.x) < 0.27 and absf(v - bc.y) < 0.27:
+				continue
+			cells.append(Vector2(u, v))
+	cells.sort_custom(func(p, q): return p.x + p.y < q.x + q.y)
+	var built := false
+	for q in cells:
+		if not built and q.x + q.y > bc.x + bc.y:
+			_solar_hut(ci, c, tw, bc, hw, dd, state)
+			built = true
+		_solar_panel(ci, c, tw, q, state)
+	if not built:
+		_solar_hut(ci, c, tw, bc, hw, dd, state)
 	for d in links:
 		if d.x > 0 or d.y > 0:
-			_iso_link(ci, c, tw, d, hw, state)
+			_iso_link(ci, c, tw, d, 0.27 + hw, state)
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
-		if not (d in links) and d in state.get("doors", [d]):
-			_iso_port(ci, _iso(c, tw, d.x * hw, d.y * hw, 0.06), tw, state, true, d)
+		if not (d in links) and d == dd:
+			_iso_port(ci, _iso(c, tw, d.x * (0.27 + hw), d.y * (0.27 + hw), 0.06), tw, state, true, d)
 
 
-## One curved mirror trough along the tile at v = vc, with its glowing pipe.
-static func _trough(ci: CanvasItem, c: Vector2, tw: float, vc: float, state: Dictionary) -> void:
+## Which side the Solar Array's one door is on.
+static func _solar_door(links: Array, state: Dictionary) -> Vector2i:
+	if not links.is_empty():
+		return links[0]
+	var doors: Array = state.get("doors", [])
+	return doors[0] if not doors.is_empty() else Vector2i(0, 1)
+
+
+## The little control building: inverters inside, a cyan trim, a light, and
+## an airlock doorway on the door side for the tunnel to plug into.
+static func _solar_hut(ci: CanvasItem, c: Vector2, tw: float, bc: Vector2, hw: float, dd: Vector2i, state: Dictionary) -> void:
 	var md := _fade(METAL_DARK, state)
-	var lit := _lit(state)
-	var u0 := -0.44
-	var u1 := 0.44
-	var w := 0.10
-	# Legs holding it up at both ends and the middle.
-	for u in [u0 + 0.03, 0.0, u1 - 0.03]:
-		ci.draw_line(_iso(c, tw, u, vc, 0.0), _iso(c, tw, u, vc, 0.08), md, maxf(1.5, tw * 0.012))
-	# The curved mirror: strips across, darker at the bottom of the curve.
-	var steps := 6
-	for i in steps:
-		var t0 := -1.0 + 2.0 * float(i) / steps
-		var t1 := -1.0 + 2.0 * float(i + 1) / steps
-		var z0 := 0.06 + 0.08 * t0 * t0
-		var z1 := 0.06 + 0.08 * t1 * t1
-		var quad := PackedVector2Array([_iso(c, tw, u0, vc + w * t0, z0), _iso(c, tw, u1, vc + w * t0, z0), _iso(c, tw, u1, vc + w * t1, z1), _iso(c, tw, u0, vc + w * t1, z1)])
-		var shine := 1.0 - absf((t0 + t1) * 0.5)
-		var col := _fade(Color(0.62, 0.74, 0.86), state).lerp(_fade(Color(0.92, 0.97, 1.0), state), shine * 0.7)
-		ci.draw_colored_polygon(quad, col)
-	# The rim, and a bright glint along the mirror.
-	ci.draw_line(_iso(c, tw, u0, vc - w, 0.14), _iso(c, tw, u1, vc - w, 0.14), md, maxf(1.5, tw * 0.01))
-	ci.draw_line(_iso(c, tw, u0, vc + w, 0.14), _iso(c, tw, u1, vc + w, 0.14), md.lightened(0.2), maxf(1.5, tw * 0.012))
-	ci.draw_line(_iso(c, tw, u0 + 0.06, vc + w * 0.45, 0.09), _iso(c, tw, u0 + 0.30, vc + w * 0.45, 0.09), Color(1, 1, 1, 0.75 * md.a), 1.5)
-	# End plates.
-	for u in [u0, u1]:
-		var plate := PackedVector2Array()
-		for i in steps + 1:
-			var t := -1.0 + 2.0 * float(i) / steps
-			plate.append(_iso(c, tw, u, vc + w * t, 0.06 + 0.08 * t * t))
-		ci.draw_polyline(plate, md, maxf(1.5, tw * 0.012))
-	# The pipe the sunlight is focused on, held up on little arms.
-	var pz := 0.13
-	for u in [u0 + 0.04, u1 - 0.04]:
-		ci.draw_line(_iso(c, tw, u, vc, 0.07), _iso(c, tw, u, vc, pz), md, 1.0)
-	ci.draw_line(_iso(c, tw, u0, vc, pz), _iso(c, tw, u1, vc, pz), md, maxf(2.5, tw * 0.022))
-	var glow := _fade(Color(1.0, 0.70, 0.30), state) if lit else _fade(METAL, state)
-	ci.draw_line(_iso(c, tw, u0, vc, pz), _iso(c, tw, u1, vc, pz), glow, maxf(1.2, tw * 0.010))
-	if lit:
-		ci.draw_line(_iso(c, tw, u0, vc, pz), _iso(c, tw, u1, vc, pz), Color(1.0, 0.85, 0.5, 0.25), maxf(4.0, tw * 0.04))
+	var box := _fade(Color(0.70, 0.72, 0.78), state)
+	var hh := 0.26
+	_box(ci, c, tw, bc.x - hw, bc.y - hw, bc.x + hw, bc.y + hw, hh, box, box.lightened(0.12))
+	ci.draw_polyline(PackedVector2Array([_iso(c, tw, bc.x - hw, bc.y + hw, hh), _iso(c, tw, bc.x + hw, bc.y + hw, hh), _iso(c, tw, bc.x + hw, bc.y - hw, hh)]), _fade(CYAN, state), maxf(1.5, tw * 0.012))
+	# Vents on the side wall that isn't the door.
+	var vent_u := bc.x + hw
+	if dd != Vector2i(1, 0):
+		for k in 3:
+			ci.draw_line(_iso(c, tw, vent_u, bc.y - 0.07 + k * 0.05, 0.10), _iso(c, tw, vent_u, bc.y - 0.07 + k * 0.05, 0.18), md, 1.0)
+	_box(ci, c, tw, bc.x - 0.06, bc.y - 0.06, bc.x + 0.04, bc.y + 0.04, 0.05, md.lightened(0.2), md.lightened(0.3), hh)
+	if dd != Vector2i(0, 1):
+		_glow(ci, _iso(c, tw, bc.x - 0.05, bc.y + hw, 0.19), tw * 0.014, _fade(Color(0.4, 1.0, 0.5), state), state)
+	# The airlock doorway on the visible door wall: an orange frame round a
+	# dark opening, sized to the tunnel.
+	if dd == Vector2i(1, 0) or dd == Vector2i(0, 1):
+		var orange := _fade(ORANGE, state)
+		var along := 0
+		var fr := PackedVector2Array()
+		var op := PackedVector2Array()
+		for corner in [[-0.10, 0.0], [0.10, 0.0], [0.10, 0.21], [-0.10, 0.21]]:
+			var w: float = corner[0]
+			var z: float = corner[1]
+			if dd == Vector2i(1, 0):
+				fr.append(_iso(c, tw, bc.x + hw, bc.y + w, z))
+				op.append(_iso(c, tw, bc.x + hw, bc.y + w * 0.75, z * 0.85 + 0.01))
+			else:
+				fr.append(_iso(c, tw, bc.x + w, bc.y + hw, z))
+				op.append(_iso(c, tw, bc.x + w * 0.75, bc.y + hw, z * 0.85 + 0.01))
+		ci.draw_colored_polygon(fr, md.lightened(0.1))
+		ci.draw_colored_polygon(op, Color(0.04, 0.04, 0.05, md.a))
+		ci.draw_polyline(PackedVector2Array([fr[0], fr[1], fr[2], fr[3], fr[0]]), orange, maxf(1.5, tw * 0.014))
 
 
-## The Mirror Field from above: two troughs with their glowing pipes and the
-## power house between them.
+## One low solar panel centred at q, tilted up toward the viewer, on short legs.
+static func _solar_panel(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var hu := 0.105
+	var hv := 0.085
+	var lo := 0.035
+	var hi := 0.11
+	var p0 := _iso(c, tw, q.x - hu, q.y - hv, hi)
+	var p1 := _iso(c, tw, q.x + hu, q.y - hv, hi)
+	var p2 := _iso(c, tw, q.x + hu, q.y + hv, lo)
+	var p3 := _iso(c, tw, q.x - hu, q.y + hv, lo)
+	for u in [q.x - hu + 0.015, q.x + hu - 0.015]:
+		ci.draw_line(_iso(c, tw, u, q.y - hv + 0.01, 0.0), _iso(c, tw, u, q.y - hv + 0.01, hi), md, maxf(1.0, tw * 0.008))
+	var panel := PackedVector2Array([p0, p1, p2, p3])
+	ci.draw_colored_polygon(panel, _fade(Color(0.10, 0.20, 0.42), state))
+	var cell := _fade(Color(0.35, 0.55, 0.85), state)
+	for k in range(1, 4):
+		var t := float(k) / 4.0
+		ci.draw_line(p0.lerp(p1, t), p3.lerp(p2, t), cell, 1.0)
+	ci.draw_line(p0.lerp(p3, 0.5), p1.lerp(p2, 0.5), cell, 1.0)
+	ci.draw_polyline(PackedVector2Array([p0, p1, p2, p3, p0]), m.lightened(0.25), 1.0)
+	ci.draw_line(p0.lerp(p1, 0.2).lerp(p3.lerp(p2, 0.2), 0.2), p0.lerp(p1, 0.5).lerp(p3.lerp(p2, 0.5), 0.7), Color(1, 1, 1, 0.45 * m.a), 1.0)
+
+
+## The Solar Array from above: rows of panels and the little building by the door.
 static func _top_mirror(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
-	var md := _fade(METAL_DARK, state)
-	var lit := _lit(state)
-	for vc in [-0.30, 0.30]:
-		var r := Rect2(c + Vector2(-s * 0.44, (vc - 0.12) * s), Vector2(s * 0.88, s * 0.24))
-		ci.draw_rect(r, md)
-		for i in 6:
-			var t := (float(i) + 0.5) / 6.0
-			var shine := 1.0 - absf(t * 2.0 - 1.0)
-			var band := Rect2(Vector2(r.position.x + s * 0.02, r.position.y + s * 0.02 + (r.size.y - s * 0.04) * float(i) / 6.0), Vector2(r.size.x - s * 0.04, (r.size.y - s * 0.04) / 6.0 + 0.5))
-			ci.draw_rect(band, _fade(Color(0.62, 0.74, 0.86), state).lerp(_fade(Color(0.92, 0.97, 1.0), state), shine * 0.7))
-		var mid := r.position.y + r.size.y * 0.5
-		ci.draw_line(Vector2(r.position.x, mid), Vector2(r.end.x, mid), md, maxf(2.5, s * 0.03))
-		ci.draw_line(Vector2(r.position.x, mid), Vector2(r.end.x, mid), _fade(Color(1.0, 0.70, 0.30), state) if lit else _fade(METAL, state), maxf(1.2, s * 0.014))
-		ci.draw_line(c + Vector2(0, vc * s * 0.6), c, md, maxf(2.0, s * 0.025))
-	var hw := s * 0.11
-	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.72, 0.74, 0.80), state))
-	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(CYAN, state), false, 1.5)
-	ci.draw_circle(c, s * 0.04, md)
-	for d in DIRS:
-		_top_port(ci, c + Vector2(d) * hw, s, state, not (d in links), d)
+	var m := _fade(METAL, state)
+	var dd := _solar_door(links, state)
+	var bc := Vector2(dd) * 0.27
+	for u in [-0.36, -0.12, 0.12, 0.36]:
+		for v in [-0.36, -0.12, 0.12, 0.36]:
+			if absf(u - bc.x) < 0.27 and absf(v - bc.y) < 0.27:
+				continue
+			var r := Rect2(c + Vector2((u - 0.105) * s, (v - 0.085) * s), Vector2(s * 0.21, s * 0.17))
+			ci.draw_rect(r, _fade(Color(0.10, 0.20, 0.42), state))
+			for k in range(1, 4):
+				var x := r.position.x + r.size.x * float(k) / 4.0
+				ci.draw_line(Vector2(x, r.position.y), Vector2(x, r.end.y), _fade(Color(0.35, 0.55, 0.85), state), 1.0)
+			ci.draw_line(Vector2(r.position.x, r.get_center().y), Vector2(r.end.x, r.get_center().y), _fade(Color(0.35, 0.55, 0.85), state), 1.0)
+			ci.draw_rect(r, m.lightened(0.25), false, 1.0)
+	var hw := s * 0.15
+	var hc := c + bc * s
+	ci.draw_rect(Rect2(hc - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.72, 0.74, 0.80), state))
+	ci.draw_rect(Rect2(hc - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(CYAN, state), false, 1.5)
+	_glow(ci, hc, s * 0.02, _fade(Color(0.4, 1.0, 0.5), state), state)
+	_top_port(ci, hc + Vector2(dd) * hw, s, state, not (dd in links), dd)
 
 
 ## The Radio Station: a small studio with an "on air" light and a dish on its

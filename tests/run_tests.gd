@@ -374,7 +374,7 @@ func test_deep() -> void:
 	var base := Actions.structure_at(s, spot.x, spot.y, 1)
 	check(not base.is_empty() and base["type"] == "shaft_base", "a finished shaft opens a landing in the Deep")
 	check(Actions.terrain_at(s, spot.x, spot.y, 1) == "cavern", "the landing is dug out")
-	check(not Actions.check_place(s, "mirror", spot.x + 1, spot.y, 1)["ok"], "Mirror Fields can't go underground")
+	check(not Actions.check_place(s, "mirror", spot.x + 1, spot.y, 1)["ok"], "Solar Arrays can't go underground")
 	# Build a bunkhouse next to the landing; rock costs more and takes longer.
 	var dig := Vector2i(-1, -1)
 	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:

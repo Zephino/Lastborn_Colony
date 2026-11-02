@@ -2,6 +2,23 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.70
+Date: 11/02/2026
+Time: 4:36 AM
+
+### Changes
+- **The Mirror Field is now the Solar Array, with a new look.** A little control building sits by the door, with a cyan trim, vents, a rooftop unit and a green working light. The rest of the tile is a big field of low dark-blue solar panels in rows on short legs, with cell lines and a glint of sunlight. The building moves to whichever side the door faces. The tunnel plugs into an orange-framed airlock doorway in its wall, and the building is tall enough that the tunnel doesn't swamp it.
+- The top-down picture matches. The mirror troughs from 00.01.69 are gone.
+- What it does hasn't changed. The internal id stays `mirror`, so saves keep working.
+- All player text uses the new name:
+  - the build menu, README and How to play;
+  - "Panel Coatings" research (was Mirror Coatings);
+  - the grit-storm news, the Hollow planet description and the prefab cargo;
+  - the story ending and the weather satellite description.
+
+### Reason
+The owner didn't like the mirror troughs and asked to rename and rework it: a Solar Array, with a little building and a big solar field. They also didn't like how the tunnel entered the little building.
+
 ## Version 00.01.69
 Date: 11/02/2026
 Time: 4:32 AM
