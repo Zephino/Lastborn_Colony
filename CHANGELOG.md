@@ -2,6 +2,24 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.59
+Date: 11/02/2026
+Time: 1:15 AM
+
+### Changes
+**The lander was redrawn to look more sophisticated** (`draw_lander` in `scripts/ui/sprites_more.gd`):
+- a slimmer, slightly tapered white body, shaded band by band so it reads as round, with panel seams;
+- a band of dark heat-shield tiles at its base, over a cluster of three engine bells with a blue exhaust glow;
+- landing legs with hydraulic pistons and footpads;
+- thruster pods on both sides and lattice grid fins near the top;
+- an orange stripe with a colony emblem;
+- a band of tinted cockpit windows catching the light, under a pointed, shaded nose with an antenna and a red light.
+
+The boarding tube into the pad's airlock stays.
+
+### Reason
+The owner asked for the rocket to look more sophisticated.
+
 ## Version 00.01.58
 Date: 11/02/2026
 Time: 12:55 AM

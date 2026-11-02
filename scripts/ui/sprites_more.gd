@@ -708,68 +708,139 @@ static func _iso_rover(ci: CanvasItem, c: Vector2, tw: float, at: Vector2, col: 
 
 # ============================================================ the ship
 
-## The colony's lander standing on the Landing Pad: four splayed legs with
-## footpads, a gold-foil engine section with its nozzle, a white body with an
-## orange band and a ring of lit portholes, a rounded nose with a red light,
-## and a sealed boarding tube from its hatch down into one of the pad's airlocks.
+## The colony's lander standing on the Landing Pad. A slim, slightly tapered
+## body shaded round, with panel seams; a band of dark heat-shield tiles at its
+## base over a cluster of three engine bells; landing legs with hydraulic
+## pistons; thruster pods and grid fins; an orange stripe with the colony's
+## emblem; a band of tinted cockpit windows under a pointed nose with an
+## antenna; and a sealed boarding tube from its hatch down into one of the
+## pad's airlocks.
 static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary) -> void:
-	var white := _f(Color(0.92, 0.93, 0.95), state)
-	var shade := _f(Color(0.70, 0.72, 0.76), state)
-	var gold := _f(Color(0.85, 0.66, 0.25), state)
-	var orange := _f(S.ORANGE, state)
+	var white := _f(Color(0.93, 0.94, 0.96), state)
 	var md := _f(S.METAL_DARK, state)
+	var m := _f(S.METAL, state)
+	var orange := _f(S.ORANGE, state)
+	var tile := _f(Color(0.16, 0.17, 0.19), state)
 	var pad_z := 0.05
-	# Scorch on the pad under the engine.
-	ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0, 0, pad_z), tw * 0.16, tw * 0.08), Color(0.05, 0.05, 0.05, 0.35 * white.a))
-	# Legs: the two at the back first.
-	# Legs to the corners, clear of the boarding tube on the +v side.
+	var body_z := pad_z + 0.10
+	var body_h := 0.36
+	var r0 := 0.105
+	var r1 := 0.085
+	# Scorch on the pad, and the engine glow under the skirt.
+	ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0, 0, pad_z), tw * 0.17, tw * 0.085), Color(0.04, 0.04, 0.05, 0.4 * white.a))
 	var legs := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
+	for q in legs:
+		if q.x + q.y < 0.0:
+			_lander_leg(ci, c, tw, q.normalized(), pad_z, body_z, m, md)
+	# Three engine bells.
+	for k in 3:
+		var a := k * TAU / 3.0 + 0.5
+		var eu := cos(a) * 0.045
+		var ev := sin(a) * 0.045
+		var top := S._iso(c, tw, eu, ev, body_z)
+		var bot := S._iso(c, tw, eu, ev, pad_z + 0.025)
+		var bell := PackedVector2Array([top + Vector2(-tw * 0.012, 0), top + Vector2(tw * 0.012, 0), bot + Vector2(tw * 0.026, 0), bot + Vector2(-tw * 0.026, 0)])
+		ci.draw_colored_polygon(bell, md.lightened(0.1))
+		ci.draw_colored_polygon(S._ellipse(bot, tw * 0.026, tw * 0.011), Color(0.05, 0.05, 0.06, white.a))
+	S._glow(ci, S._iso(c, tw, 0, 0, pad_z + 0.02), tw * 0.03, _f(Color(0.55, 0.75, 1.0), state), state)
+	# The body: a tapered round shell, shaded band by band so it reads as round.
+	_lander_shell(ci, c, tw, body_z, body_z + body_h, r0, r1, white, state)
+	# Heat-shield tiles round the base.
+	_lander_shell(ci, c, tw, body_z, body_z + 0.07, r0 + 0.002, r0 - 0.003, tile, state)
+	var base := S._iso(c, tw, 0, 0, body_z)
+	for k in 2:
+		var z := body_z + 0.025 + k * 0.025
+		var rr := lerpf(r0, r1, (z - body_z) / body_h) + 0.002
+		ci.draw_polyline(S._ellipse(S._iso(c, tw, 0, 0, z), rr * tw * 0.72, rr * tw * 0.36, 5, 175, 16), tile.lightened(0.15), 1.0)
+	for k in 7:
+		var ang := deg_to_rad(15.0 + k * 25.0)
+		ci.draw_line(base + Vector2(cos(ang) * r0 * tw * 0.72, sin(ang) * r0 * tw * 0.36), base + Vector2(cos(ang) * r0 * tw * 0.72, sin(ang) * r0 * tw * 0.36 - 0.07 * tw), tile.lightened(0.15), 1.0)
+	# Panel seams.
+	for z in [0.16, 0.24, 0.31]:
+		var zz: float = body_z + z
+		var rr := lerpf(r0, r1, (zz - body_z) / body_h)
+		ci.draw_polyline(S._ellipse(S._iso(c, tw, 0, 0, zz), rr * tw * 0.72, rr * tw * 0.36, 5, 175, 16), white.darkened(0.2), 1.0)
+	# The orange stripe and the colony emblem.
+	var sz := body_z + 0.11
+	var srr := lerpf(r0, r1, 0.11 / body_h)
+	ci.draw_polyline(S._ellipse(S._iso(c, tw, 0, 0, sz), srr * tw * 0.72, srr * tw * 0.36, 5, 175, 16), orange, maxf(3.0, tw * 0.02))
+	var emblem := S._iso(c, tw, 0, 0, body_z + 0.20) + Vector2(srr * tw * 0.72 * 0.25, srr * tw * 0.36 * 0.95)
+	ci.draw_circle(emblem, tw * 0.016, orange)
+	ci.draw_circle(emblem, tw * 0.010, white)
+	ci.draw_colored_polygon(PackedVector2Array([emblem + Vector2(0, -tw * 0.008), emblem + Vector2(tw * 0.006, tw * 0.005), emblem + Vector2(-tw * 0.006, tw * 0.005)]), orange)
+	# Thruster pods on the sides, and grid fins near the top.
+	for side in [-1.0, 1.0]:
+		var at := S._iso(c, tw, 0, 0, body_z + 0.22) + Vector2(side * r1 * tw * 0.75, 0)
+		ci.draw_rect(Rect2(at - Vector2(tw * 0.010, tw * 0.012), Vector2(tw * 0.020, tw * 0.024)), md)
+		for k in 3:
+			ci.draw_circle(at + Vector2(side * tw * 0.012, (k - 1) * tw * 0.008), maxf(1.0, tw * 0.004), m.lightened(0.3))
+		var fin := S._iso(c, tw, 0, 0, body_z + body_h - 0.05) + Vector2(side * r1 * tw * 0.78, 0)
+		var fr := Rect2(fin + Vector2(-tw * 0.004 if side > 0 else -tw * 0.036, -tw * 0.018), Vector2(tw * 0.04, tw * 0.036))
+		ci.draw_rect(fr, md.lightened(0.2), false, 1.5)
+		for g in 2:
+			ci.draw_line(Vector2(fr.position.x + fr.size.x * (g + 1) / 3.0, fr.position.y), Vector2(fr.position.x + fr.size.x * (g + 1) / 3.0, fr.end.y), md.lightened(0.2), 1.0)
+			ci.draw_line(Vector2(fr.position.x, fr.position.y + fr.size.y * (g + 1) / 3.0), Vector2(fr.end.x, fr.position.y + fr.size.y * (g + 1) / 3.0), md.lightened(0.2), 1.0)
+	# The cockpit: a band of tinted windows near the top, catching the light.
+	var wz := body_z + body_h - 0.06
+	var wr := lerpf(r0, r1, (wz - body_z) / body_h)
+	var wc := S._iso(c, tw, 0, 0, wz)
+	var band := S._ellipse(wc, wr * tw * 0.73, wr * tw * 0.37, 20, 160, 14)
+	band.append_array(S._ellipse(wc - Vector2(0, tw * 0.03), wr * tw * 0.73, wr * tw * 0.37, 160, 20, 14))
+	ci.draw_colored_polygon(band, _f(Color(0.10, 0.16, 0.24), state))
+	ci.draw_polyline(S._ellipse(wc - Vector2(0, tw * 0.022), wr * tw * 0.66, wr * tw * 0.33, 60, 110, 6), Color(0.75, 0.9, 1.0, 0.8 * white.a), 1.5)
 	for k in 4:
-		var q: Vector2 = legs[k].normalized()
-		if q.x + q.y > 0.0:
-			continue
-		_lander_leg(ci, c, tw, q, pad_z, shade, md)
-	# The engine nozzle and the gold-foil engine section.
-	S._cyl(ci, c, tw, 0, 0, 0.06, 0.05, md, md.darkened(0.3), pad_z + 0.02)
-	S._cyl(ci, c, tw, 0, 0, 0.11, 0.07, gold, gold.lightened(0.15), pad_z + 0.07)
-	for k in 5:
-		var ang := deg_to_rad(20.0 + k * 35.0)
-		var base := S._iso(c, tw, 0, 0, pad_z + 0.07)
-		ci.draw_line(base + Vector2(cos(ang) * 0.11 * tw * 0.72, sin(ang) * 0.11 * tw * 0.36), base + Vector2(cos(ang) * 0.11 * tw * 0.72, sin(ang) * 0.11 * tw * 0.36 - 0.07 * tw), gold.darkened(0.25), 1.0)
-	# The body.
-	var body_z := pad_z + 0.14
-	var body_h := 0.30
-	var base_b := S._iso(c, tw, 0, 0, body_z)
-	var rx := 0.10 * tw * 0.72
-	var body := S._ellipse(base_b, rx, rx * 0.5, 0, 180, 14)
-	body.append_array(S._ellipse(base_b - Vector2(0, body_h * tw), rx, rx * 0.5, 180, 0, 14))
-	ci.draw_colored_polygon(body, white)
-	# Shade the right side so it reads as round.
-	ci.draw_colored_polygon(PackedVector2Array([base_b + Vector2(rx * 0.35, rx * 0.47), base_b + Vector2(rx, 0), base_b + Vector2(rx, -body_h * tw), base_b + Vector2(rx * 0.35, rx * 0.47 - body_h * tw)]), shade)
-	ci.draw_polyline(S._ellipse(base_b - Vector2(0, body_h * tw * 0.30), rx, rx * 0.5, 0, 180, 14), orange, maxf(2.0, tw * 0.016))
-	# Portholes round the upper body.
-	for k in 4:
-		var ang := deg_to_rad(35.0 + k * 37.0)
-		var p := base_b - Vector2(0, body_h * tw * 0.65) + Vector2(cos(ang) * rx * 0.95, sin(ang) * rx * 0.47)
-		ci.draw_circle(p, maxf(1.5, tw * 0.011), md)
-		ci.draw_circle(p, maxf(1.0, tw * 0.007), _f(Color(1.0, 0.85, 0.5), state))
-	# The rounded nose and its light.
-	var top := base_b - Vector2(0, body_h * tw)
-	var nose := S._ellipse(top, rx, rx * 0.5, 0, 180, 14)
-	nose.append_array(S._ellipse(top, rx, tw * 0.10, 180, 360, 14))
-	ci.draw_colored_polygon(nose, white)
-	ci.draw_arc(top - Vector2(rx * 0.3, tw * 0.05), rx * 0.35, deg_to_rad(200), deg_to_rad(260), 6, Color(1, 1, 1, 0.8 * white.a), 1.5)
-	S._glow(ci, top - Vector2(0, tw * 0.10), tw * 0.012, _f(Color(1.0, 0.3, 0.3), state), state)
-	# The two front legs.
-	for k in 4:
-		var q: Vector2 = legs[k].normalized()
-		if q.x + q.y <= 0.0:
-			continue
-		_lander_leg(ci, c, tw, q, pad_z, shade, md)
+		var ang := deg_to_rad(40.0 + k * 33.0)
+		var x := wc + Vector2(cos(ang) * wr * tw * 0.73, sin(ang) * wr * tw * 0.37)
+		ci.draw_line(x, x - Vector2(0, tw * 0.03), white.darkened(0.3), 1.0)
+	# The pointed nose, its antenna and light.
+	var top := S._iso(c, tw, 0, 0, body_z + body_h)
+	var rx := r1 * tw * 0.72
+	var tip := top - Vector2(0, tw * 0.16)
+	var right_side := PackedVector2Array()
+	for k in 9:
+		var t := float(8 - k) / 8.0
+		var w := rx * sqrt(maxf(0.0, 1.0 - t * t))
+		right_side.append(top.lerp(tip, t) + Vector2(w, 0))
+	var nose_poly := S._ellipse(top, rx, rx * 0.5, 0, 180, 14)
+	for k in 9:
+		var t := float(k) / 8.0
+		nose_poly.append(top.lerp(tip, t) + Vector2(-rx * sqrt(maxf(0.0, 1.0 - t * t)), 0))
+	nose_poly.append_array(right_side)
+	ci.draw_colored_polygon(nose_poly, white)
+	var shade_poly := PackedVector2Array()
+	for k in 9:
+		var t := float(k) / 8.0
+		shade_poly.append(top.lerp(tip, t) + Vector2(rx * 0.35 * sqrt(maxf(0.0, 1.0 - t * t)), 0))
+	shade_poly.append_array(right_side)
+	ci.draw_colored_polygon(shade_poly, white.darkened(0.18))
+	ci.draw_line(tip, tip - Vector2(0, tw * 0.05), md, 1.5)
+	S._glow(ci, tip - Vector2(0, tw * 0.05), tw * 0.010, _f(Color(1.0, 0.3, 0.3), state), state)
+	for q in legs:
+		if q.x + q.y >= 0.0:
+			_lander_leg(ci, c, tw, q.normalized(), pad_z, body_z, m, md)
 	# A sealed boarding tube from the hatch (on the +v side) down into the pad's
 	# airlock building on that side, so nobody has to walk outside.
 	_boarding_tube(ci, c, tw, Vector3(0.0, 0.09, body_z + 0.06), Vector3(0.0, 0.37, 0.12), 0.035, state)
 
+
+## A body of revolution between heights z0 and z1 (radius r0 at the bottom,
+## r1 at the top), shaded in vertical bands so it reads as round.
+static func _lander_shell(ci: CanvasItem, c: Vector2, tw: float, z0: float, z1: float, r0: float, r1: float, col: Color, state: Dictionary) -> void:
+	var b := S._iso(c, tw, 0, 0, z0)
+	var t := S._iso(c, tw, 0, 0, z1)
+	var steps := 10
+	for k in steps:
+		var a0 := deg_to_rad(180.0 * k / steps)
+		var a1 := deg_to_rad(180.0 * (k + 1) / steps)
+		var light := clampf(cos((a0 + a1) * 0.5 - deg_to_rad(150.0)), -1.0, 1.0)
+		var shade := col.lightened(light * 0.12) if light > 0.0 else col.darkened(-light * 0.30)
+		var quad := PackedVector2Array([
+			b + Vector2(cos(a0) * r0 * tw * 0.72, sin(a0) * r0 * tw * 0.36),
+			b + Vector2(cos(a1) * r0 * tw * 0.72, sin(a1) * r0 * tw * 0.36),
+			t + Vector2(cos(a1) * r1 * tw * 0.72, sin(a1) * r1 * tw * 0.36),
+			t + Vector2(cos(a0) * r1 * tw * 0.72, sin(a0) * r1 * tw * 0.36)])
+		ci.draw_colored_polygon(quad, shade)
+	ci.draw_colored_polygon(S._ellipse(t, r1 * tw * 0.72, r1 * tw * 0.36), col.lightened(0.05))
 
 
 ## A round tube between two points (u, v, height), shaded, with ribs and an
@@ -815,14 +886,18 @@ static func _boarding_tube(ci: CanvasItem, c: Vector2, tw: float, a: Vector3, b:
 	ci.draw_polyline(collar, _f(S.AMBER, state), maxf(1.5, tw * 0.008))
 
 
-static func _lander_leg(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, pad_z: float, col: Color, dark: Color) -> void:
-	var hip := S._iso(c, tw, q.x * 0.09, q.y * 0.09, pad_z + 0.16)
-	var knee := S._iso(c, tw, q.x * 0.20, q.y * 0.20, pad_z + 0.10)
-	var foot := S._iso(c, tw, q.x * 0.24, q.y * 0.24, pad_z)
-	ci.draw_polyline(PackedVector2Array([hip, knee, foot]), dark, maxf(2.0, tw * 0.018))
-	ci.draw_polyline(PackedVector2Array([hip, knee, foot]), col, maxf(1.0, tw * 0.008))
-	ci.draw_line(S._iso(c, tw, q.x * 0.10, q.y * 0.10, pad_z + 0.09), knee, dark, maxf(1.0, tw * 0.008))
-	ci.draw_colored_polygon(S._ellipse(foot, tw * 0.03, tw * 0.015), dark)
+static func _lander_leg(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, pad_z: float, body_z: float, col: Color, dark: Color) -> void:
+	var hip := S._iso(c, tw, q.x * 0.09, q.y * 0.09, body_z + 0.06)
+	var knee := S._iso(c, tw, q.x * 0.20, q.y * 0.20, pad_z + 0.09)
+	var foot := S._iso(c, tw, q.x * 0.25, q.y * 0.25, pad_z)
+	ci.draw_polyline(PackedVector2Array([hip, knee, foot]), dark, maxf(2.5, tw * 0.02))
+	ci.draw_polyline(PackedVector2Array([hip, knee, foot]), col.lightened(0.15), maxf(1.0, tw * 0.008))
+	# The hydraulic piston from low on the body out to the knee.
+	var root := S._iso(c, tw, q.x * 0.10, q.y * 0.10, body_z - 0.02)
+	ci.draw_line(root, root.lerp(knee, 0.55), dark, maxf(2.0, tw * 0.014))
+	ci.draw_line(root.lerp(knee, 0.5), knee, col.lightened(0.35), maxf(1.0, tw * 0.007))
+	ci.draw_colored_polygon(S._ellipse(foot, tw * 0.034, tw * 0.016), dark)
+	ci.draw_colored_polygon(S._ellipse(foot - Vector2(0, tw * 0.004), tw * 0.026, tw * 0.011), col)
 
 
 # ============================================================ units
