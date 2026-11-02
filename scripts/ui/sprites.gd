@@ -580,9 +580,15 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			for i in 3:
 				ci.draw_line(c + Vector2(-rad * 0.4, -rad * 0.3 + i * rad * 0.3), c + Vector2(rad * 0.4, -rad * 0.3 + i * rad * 0.3), a, 2.0)
 		"shaft_base":
-			ci.draw_circle(c, rad * 0.4, Color(0.02, 0.02, 0.04, a.a))
+			# Looking down on the lift tube: ribbed rings round the lift car.
+			ci.draw_circle(c, rad * 0.55, md)
+			for k in [0.55, 0.47]:
+				ci.draw_arc(c, rad * k, 0, TAU, 24, m.lightened(0.15), 1.5)
+			ci.draw_circle(c, rad * 0.38, Color(0.02, 0.02, 0.04, a.a))
+			ci.draw_rect(Rect2(c - Vector2(rad * 0.2, rad * 0.2), Vector2(rad * 0.4, rad * 0.4)), _fade(Color(0.95, 0.75, 0.25), state))
+			ci.draw_line(c - Vector2(rad * 0.2, 0), c + Vector2(rad * 0.2, 0), md, 1.5)
 			for i in 4:
-				_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.62, s * 0.03, a, state)
+				_glow(ci, c + Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * rad * 0.72, s * 0.03, a, state)
 	more().top_post(ci, type, c, s, rad, state)
 	if not state.get("built", true):
 		if SHAPE.get(type, "dome") == "vault":
@@ -905,6 +911,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 		return
 	if type == "shaft":
 		_iso_hole(ci, c, tw, r, links, state)
+		return
+	if type == "shaft_base":
+		_iso_landing(ci, c, tw, links, state)
 		return
 	if type == "rail":
 		_iso_spin(ci, c, tw, links, state)
@@ -1301,6 +1310,107 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true, d)
+
+
+## The Shaft Landing in the Deep: the shaft comes down from the cave roof as a
+## tall ribbed tube onto a landing deck, with the lift car seen through its window.
+static func _iso_landing(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var orange := _fade(ORANGE, state)
+	var deck_r := 0.40
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, deck_r, state)
+	# The landing deck, with a hazard-striped edge.
+	var center := _iso(c, tw, 0, 0, 0.0)
+	var drx := deck_r * tw * 0.72
+	_cyl(ci, c, tw, 0, 0, deck_r, 0.06, md, md.lightened(0.12))
+	var top := _iso(c, tw, 0, 0, 0.06)
+	for i in 20:
+		var a0 := float(i) * 18.0
+		ci.draw_polyline(_ellipse(top, drx * 0.94, drx * 0.47, a0, a0 + 12.0, 3), orange if i % 2 == 0 else Color(0.05, 0.05, 0.05, orange.a), 2.5)
+	for i in 4:
+		var q := Vector2.from_angle(i * TAU / 4.0 + PI / 4.0) * deck_r * 0.82
+		_glow(ci, _iso(c, tw, q.x, q.y, 0.07), tw * 0.014, orange, state)
+	# The tube: from the deck up into the dark of the cave roof.
+	var tr := 0.24
+	var rx := tr * tw * 0.72
+	var ry := rx * 0.5
+	var z0 := 0.06
+	var z1 := 1.45
+	var steps := 10
+	for k in steps:
+		var h0 := z0 + (z1 - z0) * float(k) / steps
+		var h1 := z0 + (z1 - z0) * float(k + 1) / steps
+		var fade := clampf((float(k) / steps - 0.45) / 0.55, 0.0, 1.0)
+		var body := PackedVector2Array()
+		var b0 := _iso(c, tw, 0, 0, h0)
+		var b1 := _iso(c, tw, 0, 0, h1)
+		body.append_array(_ellipse(b0, rx, ry, 0, 180, 14))
+		body.append_array(_ellipse(b1, rx, ry, 180, 0, 14))
+		var col := m.darkened(0.15).lerp(Color(0.10, 0.10, 0.12, m.a), fade * 0.8)
+		ci.draw_colored_polygon(body, col)
+		# Shade the right side so it reads as round.
+		var sh := PackedVector2Array([b0 + Vector2(rx * 0.45, ry * 0.9), b0 + Vector2(rx, 0), b1 + Vector2(rx, 0), b1 + Vector2(rx * 0.45, ry * 0.9)])
+		ci.draw_colored_polygon(sh, Color(0, 0, 0, 0.25 * col.a))
+		ci.draw_line(b0 - Vector2(rx * 0.55, -ry * 0.8), b1 - Vector2(rx * 0.55, -ry * 0.8), Color(1, 1, 1, 0.18 * col.a), maxf(1.0, tw * 0.01))
+	# Ribs round the tube, fading as they rise.
+	var rib_z := z0 + 0.05
+	while rib_z < z1:
+		var t := (rib_z - z0) / (z1 - z0)
+		var fa := 1.0 - clampf((t - 0.45) / 0.55, 0.0, 1.0) * 0.7
+		var ring := _iso(c, tw, 0, 0, rib_z)
+		ci.draw_polyline(_ellipse(ring, rx * 1.06, ry * 1.06, 0, 180, 14), Color(md.r, md.g, md.b, md.a * fa), maxf(2.0, tw * 0.022))
+		ci.draw_polyline(_ellipse(ring - Vector2(0, 1), rx * 1.06, ry * 1.06, 0, 180, 14), Color(m.r, m.g, m.b, 0.6 * m.a * fa).lightened(0.2), 1.0)
+		rib_z += 0.20
+	# The window, with the lift car and its cables inside.
+	var w0 := _iso(c, tw, 0, 0, 0.16) + Vector2(0, ry)
+	var w1 := _iso(c, tw, 0, 0, 0.80) + Vector2(0, ry)
+	var ww := rx * 0.42
+	ci.draw_colored_polygon(PackedVector2Array([w0 + Vector2(-ww, 0), w0 + Vector2(ww, 0), w1 + Vector2(ww, 0), w1 + Vector2(-ww, 0)]), Color(0.03, 0.04, 0.06, m.a))
+	for side in [-0.5, 0.5]:
+		ci.draw_line(w1 + Vector2(ww * side, 0), w0 + Vector2(ww * side, 0), Color(0.6, 0.6, 0.6, 0.6 * m.a), 1.0)
+	var car := _iso(c, tw, 0, 0, 0.30) + Vector2(0, ry)
+	var ch := tw * 0.14
+	ci.draw_rect(Rect2(car + Vector2(-ww * 0.85, -ch), Vector2(ww * 1.7, ch)), _fade(Color(0.95, 0.75, 0.25), state))
+	ci.draw_rect(Rect2(car + Vector2(-ww * 0.6, -ch * 0.8), Vector2(ww * 1.2, ch * 0.45)), _fade(Color(1.0, 0.92, 0.7), state) if _lit(state) else md)
+	var glass := _fade(GLASS, state)
+	ci.draw_colored_polygon(PackedVector2Array([w0 + Vector2(-ww, 0), w0 + Vector2(ww, 0), w1 + Vector2(ww, 0), w1 + Vector2(-ww, 0)]), Color(glass.r, glass.g, glass.b, glass.a * 0.35))
+	ci.draw_polyline(PackedVector2Array([w0 + Vector2(-ww, 0), w0 + Vector2(ww, 0), w1 + Vector2(ww, 0), w1 + Vector2(-ww, 0), w0 + Vector2(-ww, 0)]), md.lightened(0.2), 1.5)
+	# Where the tube meets the cave roof: a rough collar of rock.
+	var roof := _iso(c, tw, 0, 0, z1)
+	var rock := _fade(Color(0.30, 0.27, 0.25), state)
+	var collar := PackedVector2Array()
+	var lip := PackedVector2Array()
+	for i in 18:
+		var ang := float(i) / 18.0 * TAU
+		var k := 1.9 + 0.35 * sin(ang * 3.0 + 1.0) + 0.2 * sin(ang * 7.0)
+		collar.append(roof + Vector2(cos(ang) * rx * k, sin(ang) * ry * k * 1.1 - tw * 0.05))
+		if sin(ang) >= -0.1:
+			lip.append(collar[collar.size() - 1])
+	# The roof rock: a hanging slab with a broken lower edge.
+	var hang := PackedVector2Array(collar)
+	ci.draw_colored_polygon(hang, rock.darkened(0.35))
+	var under := PackedVector2Array()
+	for p2 in lip:
+		under.append(p2)
+	for i in range(lip.size() - 1, -1, -1):
+		under.append(lip[i] + Vector2(0, tw * (0.05 + 0.03 * sin(i * 2.3))))
+	ci.draw_colored_polygon(under, rock.darkened(0.55))
+	ci.draw_polyline(lip, rock.lightened(0.15), 1.5)
+	# The tube's steel sleeve where it passes through the rock.
+	var sleeve := _iso(c, tw, 0, 0, z1 - 0.04)
+	ci.draw_colored_polygon(_ellipse(sleeve, rx * 1.18, ry * 1.18, 0, 180, 14), md)
+	ci.draw_polyline(_ellipse(sleeve, rx * 1.18, ry * 1.18, 0, 180, 14), orange, 2.0)
+	# A warning light where the lift arrives.
+	_glow(ci, _iso(c, tw, 0, 0, 0.92) + Vector2(rx * 0.7, ry * 0.4), tw * 0.016, orange, state)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, deck_r, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links):
+			_iso_port(ci, _iso(c, tw, d.x * deck_r * 0.95, d.y * deck_r * 0.95, 0.04), tw, state, true, d)
 
 
 ## A rectangle centred on p, `length` long along `along` and `width` wide.

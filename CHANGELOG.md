@@ -2,6 +2,16 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.63
+Date: 11/02/2026
+Time: 3:03 AM
+
+### Changes
+- **The Shaft Landing in the Deep now shows the shaft coming down from the surface.** A tall ribbed lift tube drops through a steel sleeve in the cave roof onto a round landing deck with a hazard-striped edge. The lift car shows through a window in the tube. Seen from above, it shows the tube's rings round the lift car.
+
+### Reason
+The owner asked for a tunnel coming down from the surface.
+
 ## Version 00.01.62
 Date: 11/02/2026
 Time: 2:28 AM
