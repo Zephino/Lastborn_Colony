@@ -77,6 +77,9 @@ func _buildings(title: String, ids: Array, both: bool) -> void:
 		if doors == 2 or id == "main":
 			# Two-door buildings are passed through: in one side, out the other.
 			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
+		if id == "reclaimer":
+			# Show a truck parked in the drop-off bay.
+			sample["truck"] = true
 		var label := "" if id == "main" else "%d door%s" % [doors, "" if doors == 1 else "s"]
 		var deep_page := page == "deep" or (page == "remade" and (id == "shaft_base" or GameData.level_note(GameData.building(id)) == "Deep only."))
 		var ground := _ground(id, deep_page)

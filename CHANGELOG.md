@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.74
+Date: 11/02/2026
+Time: 5:03 AM
+
+### Changes
+- **The Reclaimer has a drop-off bay on its left side.** It has:
+  - a concrete parking pad with yellow-and-black hazard edges and a painted arrow;
+  - a pit at the far end, where a truck backs up to tip its load;
+  - a conveyor that now carries the junk from the pit up into the hopper on the roof.
+- The sorting bins and scrap bales moved to the right.
+- **For animations later:** the bay's two spots (where a truck parks, and the pit) are kept as `RECLAIMER_BAY` in `scripts/ui/sprites.gd`. Passing `"truck": true` when drawing the Reclaimer draws a Hauler parked in the bay. The sprite sheet shows it that way. The game doesn't park trucks there yet.
+- The parked truck is drawn only when the hall runs along one map direction, because the Hauler can only be drawn facing that way so far.
+
+### Reason
+The owner asked for a spot on the Reclaimer's left side where a truck can park to drop off things to be reclaimed, planning for simple animations later.
+
 ## Version 00.01.73
 Date: 11/02/2026
 Time: 4:58 AM

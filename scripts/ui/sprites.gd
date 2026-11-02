@@ -58,6 +58,10 @@ const DOME_SIZE := {"hull": 0.46, "mirror": 0.42, "drill": 0.40, "cache": 0.34, 
 	"fusion": 0.24, "catcher": 0.16, "reclaimer": 0.30, "fab": 0.32, "dronebay": 0.28, "mast": 0.22,
 	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.19, "lounge": 0.24, "commons": 0.36, "clinic": 0.24}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+## The Reclaimer's drop-off bay, for drawing a truck there and for animations
+## later. Points are (along the hall, toward its front), in tile units from
+## the tile centre: "park" is where a truck stops, "pit" where it tips its load.
+const RECLAIMER_BAY := {"park": Vector2(-0.14, 0.33), "pit": Vector2(-0.42, 0.33)}
 ## How many doors (tunnel entrances) each building has. Sides with a tunnel
 ## always get an open door; spare doors show as capped ones, front sides first.
 ## 4: hubs where people live, gather or pass between levels.
@@ -1791,37 +1795,62 @@ static func _iso_reclaimer(ci: CanvasItem, c: Vector2, tw: float, links: Array, 
 	var hw := tw * 0.10
 	ci.draw_colored_polygon(PackedVector2Array([hc + Vector2(-hw * 0.4, 0), hc + Vector2(hw * 0.4, 0), hc + Vector2(hw, -tw * 0.12), hc + Vector2(-hw, -tw * 0.12)]), m)
 	ci.draw_colored_polygon(_ellipse(hc - Vector2(0, tw * 0.12), hw, hw * 0.45), md)
-	# Junk on a heap out front, going up a conveyor into the hopper.
+	# The drop-off bay on the left: a parking pad for a truck, backing its dump
+	# bed up to a pit. A conveyor carries the junk from the pit up into the hopper.
+	var bay: Dictionary = RECLAIMER_BAY
+	var park: Vector2 = bay["park"]
+	var pit: Vector2 = bay["pit"]
+	var hazard := _fade(HAZARD, state)
+	var pad := PackedVector2Array([at.call(park.x - 0.20, park.y - 0.12, 0.004), at.call(park.x + 0.18, park.y - 0.12, 0.004), at.call(park.x + 0.18, park.y + 0.13, 0.004), at.call(park.x - 0.20, park.y + 0.13, 0.004)])
+	ci.draw_colored_polygon(pad, _fade(Color(0.40, 0.40, 0.42), state))
+	for k in 12:
+		var t0 := float(k) / 12.0
+		var t1 := float(k + 1) / 12.0
+		var stripe := hazard if k % 2 == 0 else Color(0.08, 0.08, 0.08, hazard.a)
+		ci.draw_line(pad[0].lerp(pad[1], t0), pad[0].lerp(pad[1], t1), stripe, maxf(1.5, tw * 0.012))
+		ci.draw_line(pad[3].lerp(pad[2], t0), pad[3].lerp(pad[2], t1), stripe, maxf(1.5, tw * 0.012))
+	# A painted arrow: back up toward the pit.
+	var ar0: Vector2 = at.call(park.x + 0.10, park.y, 0.006)
+	var ar1: Vector2 = at.call(park.x - 0.10, park.y, 0.006)
+	ci.draw_line(ar0, ar1, _fade(WHITE, state), maxf(1.5, tw * 0.012))
+	ci.draw_line(ar1, at.call(park.x - 0.05, park.y - 0.04, 0.006), _fade(WHITE, state), maxf(1.5, tw * 0.012))
+	ci.draw_line(ar1, at.call(park.x - 0.05, park.y + 0.04, 0.006), _fade(WHITE, state), maxf(1.5, tw * 0.012))
+	# The pit, with a rim and junk inside.
+	var pit_q := PackedVector2Array([at.call(pit.x - 0.06, pit.y - 0.09, 0.0), at.call(pit.x + 0.06, pit.y - 0.09, 0.0), at.call(pit.x + 0.06, pit.y + 0.09, 0.0), at.call(pit.x - 0.06, pit.y + 0.09, 0.0)])
+	ci.draw_colored_polygon(pit_q, Color(0.05, 0.05, 0.06, md.a))
 	var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
-	for k in 10:
-		var layer := 0 if k < 6 else (1 if k < 9 else 2)
-		var ang := k * 2.3
-		var rr := 0.09 - layer * 0.03
-		var jp: Vector2 = at.call(-0.30 + cos(ang) * rr, 0.30 + sin(ang) * rr * 0.6, 0.02 + layer * 0.04)
-		_iso_sphere(ci, jp, tw * 0.028, _fade(junk[k % 5], state))
-	var c0: Vector2 = at.call(-0.24, 0.24, 0.06)
+	for k in 6:
+		var jp: Vector2 = at.call(pit.x - 0.03 + (k % 3) * 0.03, pit.y - 0.05 + (k / 3) * 0.07, 0.01)
+		_iso_sphere(ci, jp, tw * 0.022, _fade(junk[k % 5], state))
+	ci.draw_polyline(PackedVector2Array([pit_q[0], pit_q[1], pit_q[2], pit_q[3], pit_q[0]]), hazard, maxf(1.5, tw * 0.012))
+	# The conveyor from the pit up into the hopper.
+	var c0: Vector2 = at.call(pit.x, pit.y - 0.04, 0.03)
 	var c1: Vector2 = hc - Vector2(0, tw * 0.12)
 	ci.draw_line(c0, c1, md, maxf(4.0, tw * 0.035))
 	ci.draw_line(c0, c1, m.lightened(0.1), maxf(2.0, tw * 0.018))
 	for k in 3:
 		_iso_sphere(ci, c0.lerp(c1, 0.25 + k * 0.25) - Vector2(0, tw * 0.015), tw * 0.016, _fade(junk[k + 1], state))
-	ci.draw_line(c0.lerp(c1, 0.5), c0.lerp(c1, 0.5) + Vector2(0, tw * 0.12), md, 1.0)
+	ci.draw_line(c0.lerp(c1, 0.5), c0.lerp(c1, 0.5) + Vector2(0, tw * 0.14), md, 1.0)
 	# Sorted bins out front: metal, glass, plastic.
 	for k in 3:
 		var bcol: Color = [Color(0.60, 0.62, 0.66), Color(0.35, 0.70, 0.40), Color(0.35, 0.55, 0.90)][k]
-		var a0 := -0.02 + k * 0.09
+		var a0 := 0.08 + k * 0.08
 		if on_v:
-			_box(ci, c, tw, 0.20, a0, 0.27, a0 + 0.07, 0.07, _fade(bcol, state))
+			_box(ci, c, tw, 0.20, a0, 0.26, a0 + 0.06, 0.07, _fade(bcol, state))
 		else:
-			_box(ci, c, tw, a0, 0.20, a0 + 0.07, 0.27, 0.07, _fade(bcol, state))
-	# Bales of crushed scrap at the far end of the front.
+			_box(ci, c, tw, a0, 0.20, a0 + 0.06, 0.26, 0.07, _fade(bcol, state))
+	# Bales of crushed scrap at the right end of the front.
 	for k in 2:
-		var a0 := 0.28 - k * 0.0
+		var a0 := 0.34
 		var z := k * 0.06
 		if on_v:
-			_box(ci, c, tw, 0.22, a0, 0.32, a0 + 0.10, 0.06, _fade(Color(0.58, 0.52, 0.42), state), Color(0, 0, 0, 0), z)
+			_box(ci, c, tw, 0.30, a0, 0.40, a0 + 0.10, 0.06, _fade(Color(0.58, 0.52, 0.42), state), Color(0, 0, 0, 0), z)
 		else:
-			_box(ci, c, tw, a0, 0.22, a0 + 0.10, 0.32, 0.06, _fade(Color(0.58, 0.52, 0.42), state), Color(0, 0, 0, 0), z)
+			_box(ci, c, tw, a0, 0.30, a0 + 0.10, 0.40, 0.06, _fade(Color(0.58, 0.52, 0.42), state), Color(0, 0, 0, 0), z)
+	# A truck parked in the bay (for now drawn only when asked for, and only
+	# when the hall runs along u, matching the way the Hauler is drawn).
+	if state.get("truck", false) and not on_v:
+		more().draw_unit(ci, "hauler", at.call(park.x, park.y, 0.0), tw * 0.62)
 	if lit:
 		_glow(ci, at.call(0.20, f1, 0.12), tw * 0.016, _fade(GREEN, state), state)
 	for d in links:
@@ -1843,10 +1872,23 @@ static func _top_reclaimer(ci: CanvasItem, c: Vector2, s: float, links: Array, s
 	ci.draw_circle(p.call(0.05, -0.05), s * 0.08, _fade(METAL_DARK, state))
 	var tq: Vector2 = p.call(0.24, -0.34)
 	ci.draw_circle(tq, s * 0.10, _fade(WATER, state).darkened(0.1))
-	ci.draw_circle(p.call(-0.30, 0.30), s * 0.10, _fade(Color(0.60, 0.52, 0.42), state))
+	# The drop-off bay, the pit, and a truck if one is parked.
+	var park: Vector2 = RECLAIMER_BAY["park"]
+	var pit: Vector2 = RECLAIMER_BAY["pit"]
+	var pad := Rect2(p.call(park.x - 0.20, park.y - 0.12), Vector2.ZERO).expand(p.call(park.x + 0.18, park.y + 0.13))
+	ci.draw_rect(pad, _fade(Color(0.40, 0.40, 0.42), state))
+	ci.draw_rect(pad, _fade(HAZARD, state), false, 1.5)
+	var pr := Rect2(p.call(pit.x - 0.06, pit.y - 0.09), Vector2.ZERO).expand(p.call(pit.x + 0.06, pit.y + 0.09))
+	ci.draw_rect(pr, Color(0.05, 0.05, 0.06))
+	ci.draw_rect(pr, _fade(HAZARD, state), false, 1.5)
+	if state.get("truck", false):
+		var tr := Rect2(p.call(park.x - 0.15, park.y - 0.07), Vector2.ZERO).expand(p.call(park.x + 0.15, park.y + 0.07))
+		ci.draw_rect(tr, _fade(HAZARD, state))
+		ci.draw_rect(Rect2(p.call(park.x + 0.07, park.y - 0.07), Vector2.ZERO).expand(p.call(park.x + 0.15, park.y + 0.07)), _fade(HAZARD, state).darkened(0.25))
 	for k in 3:
 		var bcol: Color = [Color(0.60, 0.62, 0.66), Color(0.35, 0.70, 0.40), Color(0.35, 0.55, 0.90)][k]
-		ci.draw_rect(Rect2(p.call(-0.02 + k * 0.09, 0.20), Vector2(s * 0.07, s * 0.07)), _fade(bcol, state))
+		ci.draw_rect(Rect2(p.call(0.08 + k * 0.08, 0.20), Vector2(s * 0.06, s * 0.06)), _fade(bcol, state))
+	ci.draw_rect(Rect2(p.call(0.34, 0.30), Vector2(s * 0.10, s * 0.10)), _fade(Color(0.58, 0.52, 0.42), state))
 	for d in DIRS:
 		if (d.y != 0) == on_v:
 			_top_port(ci, p.call(0.30 * (d.y if on_v else d.x), 0.0), s, state, not (d in links), d)
