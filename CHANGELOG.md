@@ -2,6 +2,31 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.80
+Date: 11/02/2026
+Time: 12:36 PM
+
+### Changes
+- **Eight planets.** Five new worlds join Brume, Cinder and Hollow, ordered from gentle to extreme:
+  - **Tessel** (Gentle): mild light, few storms or quakes, plenty of ore.
+  - **Shale** (Tricky): rich ore, but many long ridges and frequent quakes.
+  - **Ashfall** (Harder): 18 vents, but vent surges, ash storms and little ice.
+  - **Glasswater** (Hard): a frozen ocean moon, with lots of ice and vents, little ore, cold, and icequakes.
+  - **Rimefar** (Extreme): almost no sunlight, bitter cold, and frequent icequakes and seal failures.
+  - All names and settings are original. Each planet gets its own leaderboards.
+- **A styled "Choose a planet" screen.** Each world is a card in a two-column grid (one column on narrow screens). The planet you last picked is outlined. Each card has:
+  - a drawn globe in that world's own style: split light and dark, banded, icy, rocky with ore veins, volcanic, ocean ice, or dim;
+  - the name, a coloured difficulty badge with 1 to 5 pips, and the tagline;
+  - eight bars comparing it with the other worlds: Sunlight, Warmth, Ice, Vents, Ore, Ridges, Storms and Quakes;
+  - the description, and **Choose** and **Send a probe** buttons.
+  - Each planet's look lives in `data/planets.json`; the drawing is new in `scripts/ui/planet_card.gd`.
+- **The online leaderboard allows up to 48 boards** (it was 16), so all 8 planets x 3 difficulties fit. Cloudflare redeploys the service automatically from `main`. All 55 service tests pass.
+- **Balance check** (test bot, Normal, 4 games each): Tessel 4/4 (about 130 turns), Glasswater 4/4 (173), Shale 4/4 (211), Ashfall 4/4 (219), Rimefar 2/4 (215).
+- README lists all eight worlds. The planet-count test now expects 8, and the new worlds' landing sites are checked too (575 checks in all).
+
+### Reason
+The owner asked for eight planets, like the eight in our solar system, and for the "Choose a planet" menu to be styled.
+
 ## Version 00.01.79
 Date: 11/02/2026
 Time: 12:30 PM

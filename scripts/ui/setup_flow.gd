@@ -9,6 +9,7 @@ const MapGen = preload("res://scripts/sim/map_gen.gd")
 const Minimap = preload("res://scripts/ui/minimap.gd")
 const ProbeView = preload("res://scripts/ui/probe_view.gd")
 const Probe = preload("res://scripts/sim/probe.gd")
+const PlanetCard = preload("res://scripts/ui/planet_card.gd")
 const UiUtil = preload("res://scripts/ui/ui_util.gd")
 
 signal finished(options: Dictionary)
@@ -126,25 +127,43 @@ func show_briefing() -> void:
 
 
 func show_planets() -> void:
-	var box := _new_page("Choose a planet")
-	box.add_child(_label("Each world has its own leaderboard.", 0, MUTED, true))
+	var wide := _width() >= 980.0
+	var box := _new_page("Choose a planet", 1180.0 if wide else 760.0)
+	box.add_child(_label("Eight worlds, from gentle to extreme. Each has its own leaderboard. Send probes to scout a world's landing sites before you choose (%d of %d probes left)." % [_probes_left(), Probe.carried(manifest)], 0, MUTED, true))
+	var grid := GridContainer.new()
+	grid.columns = 2 if wide else 1
+	grid.add_theme_constant_override("h_separation", 14)
+	grid.add_theme_constant_override("v_separation", 14)
+	box.add_child(grid)
 	for p in GameData.planets():
-		var b := _button("%s  ·  %s\n%s\n%s" % [p["name"], p["difficulty"], p["tagline"], p["desc"]], _pick_planet.bind(p["id"]))
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		var cell := VBoxContainer.new()
+		cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cell.add_theme_constant_override("separation", 4)
+		grid.add_child(cell)
+		var card := PlanetCard.new()
+		card.custom_minimum_size = Vector2(0, 176)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cell.add_child(card)
+		card.show_planet(p, p["id"] == planet_id)
+		cell.add_child(_label(p["desc"], 0, Color(0.85, 0.88, 0.92), true))
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		cell.add_child(row)
+		var b := _button("Choose %s" % p["name"], _pick_planet.bind(p["id"]))
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_fit(b)
-		box.add_child(b)
+		row.add_child(b)
 		if p["id"] == planet_id:
 			b.grab_focus.call_deferred()
 		var seen := _scouted_count(p["id"])
-		var probe_text := "Send a probe to %s  (%d of %d probes left)" % [p["name"], _probes_left(), Probe.carried(manifest)]
+		var probe_text := "Send a probe"
 		if seen > 0:
-			probe_text += "  ·  %d site%s scouted" % [seen, "" if seen == 1 else "s"]
+			probe_text += "  (%d scouted)" % seen
 		var pb := _button(probe_text, show_probe_target.bind(p["id"]))
-		pb.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		pb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		pb.disabled = _probes_left() <= 0 and seen == 0
 		_fit(pb)
-		box.add_child(pb)
+		row.add_child(pb)
 	var back := _button("Back", show_briefing)
 	box.add_child(back)
 

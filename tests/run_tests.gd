@@ -448,7 +448,7 @@ func test_manifest() -> void:
 
 func test_planets_and_sites() -> void:
 	print("Planets and landing sites")
-	check(GameData.planets().size() == 3, "3 planets loaded")
+	check(GameData.planets().size() == 8, "8 planets loaded")
 	for p in GameData.planets():
 		for site in GameData.balance()["landing_sites"].size():
 			var m := MapGen.generate(11, p["id"], site)

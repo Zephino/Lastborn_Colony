@@ -36,7 +36,7 @@ export const MAX_TURN = 5000;
 export const MAX_DEBT_TOTAL = 1_000_000;
 export const MAX_POPULATION = 100_000;
 /** No more boards than this (stops junk planet ids filling KV). */
-export const MAX_PLANETS = 16;
+export const MAX_PLANETS = 48;
 export const DIFFICULTIES = ["easy", "normal", "hard"];
 export const ENDINGS = ["free", "receivership", "silent", "retired", "independence", "company_town"];
 export const ABOUT =

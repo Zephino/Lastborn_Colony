@@ -48,7 +48,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/text_rules.gd` | Cleaning rules for everything a player types. |
 | `scripts/sim/probe.gd` | Scouting probes before landing: site reports and lucky finds (fixed by seed, planet and site). |
 | `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
-| `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd`, `scripts/ui/probe_view.gd` | The screens before landing (with probe scouting), the small map previews (fogged until scouted), and the probe report picture. |
+| `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd`, `scripts/ui/probe_view.gd`, `scripts/ui/planet_card.gd` | The screens before landing (with probe scouting), the small map previews (fogged until scouted), the probe report picture, and the planet cards (globe, difficulty pips and stat bars, styled by each planet's "look" in `data/planets.json`). |
 | `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
 | `scripts/ui/people.gd`, `scripts/ui/stat_icon.gd` | Colonists in space suits, and the resource icons in the top bar. |
 | `scripts/ui/sprite_icon.gd` | A small picture of one building, for the build list, Build menu and Info panel. |

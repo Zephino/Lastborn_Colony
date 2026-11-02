@@ -26,10 +26,18 @@ Payments start on **turn 30** and come every **10 turns**, each a little bigger 
 ## Before you land
 
 1. **Briefing.** Read the story so far.
-2. **Pick a planet.**
-   - **Brume** (Standard): ice, vents and sunlight all within reach. Start here.
-   - **Cinder** (Harder): bright and hot, but ice is rare.
-   - **Hollow** (Hardest): icy and full of vents, but the sun is weak.
+2. **Pick a planet.** There are eight worlds, from gentle to extreme. Each card shows a picture of the world and bars for its sunlight, warmth, ice, vents, ore, ridges, storms and quakes.
+
+   | World | Difficulty | What it's like |
+   | --- | --- | --- |
+   | **Tessel** | Gentle | Mild sunlight, few storms or quakes, plenty of ore. The easiest place to learn. |
+   | **Brume** | Standard | Locked face-to-sun: ice, vents and sunlight all within reach. |
+   | **Shale** | Tricky | Rich ore, but long rock ridges cut the plains into pockets, and quakes are common. |
+   | **Cinder** | Harder | Bright and hot, but ice is rare and grit storms are common. |
+   | **Ashfall** | Harder | Vents everywhere, but vents surge, ash storms bury panels, and ice is scarce. |
+   | **Glasswater** | Hard | A frozen ocean: water is easy, but ore is rare, it's cold, and icequakes crack the crust. |
+   | **Hollow** | Hardest | Icy and full of vents, but the sun is weak. |
+   | **Rimefar** | Extreme | Almost no sunlight and bitter cold. Only vents and the Deep keep a colony alive. |
 3. **Send probes (optional).** Your ship carries **3 scouting probes**. Under each planet, **Send a probe** lets you pick a landing site and land a probe there. Its report shows:
    - a picture of the ground around the site;
    - how much sunlight and cold there is;
