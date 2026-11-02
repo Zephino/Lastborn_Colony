@@ -722,7 +722,8 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 	# Scorch on the pad under the engine.
 	ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0, 0, pad_z), tw * 0.16, tw * 0.08), Color(0.05, 0.05, 0.05, 0.35 * white.a))
 	# Legs: the two at the back first.
-	var legs := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
+	# Legs to the four sides, so the hatch and ramp (facing the front corner) sit between two of them.
+	var legs := [Vector2(-1, 0), Vector2(0, -1), Vector2(1, 0), Vector2(0, 1)]
 	for k in 4:
 		var q: Vector2 = legs[k].normalized()
 		if q.x + q.y > 0.0:

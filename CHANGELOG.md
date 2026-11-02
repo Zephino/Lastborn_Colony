@@ -2,6 +2,16 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.57
+Date: 11/02/2026
+Time: 12:40 AM
+
+### Changes
+- **Lander:** its four legs point to the four sides instead of the corners. The front leg no longer comes out through the hatch: the two front legs stand on either side of it, and the ramp comes down between them.
+
+### Reason
+The owner noticed a leg coming out of the lander's door.
+
 ## Version 00.01.56
 Date: 11/02/2026
 Time: 12:30 AM
