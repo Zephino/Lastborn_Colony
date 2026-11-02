@@ -158,3 +158,15 @@ static func quake_radius(state: Dictionary) -> int:
 		if sats(state, t) > 0:
 			r += int(sat_def(t).get("quake_radius", 0))
 	return r
+
+
+## Death multiplier from working Medic rovers (1.0 with none).
+static func medic_mult(state: Dictionary) -> float:
+	var d: Dictionary = GameData.balance()["drones"]
+	var cut := float(working(state).get("medic", 0)) * float(drone_def("medic").get("health", 0.0))
+	return 1.0 - minf(cut, float(d.get("medic_cap", 0.3)))
+
+
+## Output multiplier for Seam Cutters and Ice Drills from a Survey satellite.
+static func survey_mult(state: Dictionary) -> float:
+	return float(sat_def("survey").get("dig", 1.0)) if sats(state, "survey") > 0 else 1.0

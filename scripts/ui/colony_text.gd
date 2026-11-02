@@ -156,8 +156,20 @@ static func tile(state: Dictionary, c: Vector2i, z: int = 0) -> String:
 		gives.append("costs %d marks a turn" % int(GameData.num(def, "upkeep")))
 	if GameData.num(def, "export") > 0.0:
 		gives.append("exports up to %d alloy" % int(GameData.num(def, "export") + Research.add(state, "export:" + str(s["type"]))))
+	if GameData.num(def, "power_store") > 0.0:
+		gives.append("stores up to %d power" % int(GameData.num(def, "power_store")))
+	if GameData.num(def, "heat_store") > 0.0:
+		gives.append("stores up to %d heat" % int(GameData.num(def, "heat_store")))
+	if GameData.num(def, "water_saving") > 0.0:
+		gives.append("everyone needs %d%% less water" % int(GameData.num(def, "water_saving") * 100.0))
+	if GameData.num(def, "trade") > 0.0:
+		gives.append("sells up to %d each of food, water and parts (prices now %d%%)" % [int(GameData.num(def, "trade")), int(round(Turn.market_factor(state) * 100.0))])
+	if GameData.num(def, "school") > 0.0:
+		gives.append("lessons for %d children" % int(GameData.num(def, "school")))
 	if not gives.is_empty():
 		lines.append("Gives: " + ", ".join(gives))
+	if GameData.num(def, "power_store") > 0.0 or GameData.num(def, "heat_store") > 0.0:
+		lines.append("Saved now: %s power, %s heat (all banks and stores together)." % [fmt(float(state.get("battery", 0.0))), fmt(float(state.get("heat_bank", 0.0)))])
 	return "\n".join(lines)
 
 
@@ -171,6 +183,12 @@ static func report(state: Dictionary) -> String:
 	lines.append("POWER %s of %s free.  HEAT %s of %s free.  WORKERS %d of %d free." % [
 		fmt(float(r["power_free"])), fmt(float(r["power_gen"])), fmt(float(r["heat_free"])), fmt(float(r["heat_gen"])),
 		int(r["workers_free"]), int(r["workers_total"])])
+	if float(r.get("stored_power", 0.0)) > 0.0 or float(r.get("battery", 0.0)) > 0.0 or float(r.get("heat_bank", 0.0)) > 0.0:
+		lines.append("SAVED: used %s power and %s heat from storage; now holding %s power and %s heat." % [fmt(float(r.get("stored_power", 0.0))), fmt(float(r.get("stored_heat", 0.0))), fmt(float(r.get("battery", 0.0))), fmt(float(r.get("heat_bank", 0.0)))])
+	if float(r.get("traded", 0.0)) > 0.0:
+		lines.append("TRADE: the Trading Post earned %s marks (prices at %d%%)." % [fmt(float(r["traded"])), int(round(float(r.get("market_factor", 1.0)) * 100.0))])
+	if float(r.get("water_saving", 0.0)) > 0.0:
+		lines.append("WATER: recyclers cut everyone's water need by %d%%." % int(float(r["water_saving"]) * 100.0))
 	var net: Dictionary = r.get("net", {})
 	var parts := PackedStringArray()
 	for k in ["food", "oxygen", "water", "ore", "alloy", "parts", "credits"]:

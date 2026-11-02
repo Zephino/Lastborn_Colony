@@ -61,7 +61,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/ui/app_actions.gd` | Fullscreen, Install app and Update app. |
 | `leaderboard-api/` | The Cloudflare Worker behind the online features (not part of the game build). |
 | `web/update.js`, `.github/workflows/web.yml` | The web version's self-updater, and the workflow that builds and publishes it. |
-| `tests/` | Headless test runner, the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
+| `tests/` | Headless test runner (`run_tests.gd`, with `test_fleet.gd` and `test_new.gd` for the newer content), the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
 | `tools/` | Developer tools, not part of the game: `sprite_sheet.gd` draws the sprite sheets, `ui_shot.gd` takes screenshots of the game screens, `balance.gd` plays many bot games (optionally for one planet and difficulty) and prints wins and turns. |
 | `.cursor/rules/`, `AGENTS.md`, `CLAUDE.md` | Rules for AI assistants working on the project. |
 | `CHANGELOG.md`, `VERSION` | What changed in each version, and the current version. |

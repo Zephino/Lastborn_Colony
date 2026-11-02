@@ -53,7 +53,7 @@ const INTERIOR := {
 	"hazlab": Color(0.10, 0.16, 0.08), "garden": Color(0.14, 0.30, 0.14), "lounge": Color(0.18, 0.10, 0.24),
 }
 ## Dome size (radius, as a fraction of a tile) for each building.
-const DOME_SIZE := {"hull": 0.46, "mirror": 0.42, "drill": 0.40, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.40, "vent": 0.34, "forge": 0.34, "lab": 0.44,
+const DOME_SIZE := {"battery": 0.42, "heatstore": 0.42, "school": 0.24, "hull": 0.46, "mirror": 0.42, "drill": 0.40, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.40, "vent": 0.34, "forge": 0.34, "lab": 0.44,
 	"vat": 0.44, "bunk": 0.26, "cutter": 0.38, "workshop": 0.30,
 	"fusion": 0.24, "catcher": 0.16, "reclaimer": 0.30, "fab": 0.32, "dronebay": 0.28, "mast": 0.22,
 	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.19, "lounge": 0.24, "commons": 0.36, "clinic": 0.24}
@@ -67,7 +67,7 @@ const RECLAIMER_BAY := {"park": Vector2(-0.14, 0.33), "pit": Vector2(-0.42, 0.33
 ## 4: hubs where people live, gather or pass between levels.
 ## 2: workplaces on the way between places (in one side, out the other).
 ## 1: out-of-the-way sites, machines tied to the ground, and places kept apart for safety.
-const DOORS := {
+const DOORS := {"battery": 1, "heatstore": 1, "school": 4, "mushroom": 2, "waterworks": 2, "market": 2,
 	"hull": 4, "shaft": 4, "shaft_base": 4, "bunk": 4, "commons": 4, "clinic": 4, "academy": 4, "lounge": 4, "garden": 4,
 	"splitter": 2, "vat": 2, "forge": 2, "fab": 2, "reclaimer": 2, "cache": 2, "lab": 2, "workshop": 2, "warden": 2, "rescue": 2,
 	"mirror": 1, "vent": 1, "drill": 1, "cutter": 1, "rail": 1, "mast": 1, "catcher": 1, "dronebay": 1, "fusion": 1, "hazlab": 1,
@@ -431,6 +431,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 		return
 	if type == "bunk":
 		_top_bunk(ci, c, s, links, state)
+		return
+	if type in ["battery", "heatstore", "mushroom", "waterworks", "market", "school"]:
+		_top_new(ci, type, c, s, links, state)
 		return
 	if type == "lounge":
 		_top_lounge(ci, c, s, links, state)
@@ -920,6 +923,24 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 		return
 	if type == "bunk":
 		_iso_bunk(ci, c, tw, links, state)
+		return
+	if type == "battery":
+		_iso_battery(ci, c, tw, links, state)
+		return
+	if type == "heatstore":
+		_iso_heatstore(ci, c, tw, links, state)
+		return
+	if type == "mushroom":
+		_iso_mushroom(ci, c, tw, links, state)
+		return
+	if type == "waterworks":
+		_iso_waterworks(ci, c, tw, links, state)
+		return
+	if type == "market":
+		_iso_market(ci, c, tw, links, state)
+		return
+	if type == "school":
+		_iso_school(ci, c, tw, links, state)
 		return
 	if type == "lounge":
 		_iso_lounge(ci, c, tw, links, state)
@@ -1892,6 +1913,353 @@ static func _top_reclaimer(ci: CanvasItem, c: Vector2, s: float, links: Array, s
 	for d in DIRS:
 		if (d.y != 0) == on_v:
 			_top_port(ci, p.call(0.30 * (d.y if on_v else d.x), 0.0), s, state, not (d in links), d)
+
+
+## The Battery Bank: a control hut by the door and rows of battery cabinets,
+## each with a glowing green charge bar.
+static func _iso_battery(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var dd := _solar_door(links, state)
+	var bc := Vector2(dd) * 0.27
+	var hw := 0.15
+	var green := _fade(Color(0.40, 1.0, 0.55), state)
+	var lit := _lit(state)
+	_back_links(ci, c, tw, links, 0.27 + hw, state)
+	var cells: Array = []
+	for u in [-0.33, -0.11, 0.11, 0.33]:
+		for v in [-0.30, 0.0, 0.30]:
+			if absf(u - bc.x) < 0.27 and absf(v - bc.y) < 0.27:
+				continue
+			cells.append(Vector2(u, v))
+	cells.sort_custom(func(p, q): return p.x + p.y < q.x + q.y)
+	var hut_done := false
+	var case_col := _fade(Color(0.30, 0.34, 0.40), state)
+	for q in cells:
+		if not hut_done and q.x + q.y > bc.x + bc.y:
+			_solar_hut(ci, c, tw, bc, hw, dd, state, Color(0.40, 1.0, 0.55))
+			hut_done = true
+		_box(ci, c, tw, q.x - 0.08, q.y - 0.10, q.x + 0.08, q.y + 0.10, 0.16, case_col, case_col.lightened(0.15))
+		# The charge bar on the front face of each cabinet.
+		var b0 := _iso(c, tw, q.x - 0.05, q.y + 0.10, 0.04)
+		var b1 := _iso(c, tw, q.x - 0.05, q.y + 0.10, 0.13)
+		ci.draw_line(b0, b1, Color(0.05, 0.05, 0.06, case_col.a), maxf(3.0, tw * 0.02))
+		ci.draw_line(b0, b0.lerp(b1, 0.7), green if lit else case_col.lightened(0.3), maxf(2.0, tw * 0.014))
+		ci.draw_line(_iso(c, tw, q.x + 0.02, q.y + 0.10, 0.12), _iso(c, tw, q.x + 0.06, q.y + 0.10, 0.12), _fade(HAZARD, state), maxf(1.5, tw * 0.01))
+	if not hut_done:
+		_solar_hut(ci, c, tw, bc, hw, dd, state, Color(0.40, 1.0, 0.55))
+	_front_links(ci, c, tw, links, 0.27 + hw, state)
+
+
+## The Heat Store: a big squat insulated tank with orange bands and glowing
+## vents, and a pump hut by the door.
+static func _iso_heatstore(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var dd := _solar_door(links, state)
+	var bc := Vector2(dd) * 0.28
+	var hw := 0.13
+	var orange := _fade(ORANGE, state)
+	var lit := _lit(state)
+	_back_links(ci, c, tw, links, 0.28 + hw, state)
+	var tq := -Vector2(dd) * 0.10
+	var draw_tank := func() -> void:
+		var shell := _fade(Color(0.78, 0.74, 0.70), state)
+		_cyl(ci, c, tw, tq.x, tq.y, 0.27, 0.30, shell, shell.lightened(0.08))
+		var rx := 0.27 * tw * 0.72
+		for z in [0.07, 0.15, 0.23]:
+			ci.draw_polyline(_ellipse(_iso(c, tw, tq.x, tq.y, z), rx, rx * 0.5, 0, 180, 18), orange, maxf(2.0, tw * 0.016))
+		var top := _iso(c, tw, tq.x, tq.y, 0.30)
+		for k in 3:
+			var vp := top + Vector2((k - 1) * rx * 0.45, (k % 2) * rx * 0.1)
+			ci.draw_colored_polygon(_ellipse(vp, tw * 0.03, tw * 0.015), Color(0.15, 0.06, 0.03, shell.a))
+			if lit:
+				_glow(ci, vp, tw * 0.02, _fade(Color(1.0, 0.5, 0.2), state), state)
+				ci.draw_circle(vp - Vector2(0, tw * 0.05), tw * 0.025, Color(1.0, 0.85, 0.7, 0.25))
+		# A temperature gauge.
+		var g := _iso(c, tw, tq.x, tq.y, 0.18) + Vector2(0, rx * 0.5)
+		ci.draw_circle(g, tw * 0.03, _fade(WHITE, state))
+		ci.draw_line(g, g + Vector2(tw * 0.02, -tw * 0.015), Color(0.8, 0.2, 0.1, shell.a), 1.5)
+	var tank_first := tq.x + tq.y < bc.x + bc.y
+	if tank_first:
+		draw_tank.call()
+	ci.draw_line(_iso(c, tw, tq.x, tq.y, 0.05), _iso(c, tw, bc.x, bc.y, 0.05), _fade(METAL_DARK, state), maxf(3.0, tw * 0.025))
+	_solar_hut(ci, c, tw, bc, hw, dd, state, ORANGE)
+	if not tank_first:
+		draw_tank.call()
+	_front_links(ci, c, tw, links, 0.28 + hw, state)
+
+
+## A mushroom: a stalk and a round cap with spots.
+static func _mushroom(ci: CanvasItem, p: Vector2, size: float, cap: Color) -> void:
+	ci.draw_line(p, p - Vector2(0, size * 0.9), Color(0.92, 0.88, 0.80, cap.a), maxf(2.0, size * 0.35))
+	var top := p - Vector2(0, size * 0.9)
+	var dome := _ellipse(top, size * 0.8, size * 0.3, 0, 180, 10)
+	dome.append_array(_ellipse(top, size * 0.8, size * 0.6, 180, 360, 10))
+	ci.draw_colored_polygon(dome, cap)
+	ci.draw_circle(top - Vector2(size * 0.25, size * 0.25), maxf(1.0, size * 0.12), Color(1, 1, 1, 0.7 * cap.a))
+	ci.draw_circle(top + Vector2(size * 0.2, -size * 0.35), maxf(1.0, size * 0.1), Color(1, 1, 1, 0.7 * cap.a))
+
+
+## The Mushroom Farm: a dark grow-hall with purple grow-light strips, and big
+## mushrooms growing in beds out front.
+static func _iso_mushroom(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var on_v := _along_v(links, state)
+	var lit := _lit(state)
+	var at := func(a: float, f: float, z: float) -> Vector2:
+		return _iso(c, tw, f, a, z) if on_v else _iso(c, tw, a, f, z)
+	var half := 0.30
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, half, state)
+	var wall := _fade(Color(0.26, 0.22, 0.24), state)
+	if on_v:
+		_box(ci, c, tw, -0.20, -half, 0.12, half, 0.20, wall, _fade(Color(0.35, 0.30, 0.34), state))
+	else:
+		_box(ci, c, tw, -half, -0.20, half, 0.12, 0.20, wall, _fade(Color(0.35, 0.30, 0.34), state))
+	# Grow-light strips glowing through slots in the wall.
+	var violet := _fade(Color(0.80, 0.45, 1.0), state)
+	for k in 3:
+		var z := 0.05 + k * 0.05
+		ci.draw_line(at.call(-half + 0.04, 0.12, z), at.call(half - 0.04, 0.12, z), violet if lit else wall.lightened(0.2), maxf(1.5, tw * 0.012))
+	# Misting pipe along the roof edge.
+	ci.draw_line(at.call(-half, 0.10, 0.21), at.call(half, 0.10, 0.21), _fade(METAL, state), maxf(1.5, tw * 0.012))
+	# Mushroom beds out front.
+	var bed := _fade(Color(0.32, 0.24, 0.18), state)
+	for k in 2:
+		var a0 := -0.28 + k * 0.32
+		var p0: Vector2 = at.call(a0, 0.20, 0.0)
+		var p1: Vector2 = at.call(a0 + 0.24, 0.20, 0.0)
+		var p2: Vector2 = at.call(a0 + 0.24, 0.40, 0.0)
+		var p3: Vector2 = at.call(a0, 0.40, 0.0)
+		ci.draw_colored_polygon(PackedVector2Array([p0, p1, p2, p3]), bed)
+		var caps := [Color(0.85, 0.70, 0.50), Color(0.80, 0.35, 0.30), Color(0.92, 0.85, 0.70)]
+		for j in 5:
+			var mp: Vector2 = at.call(a0 + 0.04 + (j % 3) * 0.08, 0.25 + (j / 3) * 0.09, 0.0)
+			_mushroom(ci, mp, tw * (0.035 + (j % 2) * 0.012), _fade(caps[(j + k) % 3], state))
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, half, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]) and (d.y != 0) == on_v:
+			_iso_port(ci, at.call(half, 0.0, 0.06), tw, state, true, d)
+
+
+## One round settling tank with blue water and a turning skimmer arm.
+static func _settling_tank(ci: CanvasItem, p: Vector2, tw: float, state: Dictionary) -> void:
+	var rx := tw * 0.13
+	var rim := _fade(Color(0.70, 0.72, 0.75), state)
+	var body := _ellipse(p, rx, rx * 0.5, 0, 180, 14)
+	body.append_array(_ellipse(p - Vector2(0, tw * 0.07), rx, rx * 0.5, 180, 0, 14))
+	ci.draw_colored_polygon(body, rim.darkened(0.25))
+	var top := p - Vector2(0, tw * 0.07)
+	ci.draw_colored_polygon(_ellipse(top, rx, rx * 0.5), rim)
+	ci.draw_colored_polygon(_ellipse(top, rx * 0.86, rx * 0.43), _fade(WATER, state).darkened(0.05))
+	ci.draw_line(top - Vector2(rx * 0.8, rx * 0.1), top + Vector2(rx * 0.8, rx * 0.1), _fade(METAL_DARK, state), maxf(1.5, tw * 0.012))
+	ci.draw_circle(top, tw * 0.015, _fade(METAL_DARK, state))
+	ci.draw_arc(top + Vector2(rx * 0.3, 0), rx * 0.25, deg_to_rad(200), deg_to_rad(320), 6, Color(1, 1, 1, 0.5), 1.0)
+
+
+## The Water Recycler: a filter house, two settling tanks of clean water and
+## pipes between them.
+static func _iso_waterworks(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var on_v := _along_v(links, state)
+	var lit := _lit(state)
+	var at := func(a: float, f: float, z: float) -> Vector2:
+		return _iso(c, tw, f, a, z) if on_v else _iso(c, tw, a, f, z)
+	var half := 0.30
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, half, state)
+	var wall := _fade(Color(0.60, 0.72, 0.80), state)
+	if on_v:
+		_box(ci, c, tw, -0.22, -half, 0.08, half, 0.20, wall, _fade(Color(0.70, 0.80, 0.86), state))
+	else:
+		_box(ci, c, tw, -half, -0.22, half, 0.08, 0.20, wall, _fade(Color(0.70, 0.80, 0.86), state))
+	ci.draw_line(at.call(-half, 0.08, 0.16), at.call(half, 0.08, 0.16), _fade(WATER, state), maxf(2.0, tw * 0.015))
+	# Filter columns on the roof.
+	for k in 3:
+		var fp: Vector2 = at.call(-0.20 + k * 0.10, -0.08, 0.20)
+		var col := PackedVector2Array([fp + Vector2(-tw * 0.025, 0), fp + Vector2(tw * 0.025, 0), fp + Vector2(tw * 0.025, -tw * 0.10), fp + Vector2(-tw * 0.025, -tw * 0.10)])
+		ci.draw_colored_polygon(col, _fade(Color(0.85, 0.90, 0.95), state))
+		ci.draw_colored_polygon(_ellipse(fp - Vector2(0, tw * 0.10), tw * 0.025, tw * 0.012), _fade(WATER, state))
+	# Two settling tanks out front, with a pipe from the house.
+	for k in 2:
+		var tp: Vector2 = at.call(-0.16 + k * 0.30, 0.30, 0.0)
+		ci.draw_line(at.call(-0.16 + k * 0.30, 0.08, 0.05), tp - Vector2(0, tw * 0.04), _fade(METAL_DARK, state), maxf(2.5, tw * 0.02))
+		_settling_tank(ci, tp, tw, state)
+	if lit:
+		_glow(ci, at.call(0.22, 0.08, 0.11), tw * 0.014, _fade(WATER, state), state)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, half, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]) and (d.y != 0) == on_v:
+			_iso_port(ci, at.call(half, 0.0, 0.06), tw, state, true, d)
+
+
+## The Trading Post: a market hall with striped awnings, crates and barrels
+## out front, and a sign with a coin.
+static func _iso_market(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var on_v := _along_v(links, state)
+	var md := _fade(METAL_DARK, state)
+	var at := func(a: float, f: float, z: float) -> Vector2:
+		return _iso(c, tw, f, a, z) if on_v else _iso(c, tw, a, f, z)
+	var half := 0.30
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, half, state)
+	var wall := _fade(Color(0.80, 0.66, 0.46), state)
+	if on_v:
+		_box(ci, c, tw, -0.22, -half, 0.08, half, 0.22, wall, _fade(Color(0.58, 0.38, 0.28), state))
+	else:
+		_box(ci, c, tw, -half, -0.22, half, 0.08, 0.22, wall, _fade(Color(0.58, 0.38, 0.28), state))
+	# Three shop fronts, each under a striped awning.
+	var stripes := [[Color(0.90, 0.30, 0.30), Color(0.98, 0.95, 0.90)], [Color(0.30, 0.55, 0.90), Color(0.98, 0.95, 0.90)], [Color(0.30, 0.70, 0.40), Color(0.98, 0.95, 0.90)]]
+	for k in 3:
+		var a0 := -0.27 + k * 0.19
+		var a1 := a0 + 0.16
+		ci.draw_colored_polygon(PackedVector2Array([at.call(a0 + 0.02, 0.08, 0.02), at.call(a1 - 0.02, 0.08, 0.02), at.call(a1 - 0.02, 0.08, 0.12), at.call(a0 + 0.02, 0.08, 0.12)]), _fade(Color(1.0, 0.86, 0.58), state).darkened(0.1))
+		for j in 4:
+			var s0 := a0 + j * 0.04
+			var aw := PackedVector2Array([at.call(s0, 0.08, 0.17), at.call(s0 + 0.04, 0.08, 0.17), at.call(s0 + 0.04, 0.16, 0.12), at.call(s0, 0.16, 0.12)])
+			ci.draw_colored_polygon(aw, _fade(stripes[k][j % 2], state))
+	# The coin sign on the roof.
+	var sign: Vector2 = at.call(0.0, -0.07, 0.22) - Vector2(0, tw * 0.09)
+	ci.draw_line(at.call(0.0, -0.07, 0.22), sign + Vector2(0, tw * 0.04), md, maxf(1.5, tw * 0.012))
+	ci.draw_circle(sign, tw * 0.05, _fade(GOLD, state))
+	ci.draw_circle(sign, tw * 0.038, _fade(GOLD, state).darkened(0.15))
+	ci.draw_line(sign + Vector2(-tw * 0.015, tw * 0.015), sign + Vector2(-tw * 0.015, -tw * 0.015), _fade(GOLD, state).lightened(0.3), 1.5)
+	ci.draw_line(sign + Vector2(tw * 0.015, tw * 0.015), sign + Vector2(tw * 0.015, -tw * 0.015), _fade(GOLD, state).lightened(0.3), 1.5)
+	ci.draw_line(sign + Vector2(-tw * 0.015, -tw * 0.015), sign + Vector2(0, 0), _fade(GOLD, state).lightened(0.3), 1.5)
+	ci.draw_line(sign + Vector2(tw * 0.015, -tw * 0.015), sign + Vector2(0, 0), _fade(GOLD, state).lightened(0.3), 1.5)
+	# Crates and barrels for sale out front.
+	var crate := _fade(Color(0.62, 0.46, 0.28), state)
+	for k in 3:
+		var a0 := -0.30 + k * 0.10
+		var z := 0.0 if k < 2 else 0.06
+		var aa := a0 if k < 2 else -0.25
+		if on_v:
+			_box(ci, c, tw, 0.24, aa, 0.32, aa + 0.08, 0.06, crate, crate.lightened(0.1), z)
+		else:
+			_box(ci, c, tw, aa, 0.24, aa + 0.08, 0.32, 0.06, crate, crate.lightened(0.1), z)
+	for k in 2:
+		var bp: Vector2 = at.call(0.18 + k * 0.09, 0.30, 0.0)
+		var bq: Vector2 = Vector2(0.30, 0.18 + k * 0.09) if on_v else Vector2(0.18 + k * 0.09, 0.30)
+		_cyl(ci, c, tw, bq.x, bq.y, 0.04, 0.08, _fade(Color(0.40, 0.55, 0.75), state), _fade(Color(0.50, 0.65, 0.85), state))
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, half, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]) and (d.y != 0) == on_v:
+			_iso_port(ci, at.call(half, 0.0, 0.06), tw, state, true, d)
+
+
+## The Schoolhouse: a bright blue school with big windows full of children's
+## drawings, a rainbow arch over the roof, a flag, and a playground with a slide
+## and a swing.
+static func _iso_school(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var lit := _lit(state)
+	var hw := 0.24
+	var hh := 0.24
+	_back_links(ci, c, tw, links, hw, state)
+	# The flag at the back corner.
+	var fp := _iso(c, tw, -0.38, -0.38, 0.0)
+	var ft := _iso(c, tw, -0.38, -0.38, 0.55)
+	ci.draw_line(fp, ft, md.lightened(0.3), maxf(1.5, tw * 0.01))
+	ci.draw_colored_polygon(PackedVector2Array([ft, ft + Vector2(tw * 0.09, tw * 0.02), ft + Vector2(0, tw * 0.05)]), _fade(Color(0.98, 0.80, 0.25), state))
+	var wall := _fade(Color(0.45, 0.65, 0.92), state)
+	_box(ci, c, tw, -hw, -hw, hw, hw, hh, wall, _fade(Color(0.95, 0.90, 0.75), state))
+	# Big windows with children's drawings: bright patches of colour.
+	var draw := [Color(1.0, 0.45, 0.40), Color(1.0, 0.85, 0.30), Color(0.45, 0.85, 0.45), Color(0.85, 0.55, 1.0)]
+	for front in [true, false]:
+		for i in 2:
+			var a := -0.19 + i * 0.25
+			var win := _wall_window(ci, c, tw, front, hw, a, 0.13, 0.07, 0.18, _fade(Color(1.0, 0.95, 0.80), state) if lit else _fade(Color(0.75, 0.85, 0.95), state))
+			for k in 3:
+				var p := win[0].lerp(win[2], 0.2 + k * 0.3) + Vector2(0, -tw * 0.005 * k)
+				ci.draw_rect(Rect2(p - Vector2(tw * 0.01, tw * 0.012), Vector2(tw * 0.02, tw * 0.024)), _fade(draw[(k + i + (1 if front else 0)) % 4], state))
+			ci.draw_polyline(PackedVector2Array([win[0], win[1], win[2], win[3], win[0]]), _fade(WHITE, state), 1.5)
+	# A rainbow arch over the roof.
+	var top := _iso(c, tw, 0, 0, hh)
+	var bows := [Color(1.0, 0.35, 0.35), Color(1.0, 0.75, 0.25), Color(0.45, 0.85, 0.45), Color(0.35, 0.60, 1.0)]
+	for k in 4:
+		ci.draw_arc(top + Vector2(0, tw * 0.02), tw * (0.17 - k * 0.025), PI, TAU, 18, _fade(bows[k], state), maxf(2.0, tw * 0.016))
+	# The playground at the front corner: a slide and a swing.
+	var sl := _iso(c, tw, 0.36, 0.30, 0.0)
+	var st := _iso(c, tw, 0.36, 0.30, 0.16)
+	ci.draw_line(sl, st, md, 1.5)
+	ci.draw_line(st, _iso(c, tw, 0.36, 0.44, 0.0), _fade(Color(1.0, 0.45, 0.40), state), maxf(2.5, tw * 0.02))
+	var s0 := _iso(c, tw, 0.30, 0.40, 0.0)
+	var s1 := _iso(c, tw, 0.44, 0.40, 0.0)
+	var s0t := s0 - Vector2(0, tw * 0.14)
+	var s1t := s1 - Vector2(0, tw * 0.14)
+	ci.draw_line(s0, s0t, md, 1.5)
+	ci.draw_line(s1, s1t, md, 1.5)
+	ci.draw_line(s0t, s1t, md, 1.5)
+	var mid := s0t.lerp(s1t, 0.5)
+	ci.draw_line(mid, mid + Vector2(0, tw * 0.09), md.lightened(0.3), 1.0)
+	ci.draw_line(mid + Vector2(-tw * 0.02, tw * 0.09), mid + Vector2(tw * 0.02, tw * 0.09), _fade(Color(0.35, 0.60, 1.0), state), 2.0)
+	_front_links(ci, c, tw, links, hw, state)
+
+
+## The six newer buildings from above.
+static func _top_new(ci: CanvasItem, type: String, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	match type:
+		"battery", "heatstore":
+			var dd := _solar_door(links, state)
+			var hc := c + Vector2(dd) * 0.27 * s
+			if type == "battery":
+				for u in [-0.33, -0.11, 0.11, 0.33]:
+					for v in [-0.30, 0.0, 0.30]:
+						if absf(u - dd.x * 0.27) < 0.27 and absf(v - dd.y * 0.27) < 0.27:
+							continue
+						ci.draw_rect(Rect2(c + Vector2(u - 0.08, v - 0.10) * s, Vector2(0.16, 0.20) * s), _fade(Color(0.30, 0.34, 0.40), state))
+						ci.draw_rect(Rect2(c + Vector2(u - 0.05, v - 0.06) * s, Vector2(0.03, 0.12) * s), _fade(Color(0.40, 1.0, 0.55), state))
+			else:
+				var tq := c - Vector2(dd) * 0.10 * s
+				ci.draw_circle(tq, s * 0.27, _fade(Color(0.78, 0.74, 0.70), state))
+				ci.draw_arc(tq, s * 0.27, 0, TAU, 24, _fade(ORANGE, state), 2.0)
+				ci.draw_arc(tq, s * 0.18, 0, TAU, 24, _fade(ORANGE, state), 1.5)
+				_glow(ci, tq, s * 0.03, _fade(ORANGE, state), state)
+			var hw := s * (0.15 if type == "battery" else 0.13)
+			ci.draw_rect(Rect2(hc - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.72, 0.74, 0.80), state))
+			ci.draw_rect(Rect2(hc - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.40, 1.0, 0.55) if type == "battery" else ORANGE, state), false, 1.5)
+			_top_port(ci, hc + Vector2(dd) * hw, s, state, not (dd in links), dd)
+		"mushroom", "waterworks", "market":
+			var on_v := _along_v(links, state)
+			var p := func(a: float, f: float) -> Vector2:
+				return c + (Vector2(f, a) if on_v else Vector2(a, f)) * s
+			var roof: Color = {"mushroom": Color(0.35, 0.30, 0.34), "waterworks": Color(0.70, 0.80, 0.86), "market": Color(0.58, 0.38, 0.28)}[type]
+			var rect := Rect2(p.call(-0.30, -0.22), Vector2.ZERO).expand(p.call(0.30, 0.10))
+			ci.draw_rect(rect, _fade(roof, state))
+			if type == "mushroom":
+				for k in 2:
+					var bed := Rect2(p.call(-0.28 + k * 0.32, 0.20), Vector2.ZERO).expand(p.call(-0.04 + k * 0.32, 0.40))
+					ci.draw_rect(bed, _fade(Color(0.32, 0.24, 0.18), state))
+					for j in 4:
+						ci.draw_circle(p.call(-0.24 + k * 0.32 + j * 0.05, 0.28 + (j % 2) * 0.06), s * 0.025, _fade([Color(0.85, 0.70, 0.50), Color(0.80, 0.35, 0.30)][j % 2], state))
+			elif type == "waterworks":
+				for k in 2:
+					ci.draw_circle(p.call(-0.16 + k * 0.30, 0.30), s * 0.12, _fade(Color(0.70, 0.72, 0.75), state))
+					ci.draw_circle(p.call(-0.16 + k * 0.30, 0.30), s * 0.10, _fade(WATER, state))
+			else:
+				var cols := [Color(0.90, 0.30, 0.30), Color(0.30, 0.55, 0.90), Color(0.30, 0.70, 0.40)]
+				for k in 3:
+					ci.draw_rect(Rect2(p.call(-0.27 + k * 0.19, 0.08), Vector2.ZERO).expand(p.call(-0.11 + k * 0.19, 0.16)), _fade(cols[k], state))
+				ci.draw_circle(p.call(0.0, -0.07), s * 0.05, _fade(GOLD, state))
+			for d in DIRS:
+				if (d.y != 0) == on_v:
+					_top_port(ci, p.call(0.30 * (d.y if on_v else d.x), 0.0), s, state, not (d in links), d)
+		"school":
+			var hw := s * 0.24
+			ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.95, 0.90, 0.75), state))
+			ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.45, 0.65, 0.92), state), false, 2.0)
+			var bows := [Color(1.0, 0.35, 0.35), Color(1.0, 0.75, 0.25), Color(0.45, 0.85, 0.45), Color(0.35, 0.60, 1.0)]
+			for k in 4:
+				ci.draw_arc(c, s * (0.17 - k * 0.025), PI, TAU, 14, _fade(bows[k], state), 2.0)
+			ci.draw_line(c + Vector2(0.36, 0.30) * s, c + Vector2(0.36, 0.44) * s, _fade(Color(1.0, 0.45, 0.40), state), 3.0)
+			ci.draw_line(c + Vector2(0.30, 0.40) * s, c + Vector2(0.44, 0.40) * s, md, 2.0)
+			for d in DIRS:
+				_top_port(ci, c + Vector2(d) * hw, s, state, not (d in links), d)
 
 
 ## Whether a two-door building runs along v (doors facing ±y) rather than u.

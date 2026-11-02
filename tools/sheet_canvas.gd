@@ -79,7 +79,7 @@ func _buildings(title: String, ids: Array, both: bool) -> void:
 
 
 ## Every building on one page, in three groups: Surface, Deep, and both levels.
-func _all() -> void:
+func _all() -> float:
 	var cols := 6
 	var y := 70.0
 	var heads: Array = []
@@ -96,14 +96,15 @@ func _all() -> void:
 	for h in heads:
 		draw_rect(Rect2(Vector2(0, h[1]), Vector2(size.x, 36)), Color(0.06, 0.07, 0.09))
 		_text(h[0], Vector2(24, h[1] + 28), 22, Color(0.55, 0.80, 0.95) if str(h[0]).begins_with("Deep") else Color(0.95, 0.80, 0.55))
+	return y
 
 
 ## Everything on one sheet: every building on top, then units and tunnels
-## side by side, then terrain. Draw it on its own at 3800x3900 (see
+## side by side, then terrain. Draw it on its own at 3800x4200 (see
 ## tools/sprite_sheet.gd).
 func _complete() -> void:
-	_all()
-	var parts := [[Vector2(0, 1720), "_units"], [Vector2(1900, 1720), "_tunnels"], [Vector2(0, 3070), "_world"]]
+	var y := _all() + 10.0
+	var parts := [[Vector2(0, y), "_units"], [Vector2(1900, y), "_tunnels"], [Vector2(0, y + 1350), "_world"]]
 	for part in parts:
 		draw_set_transform(part[0])
 		draw_rect(Rect2(Vector2(10, 0), Vector2(1880, 4)), Color(0.20, 0.22, 0.26))
@@ -259,39 +260,44 @@ func _units() -> void:
 	const Fleet = preload("res://scripts/sim/fleet.gd")
 	var more: Script = Sprites.more()
 	var cw := 470.0
-	for i in 4:
-		var t: String = Fleet.drone_order()[i]
-		var o := Vector2(20 + i * cw, 70)
-		draw_rect(Rect2(o, Vector2(cw - 12, 420)), Color(0.10, 0.11, 0.14))
+	# Drones: two rows of four.
+	var drones: Array = Fleet.drone_order()
+	for i in drones.size():
+		var t: String = drones[i]
+		var o := Vector2(20 + (i % 4) * cw, 60 + (i / 4) * 290)
+		draw_rect(Rect2(o, Vector2(cw - 12, 280)), Color(0.10, 0.11, 0.14))
 		_text(Fleet.drone_def(t)["name"], o + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
-		var c := o + Vector2(cw * 0.5 - 6, 260)
-		Sprites.terrain_iso(self, "regolith", c, 360.0)
-		more.draw_unit(self, t, c, 360.0)
+		var c := o + Vector2(cw * 0.5 - 6, 175)
+		Sprites.terrain_iso(self, "regolith", c, 300.0)
+		more.draw_unit(self, t, c, 300.0)
+	# Satellites, and the colonists card, in one row of five.
+	var sats: Array = Fleet.sat_order()
+	var sw := 376.0
+	for i in sats.size():
+		var t: String = sats[i]
+		var o := Vector2(20 + i * sw, 650)
+		draw_rect(Rect2(o, Vector2(sw - 12, 330)), Color(0.02, 0.03, 0.06))
+		for k in 30:
+			draw_circle(o + Vector2(fmod(k * 97.0, sw - 20) + 6, fmod(k * 53.0, 310) + 10), 1.0, Color(1, 1, 1, 0.5))
+		_text(Fleet.sat_def(t)["name"], o + Vector2(12, 28), 20, Color(1.0, 0.82, 0.48))
+		more.draw_unit(self, t, o + Vector2(sw * 0.5 - 6, 210), 280.0)
 	# Colonists in space suits, by job, and the resource icons.
 	const People = preload("res://scripts/ui/people.gd")
-	var po := Vector2(20 + 3 * cw, 510)
-	draw_rect(Rect2(po, Vector2(cw - 12, 440)), Color(0.10, 0.11, 0.14))
-	_text("Colonists and resource icons", po + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
+	var po := Vector2(20 + sats.size() * sw, 650)
+	draw_rect(Rect2(po, Vector2(1880 - po.x, 330)), Color(0.10, 0.11, 0.14))
+	_text("Colonists and resource icons", po + Vector2(12, 28), 20, Color(1.0, 0.82, 0.48))
 	var jobs := ["worker", "scientist", "warden"]
 	for k in 3:
-		People.draw_colonist(self, po + Vector2(90 + k * 130, 250), 150.0, jobs[k], 1.0 if k != 1 else -1.0, k == 1)
-		_text(jobs[k], po + Vector2(55 + k * 130, 285), 16, Color(0.75, 0.78, 0.84))
+		People.draw_colonist(self, po + Vector2(60 + k * 110, 180), 120.0, jobs[k], 1.0 if k != 1 else -1.0, k == 1)
+		_text(jobs[k], po + Vector2(30 + k * 110, 210), 14, Color(0.75, 0.78, 0.84))
 	var keys := ["pop", "morale", "power", "heat", "workers", "food", "oxygen", "water", "ore", "alloy", "parts", "marks", "debt", "payment", "turn"]
 	for k in keys.size():
-		People.draw_icon(self, keys[k], po + Vector2(40 + (k % 8) * 52, 330 + (k / 8) * 60), 40.0)
+		People.draw_icon(self, keys[k], po + Vector2(26 + (k % 8) * 42, 240 + (k / 8) * 42), 32.0)
 	# The lander on the Landing Pad, docked at each of its four airlocks in turn.
-	var lo := Vector2(20, 970)
-	draw_rect(Rect2(lo, Vector2(cw * 4 - 12, 350)), Color(0.10, 0.11, 0.14))
+	var lo := Vector2(20, 990)
+	draw_rect(Rect2(lo, Vector2(cw * 4 - 12, 340)), Color(0.10, 0.11, 0.14))
 	_text("The lander on the Landing Pad (it docks at the next airlock round each time it lands)", lo + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
 	for k in 4:
-		var lc := lo + Vector2(cw * 0.5 - 6 + k * cw, 260)
-		Sprites.terrain_iso(self, "regolith", lc, 300.0)
-		Sprites.draw_iso(self, "hull", lc, 300.0, {"links": [], "ship": true, "ship_door": k})
-	for i in 3:
-		var t: String = Fleet.sat_order()[i]
-		var o := Vector2(20 + i * cw, 510)
-		draw_rect(Rect2(o, Vector2(cw - 12, 440)), Color(0.02, 0.03, 0.06))
-		for k in 40:
-			draw_circle(o + Vector2(fmod(k * 97.0, cw - 20) + 6, fmod(k * 53.0, 420) + 10), 1.0, Color(1, 1, 1, 0.5))
-		_text(Fleet.sat_def(t)["name"], o + Vector2(12, 28), 22, Color(1.0, 0.82, 0.48))
-		more.draw_unit(self, t, o + Vector2(cw * 0.5 - 6, 300), 360.0)
+		var lc := lo + Vector2(cw * 0.5 - 6 + k * cw, 250)
+		Sprites.terrain_iso(self, "regolith", lc, 280.0)
+		Sprites.draw_iso(self, "hull", lc, 280.0, {"links": [], "ship": true, "ship_door": k})

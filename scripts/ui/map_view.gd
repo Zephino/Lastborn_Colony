@@ -408,6 +408,35 @@ func _drone_spots() -> Dictionary:
 			# A fixed shuffle that changes each turn, so they seem to roam.
 			var pick: Vector2i = edge[(turn * 7 + k * 13 + k * k * 5) % edge.size()]
 			_add_spot(out, pick, "prospector")
+		# Scouts roam the edge too, further along it.
+		for k in mini(int(work.get("scout", 0)), edge.size()):
+			var pick: Vector2i = edge[(turn * 11 + k * 17 + 5) % edge.size()]
+			_add_spot(out, pick, "scout")
+	# Sweepers at Solar Arrays, Mechanics at broken buildings (or the Workshop),
+	# Medics at the Clinic (or the Landing Pad).
+	var want := {"sweeper": int(work.get("sweeper", 0)), "mechanic": int(work.get("mechanic", 0)), "medic": int(work.get("medic", 0))}
+	for id in state["structures"]:
+		var s: Dictionary = state["structures"][id]
+		if int(s.get("z", 0)) != level or not s["built"]:
+			continue
+		var cell := Vector2i(int(s["x"]), int(s["y"]))
+		if want["sweeper"] > 0 and s["type"] == "mirror":
+			_add_spot(out, cell, "sweeper")
+			want["sweeper"] -= 1
+		elif want["mechanic"] > 0 and int(s["damaged"]) > 0:
+			_add_spot(out, cell, "mechanic")
+			want["mechanic"] -= 1
+	for id in state["structures"]:
+		var s: Dictionary = state["structures"][id]
+		if int(s.get("z", 0)) != level or not s["built"]:
+			continue
+		var cell := Vector2i(int(s["x"]), int(s["y"]))
+		if want["mechanic"] > 0 and s["type"] == "workshop":
+			_add_spot(out, cell, "mechanic")
+			want["mechanic"] -= 1
+		elif want["medic"] > 0 and (s["type"] == "clinic" or s["type"] == "hull"):
+			_add_spot(out, cell, "medic")
+			want["medic"] -= 1
 	return out
 
 

@@ -795,6 +795,106 @@ static func draw_unit(ci: CanvasItem, type: String, c: Vector2, tw: float) -> vo
 			for u in [-0.20, -0.06, 0.16]:
 				_wheel(ci, c, tw, u, 0.12, 0.055, 0.055)
 			S._glow(ci, S._iso(c, tw, 0.18, 0.0, 0.27), tw * 0.012, S.AMBER, st)
+		"sweeper":
+			# A small green rover with a spinning brush roller at the front.
+			var green := Color(0.35, 0.68, 0.45)
+			for u in [-0.12, 0.08]:
+				_wheel(ci, c, tw, u, -0.11, 0.045, 0.045)
+			S._box(ci, c, tw, -0.18, -0.09, 0.12, 0.09, 0.08, green, green.lightened(0.12), 0.05)
+			S._box(ci, c, tw, -0.16, -0.07, -0.04, 0.07, 0.06, Color(0.20, 0.30, 0.40), Color(0.45, 0.65, 0.85), 0.13)
+			# The brush roller on arms, with bristles.
+			for v in [-0.10, 0.10]:
+				ci.draw_line(S._iso(c, tw, 0.10, v, 0.09), S._iso(c, tw, 0.20, v, 0.05), md, 2.0)
+			var r0 := S._iso(c, tw, 0.21, -0.11, 0.05)
+			var r1 := S._iso(c, tw, 0.21, 0.11, 0.05)
+			ci.draw_line(r0, r1, Color(0.85, 0.75, 0.35), tw * 0.04)
+			for k in 9:
+				var p := r0.lerp(r1, float(k) / 8.0)
+				ci.draw_line(p - Vector2(tw * 0.02, tw * 0.01), p + Vector2(tw * 0.02, tw * 0.015), Color(0.55, 0.45, 0.20), 1.0)
+			# Dust thrown up by the brush.
+			for k in 4:
+				ci.draw_circle(S._iso(c, tw, 0.30 + k * 0.03, -0.04 + k * 0.03, 0.04 + k * 0.03), tw * (0.02 + k * 0.008), Color(0.80, 0.72, 0.58, 0.45 - k * 0.08))
+			for u in [-0.12, 0.08]:
+				_wheel(ci, c, tw, u, 0.11, 0.045, 0.045)
+			S._glow(ci, S._iso(c, tw, -0.10, 0.0, 0.21), tw * 0.012, S.AMBER, st)
+		"mechanic":
+			# A blue-grey service rover with a crane arm and gripper, a toolbox and
+			# a flashing amber light.
+			var body := Color(0.40, 0.50, 0.62)
+			for u in [-0.14, 0.0, 0.14]:
+				_wheel(ci, c, tw, u, -0.12, 0.05, 0.05)
+			S._box(ci, c, tw, -0.20, -0.10, 0.20, 0.10, 0.08, body, body.lightened(0.12), 0.06)
+			S._box(ci, c, tw, 0.08, -0.09, 0.20, 0.09, 0.09, body.darkened(0.1), body.lightened(0.05), 0.14)
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.20, -0.07, 0.17), S._iso(c, tw, 0.20, 0.07, 0.17), S._iso(c, tw, 0.20, 0.07, 0.21), S._iso(c, tw, 0.20, -0.07, 0.21)]), S.GLASS.darkened(0.3))
+			# The toolbox on the deck.
+			S._box(ci, c, tw, -0.16, -0.06, -0.06, 0.04, 0.05, Color(0.85, 0.30, 0.25), Color(0.90, 0.40, 0.32), 0.14)
+			# The crane arm: a base, two segments and a gripper.
+			var base := S._iso(c, tw, -0.02, 0.0, 0.16)
+			var elbow := S._iso(c, tw, -0.06, 0.0, 0.36)
+			var hand := S._iso(c, tw, -0.30, 0.04, 0.26)
+			ci.draw_circle(base, tw * 0.025, md)
+			ci.draw_line(base, elbow, yel, tw * 0.022)
+			ci.draw_line(elbow, hand, yel, tw * 0.018)
+			ci.draw_circle(elbow, tw * 0.015, md)
+			ci.draw_line(hand, hand + Vector2(-tw * 0.025, tw * 0.035), md, 2.0)
+			ci.draw_line(hand, hand + Vector2(tw * 0.01, tw * 0.04), md, 2.0)
+			for u in [-0.14, 0.0, 0.14]:
+				_wheel(ci, c, tw, u, 0.12, 0.05, 0.05)
+			S._glow(ci, S._iso(c, tw, 0.14, 0.0, 0.25), tw * 0.014, S.AMBER, st)
+		"medic":
+			# A white ambulance rover with a teal stripe and cross, and red and blue lights.
+			var white := S.WHITE
+			var teal := S.TEAL
+			for u in [-0.14, 0.12]:
+				_wheel(ci, c, tw, u, -0.12, 0.05, 0.05)
+			S._box(ci, c, tw, -0.22, -0.10, 0.10, 0.10, 0.16, white, white.lightened(0.05), 0.06)
+			S._box(ci, c, tw, 0.10, -0.09, 0.22, 0.09, 0.10, white.darkened(0.05), white, 0.06)
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.22, -0.07, 0.10), S._iso(c, tw, 0.22, 0.07, 0.10), S._iso(c, tw, 0.22, 0.07, 0.15), S._iso(c, tw, 0.22, -0.07, 0.15)]), S.GLASS.darkened(0.3))
+			ci.draw_line(S._iso(c, tw, -0.22, 0.10, 0.12), S._iso(c, tw, 0.22, 0.10, 0.12), teal, tw * 0.016)
+			var cr := S._iso(c, tw, -0.06, 0.10, 0.17)
+			ci.draw_rect(Rect2(cr - Vector2(tw * 0.008, tw * 0.025), Vector2(tw * 0.016, tw * 0.05)), teal)
+			ci.draw_rect(Rect2(cr - Vector2(tw * 0.025, tw * 0.008), Vector2(tw * 0.05, tw * 0.016)), teal)
+			for u in [-0.14, 0.12]:
+				_wheel(ci, c, tw, u, 0.12, 0.05, 0.05)
+			S._glow(ci, S._iso(c, tw, 0.04, -0.04, 0.24), tw * 0.014, Color(1.0, 0.25, 0.2), st)
+			S._glow(ci, S._iso(c, tw, 0.04, 0.04, 0.24), tw * 0.014, Color(0.3, 0.5, 1.0), st)
+		"scout":
+			# A fast sand-coloured buggy: big wheels, a roll cage, headlights, an
+			# antenna whip and a trail of dust.
+			var sand := Color(0.82, 0.68, 0.45)
+			for k in 4:
+				ci.draw_circle(S._iso(c, tw, -0.30 - k * 0.04, 0.02 * k, 0.03 + k * 0.02), tw * (0.025 + k * 0.01), Color(0.80, 0.72, 0.58, 0.40 - k * 0.08))
+			for u in [-0.14, 0.14]:
+				_wheel(ci, c, tw, u, -0.12, 0.065, 0.065)
+			S._box(ci, c, tw, -0.20, -0.08, 0.20, 0.08, 0.06, sand, sand.lightened(0.12), 0.07)
+			# Roll cage.
+			for v in [-0.08, 0.08]:
+				ci.draw_polyline(PackedVector2Array([S._iso(c, tw, -0.12, v, 0.13), S._iso(c, tw, -0.08, v, 0.27), S._iso(c, tw, 0.06, v, 0.27), S._iso(c, tw, 0.10, v, 0.13)]), md, 2.0)
+			ci.draw_line(S._iso(c, tw, -0.08, -0.08, 0.27), S._iso(c, tw, -0.08, 0.08, 0.27), md, 2.0)
+			ci.draw_line(S._iso(c, tw, 0.06, -0.08, 0.27), S._iso(c, tw, 0.06, 0.08, 0.27), md, 2.0)
+			# Antenna whip with a flag.
+			var whip := S._iso(c, tw, -0.16, -0.06, 0.48)
+			ci.draw_line(S._iso(c, tw, -0.16, -0.06, 0.13), whip, md, 1.0)
+			ci.draw_colored_polygon(PackedVector2Array([whip, whip + Vector2(tw * 0.05, tw * 0.012), whip + Vector2(0, tw * 0.03)]), Color(1.0, 0.45, 0.25))
+			for u in [-0.14, 0.14]:
+				_wheel(ci, c, tw, u, 0.12, 0.065, 0.065)
+			for v in [-0.05, 0.05]:
+				S._glow(ci, S._iso(c, tw, 0.20, v, 0.11), tw * 0.012, S.WHITE, st)
+		"survey":
+			# A camera satellite: panels, a body, a big lens looking down and a
+			# green scanning beam sweeping the ground.
+			_panels(ci, c, tw, Color(0.25, 0.40, 0.75))
+			S._box(ci, c, tw, -0.07, -0.07, 0.07, 0.07, 0.14, Color(0.55, 0.62, 0.55), Color(0, 0, 0, 0), 0.2)
+			var lens := S._iso(c, tw, 0, 0, 0.19)
+			ci.draw_colored_polygon(S._ellipse(lens, tw * 0.06, tw * 0.03), Color(0.08, 0.10, 0.12))
+			ci.draw_colored_polygon(S._ellipse(lens, tw * 0.035, tw * 0.018), Color(0.35, 0.85, 0.55))
+			var ground := S._iso(c, tw, 0, 0, -0.30)
+			ci.draw_colored_polygon(PackedVector2Array([lens + Vector2(-tw * 0.03, 0), lens + Vector2(tw * 0.03, 0), ground + Vector2(tw * 0.16, 0), ground + Vector2(-tw * 0.16, 0)]), Color(0.35, 0.95, 0.55, 0.16))
+			for k in 4:
+				var t := 0.25 + k * 0.25
+				var y := lens.lerp(ground, t)
+				var w := tw * (0.03 + 0.13 * t)
+				ci.draw_line(y - Vector2(w, 0), y + Vector2(w, 0), Color(0.35, 0.95, 0.55, 0.5), 1.0)
 		"weather":
 			_panels(ci, c, tw, Color(0.25, 0.40, 0.75))
 			S._box(ci, c, tw, -0.07, -0.07, 0.07, 0.07, 0.14, S.WHITE.darkened(0.1), Color(0, 0, 0, 0), 0.2)

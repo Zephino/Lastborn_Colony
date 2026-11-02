@@ -144,7 +144,11 @@
       "grader",
       "borer",
       "prospector",
-      "hauler"
+      "hauler",
+      "sweeper",
+      "mechanic",
+      "medic",
+      "scout"
     ],
     "types": {
       "grader": {
@@ -173,15 +177,50 @@
         "cutters": 2,
         "boost": 1.25,
         "desc": "Carries ore away from the cutters so they never stop: two working Seam Cutters make 25% more ore."
+      },
+      "sweeper": {
+        "name": "Sweeper",
+        "alloy": 5,
+        "parts": 2,
+        "arrays": 4,
+        "storm": 0.4,
+        "desc": "Brushes grit off the Solar Arrays. In a grit storm, each working Sweeper keeps 4 arrays clean, so they lose much less power."
+      },
+      "mechanic": {
+        "name": "Mechanic",
+        "alloy": 6,
+        "parts": 3,
+        "repair": 1,
+        "desc": "Drives out to broken buildings. Each working Mechanic takes one more turn off one repair each turn."
+      },
+      "medic": {
+        "name": "Medic",
+        "alloy": 6,
+        "parts": 3,
+        "health": 0.1,
+        "desc": "An ambulance rover. Each working Medic means 10% fewer deaths (up to 30%)."
+      },
+      "scout": {
+        "name": "Scout",
+        "alloy": 5,
+        "parts": 2,
+        "chance": 0.15,
+        "salvage": {
+          "alloy": 8,
+          "parts": 2
+        },
+        "desc": "Explores far from the colony. Each turn, each working Scout has a 15% chance of bringing back salvage: 8 alloy and 2 parts."
       }
-    }
+    },
+    "medic_cap": 0.3
   },
   "satellites": {
     "_comment": "Launched from a working Spin Launcher. Costs are alloy, parts and marks.",
     "order": [
       "weather",
       "relay",
-      "power"
+      "power",
+      "survey"
     ],
     "types": {
       "weather": {
@@ -211,6 +250,15 @@
         "max": 6,
         "requires_research": "beaming",
         "desc": "A mirror in orbit that beams power down to a Beam Catcher."
+      },
+      "survey": {
+        "name": "Survey satellite",
+        "alloy": 18,
+        "parts": 6,
+        "credits": 140,
+        "max": 1,
+        "dig": 1.1,
+        "desc": "Maps the ground from orbit and guides the work below: Seam Cutters and Ice Drills make 10% more."
       }
     }
   },
@@ -243,5 +291,25 @@
     "alloy": 50,
     "food": 40,
     "oxygen": 40
+  },
+  "water_saving_cap": 0.5,
+  "market": {
+    "_comment": "Trading Post: goods it may sell, the base price in marks, and the reserve it always keeps. Prices swing up and down by 'swing' over 'period' turns.",
+    "goods": {
+      "food": {
+        "price": 3,
+        "keep": 120
+      },
+      "water": {
+        "price": 2,
+        "keep": 120
+      },
+      "parts": {
+        "price": 24,
+        "keep": 20
+      }
+    },
+    "swing": 0.3,
+    "period": 16
   }
 }

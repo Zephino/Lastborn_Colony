@@ -46,6 +46,9 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 		"satellites": {},
 		"waste": 0.0,
 		"trained": 0.0,
+		# Power and heat saved by Battery Banks and Heat Stores.
+		"battery": 0.0,
+		"heat_bank": 0.0,
 		"width": int(b["map_width"]),
 		"height": int(b["map_height"]),
 		"tiles": map["tiles"],

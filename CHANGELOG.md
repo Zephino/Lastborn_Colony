@@ -2,6 +2,34 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.77
+Date: 11/02/2026
+Time: 5:34 AM
+
+### Changes
+- **Six new buildings:**
+  - **Battery Bank** (surface, 10 alloy, 1 door, no workers): saves up to 15 spare power at the end of a turn and gives it back the next turn. Drawn as a control hut and rows of battery cabinets with green charge bars.
+  - **Heat Store** (either level, 10 alloy, 1 door, no workers): the same for heat, up to 10. Drawn as a big squat insulated tank with orange bands and glowing vents, and a pump hut.
+  - **Mushroom Farm** (Deep, 8 alloy, 2 doors): 2 workers turn 1 water into 5 food. It needs only 0.5 heat (a Kelp Vat needs 2). Drawn as a dark grow-hall with purple grow-light strips and beds of big mushrooms.
+  - **Water Recycler** (Deep, 12 alloy, 2 doors): everyone needs 25% less water, and two count at most. Drawn as a filter house with filter columns and two settling tanks.
+  - **Trading Post** (surface, 14 alloy, 2 doors): sells up to 5 each of food, water and parts a turn beyond a reserve (120 food, 120 water, 20 parts). Base prices are 3, 2 and 24 marks, swinging 30% up and down over 16 turns. Drawn as a market hall with striped awnings, crates, barrels and a coin sign.
+  - **Schoolhouse** (Deep, 12 alloy, 4 doors): 12 seats. Children who grow up there join as trained specialists. Morale +2. Drawn as a bright blue school with drawings in the windows, a rainbow arch, a flag, a slide and a swing.
+- **Four new rovers** (built at a Drone Bay):
+  - **Sweeper:** in a grit storm, each keeps 4 Solar Arrays clean, so they lose 60% less.
+  - **Mechanic:** takes one more turn off one repair each turn.
+  - **Medic:** 10% fewer deaths each, 30% at most.
+  - **Scout:** each turn, a 15% chance of salvage (8 alloy and 2 parts).
+  - On the map they work where you'd expect: Sweepers at Solar Arrays, Mechanics at broken buildings or the Workshop, Medics at the Clinic or Landing Pad, and Scouts roaming the edge.
+- **New Survey satellite:** Seam Cutters and Ice Drills make 10% more.
+- The building info shows what each new building does, the saved power and heat, and today's trade prices. The Colony report shows saved and used power and heat, trade earnings and water savings.
+- New saves keep the saved power and heat; older saves load with none.
+- README, How to play (new page "Saving, trade and schools") and the sprite sheets cover everything new. The units page now fits 8 rovers and 4 satellites.
+- 46 new test checks in `tests/test_new.gd` (541 in all).
+- The test bot doesn't use the new things yet, so its balance results are unchanged.
+
+### Reason
+The owner liked every idea in the list of new buildings and units and asked for all of them.
+
 ## Version 00.01.76
 Date: 11/02/2026
 Time: 5:09 AM

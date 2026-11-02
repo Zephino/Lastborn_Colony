@@ -54,6 +54,8 @@ const DEFAULTS := {
 	"satellites": {},
 	"waste": 0.0,
 	"trained": 0.0,
+	"battery": 0.0,
+	"heat_bank": 0.0,
 	# Saves from before door rules keep joining on any side.
 	"door_rules": false,
 }

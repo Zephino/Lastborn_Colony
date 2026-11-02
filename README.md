@@ -102,9 +102,9 @@ The **Shaft** is a lift tube down to the Deep. When it's finished, a landing ope
 
 | Level | Buildings |
 | --- | --- |
-| **Surface only** | Solar Array, Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station |
-| **Deep only** | Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat, Splitter |
-| **Either** | Tunnel, Ice Drill, Vent Tap, Seam Cutter |
+| **Surface only** | Solar Array, Battery Bank, Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station, Trading Post |
+| **Deep only** | Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Schoolhouse, Survey Lab, Hazard Lab, Kelp Vat, Mushroom Farm, Splitter, Water Recycler |
+| **Either** | Tunnel, Ice Drill, Vent Tap, Seam Cutter, Heat Store |
 
 The build menu says "Surface only" or "Deep only" on each building.
 
@@ -116,13 +116,18 @@ In the Deep:
 
 ### Morale
 
-Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Garden Caverns, Radio Stations and relay satellites raise it. Shortages, crowding, waste and missed payments lower it. Below 20, people start leaving.
+Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Garden Caverns, Schoolhouses, Radio Stations and relay satellites raise it. Shortages, crowding, waste and missed payments lower it. Below 20, people start leaving.
 
 ### Money
 
 - **Seam Cutter** digs ore, then the **Forge** turns ore into alloy, then the **Spin Launcher** sells up to 4 alloy a turn for marks.
 - The **export reserve** (right panel) is how much alloy the Spin Launcher always keeps back for building.
 - You can **pay early** from the Company account panel.
+- A **Trading Post** sells spare food, water and parts too (up to 5 of each a turn), keeping a safe reserve. Its prices rise and fall over time; the building's info shows today's prices.
+
+### Saving power and heat
+
+Power and heat you don't use are normally lost at the end of a turn. A **Battery Bank** saves up to 15 spare power, and a **Heat Store** up to 10 spare heat, for the next turn. They're a good way through grit storms and cold spells. The Colony report shows what was saved and used.
 
 ---
 
@@ -158,6 +163,12 @@ Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Ga
 | Lounge | Deep | 10 | Big morale boost; costs 3 marks a turn and raises crime. |
 | Beam Catcher | Surface | 16 + parts | Receives power from power satellites. Needs research. |
 | Fusion Core | Surface | 40 + parts | Huge power day and night, plus some heat. Needs research. |
+| Battery Bank | Surface | 10 | Saves up to 15 spare power for the next turn. |
+| Heat Store | Either | 10 | Saves up to 10 spare heat for the next turn. |
+| Mushroom Farm | Deep | 8 | Food that needs very little heat: 1 water makes 5 food. |
+| Water Recycler | Deep | 12 | Everyone needs 25% less water (two count at most). |
+| Trading Post | Surface | 14 | Sells spare food, water and parts for marks. |
+| Schoolhouse | Deep | 12 | Children who grow up there become trained specialists; a little morale. |
 
 ---
 
@@ -169,10 +180,15 @@ Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Ga
   - **Borer:** speeds up the Shaft or a Deep building, and makes digging rock free.
   - **Prospector:** brings back 2 ore a turn.
   - **Hauler:** makes your Seam Cutters dig more, and carries ore up the lift.
+  - **Sweeper:** in a grit storm, keeps 4 Solar Arrays clean so they lose much less power.
+  - **Mechanic:** takes one more turn off a repair each turn.
+  - **Medic:** an ambulance rover; 10% fewer deaths each (30% at most).
+  - **Scout:** explores far away; sometimes brings back salvage (8 alloy and 2 parts).
 - **Satellites** are launched from a working **Spin Launcher**.
   - **Weather:** grit storms hurt solar panels less, and icequakes reach less far.
   - **Relay:** +3 morale.
   - **Power** (after research): beams 10 power to a Beam Catcher.
+  - **Survey:** maps the ground from orbit; Seam Cutters and Ice Drills make 10% more.
 - **Supply pods** packed before landing wait on the ship. Call one down any time for alloy, food and oxygen.
 
 ---
@@ -180,7 +196,7 @@ Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Ga
 ## Dangers
 
 - **Events:** grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
-- **Breakdowns:** machines wear out. Workshops speed up repairs.
+- **Breakdowns:** machines wear out. Workshops and Mechanic rovers speed up repairs.
 - **Crime** grows with crowding and low morale. It steals and lowers morale. Warden Posts hold it down.
 - **Plague** can break out in a big colony (not on Easy). Survey Labs must research a cure in time.
 - **Waste** builds up. Too much lowers morale and spreads plague. Reclaimers clear it.

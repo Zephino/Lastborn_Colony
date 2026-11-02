@@ -1,15 +1,60 @@
 {
   "_comment": "The How to play guide: one page per entry, in order. 'picture' is a building id shown above the text.",
   "pages": [
-    {"title": "Welcome to Brume", "picture": "hull", "body": "Your colony owes the Harrow & Vell Charter Company for the trip here. Payments start on turn 30 and come due every 10 turns, each a bit bigger. Pay off the whole debt and the colony is yours. Miss three payments in a row and the Company takes over. If everyone dies, the colony goes silent.\n\nEach turn you build, then press End turn. Take your time: nothing happens until you end the turn."},
-    {"title": "Building", "picture": "main", "body": "Choose a building (the list on the left, or Build on a phone), then tap a tile. Green means you can build there, red means you can't; the hint at the bottom says why.\n\nBuildings join only through their doors (shown in orange while you place one): hubs like the Bunkhouse have 4, workplaces 2 (in one side, out the other), and outlying machines 1. A new building needs a door facing a door or a Tunnel next to it; press R or Rotate to turn it. Tunnels (1 alloy each) join on every side, so lay them to reach further out and to give buildings somewhere to plug in.\n\nDrag the map to move it, and pinch, use the mouse wheel or the - and + buttons to zoom. Dragging never builds."},
-    {"title": "Power and heat", "picture": "mirror", "body": "Every building needs workers, and most need power and heat.\n\nSolar Arrays make power from sunlight: weak on the cold night side (west), strong on the hot day side (east). Vent Taps sit on orange vents and give lots of heat. Buildings need more heat the further west they are.\n\nIf there isn't enough, some buildings sit idle and show a red dot. Select one to see why."},
-    {"title": "Keeping people alive", "picture": "vat", "body": "Everyone eats, breathes and drinks every turn.\n\nIce Drills sit on ice and make water. Splitters turn water into oxygen. Kelp Vats turn water into food.\n\nIf food, oxygen or water runs out, people die, and oxygen runs out fastest. Keep an eye on the numbers at the top: red means a shortage."},
-    {"title": "Homes and morale", "picture": "bunk", "body": "Bunkhouses give people somewhere to live. Overcrowding makes people sick and unhappy.\n\nMorale sets how hard everyone works. The Commons, Clinic, Lounge and Garden Cavern raise it; shortages, crowding, waste and missed payments lower it. Below 20, people walk out.\n\nThe Clinic also halves deaths from illness and old age."},
-    {"title": "Making money", "picture": "rail", "body": "Seam Cutters sit on teal ore seams and cut ore. Forges smelt ore into alloy, which is also what you build with.\n\nSpin Launchers sell alloy to orbit for marks, the money you pay the Company with. They never sell below your export reserve (set it in Company account), so you keep enough alloy to build.\n\nYou can pay the debt early from Company account."},
-    {"title": "Going underground", "picture": "shaft", "body": "A Shaft opens the Deep, a level under the surface. Switch levels with Surface and Deep (or Q and E).\n\nOpen caverns cost the normal price. Solid rock must be dug out first: it costs more alloy and takes longer, unless you own a Borer drone. Ore veins are richer than surface seams, deep vents give more heat, and Ice Drills work on underground water.\n\nIcequakes never reach the Deep.\n\nSome buildings belong on one level. On the surface only: Solar Arrays, the Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop and Rescue Station. In the Deep only: homes (Bunkhouses), the Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat and Splitter. Tunnels, drills, vent taps and cutters go on either. The menus say \"Surface only\" or \"Deep only\".\n\nSo build a Shaft early: your people need the Deep to live, eat and breathe. The rock right around a new Shaft Landing is already cleared."},
-    {"title": "Research and trouble", "picture": "lab", "body": "Survey Labs make research toward the topic you choose. Finished topics make buildings better and unlock new ones.\n\nMachines break down now and then; Workshops fix them faster. Crime grows with crowding and low morale; Warden Posts hold it down. A plague can break out in a big colony, and your labs must find a cure in time.\n\nThe Company and the Crews' Union both watch how you run things, and story events will ask you to choose."},
-    {"title": "Drones and orbit", "picture": "dronebay", "body": "A Fab Shop turns alloy into parts. Parts build drones, satellites and the biggest buildings.\n\nA Drone Bay runs work drones: Graders build faster on the surface, Borers dig faster below, Prospectors find loose ore and Haulers speed up Seam Cutters. You'll see them working on the map.\n\nA working Spin Launcher can launch satellites: weather (less storm damage), relay (morale) and power (for Beam Catchers). Use the Drones & orbit button."},
-    {"title": "Tips", "picture": "commons", "body": "Colony report shows where power, heat and workers go, what changed last turn, and which buildings are idle and why.\n\nRun 5 turns skips ahead, and stops if something needs your choice.\n\nThe game saves itself every 10 turns; Save keeps your own copy. On the title screen, Leaderboard shows how others did.\n\nGood luck, and keep the air on."}
+    {
+      "title": "Welcome to Brume",
+      "picture": "hull",
+      "body": "Your colony owes the Harrow & Vell Charter Company for the trip here. Payments start on turn 30 and come due every 10 turns, each a bit bigger. Pay off the whole debt and the colony is yours. Miss three payments in a row and the Company takes over. If everyone dies, the colony goes silent.\n\nEach turn you build, then press End turn. Take your time: nothing happens until you end the turn."
+    },
+    {
+      "title": "Building",
+      "picture": "main",
+      "body": "Choose a building (the list on the left, or Build on a phone), then tap a tile. Green means you can build there, red means you can't; the hint at the bottom says why.\n\nBuildings join only through their doors (shown in orange while you place one): hubs like the Bunkhouse have 4, workplaces 2 (in one side, out the other), and outlying machines 1. A new building needs a door facing a door or a Tunnel next to it; press R or Rotate to turn it. Tunnels (1 alloy each) join on every side, so lay them to reach further out and to give buildings somewhere to plug in.\n\nDrag the map to move it, and pinch, use the mouse wheel or the - and + buttons to zoom. Dragging never builds."
+    },
+    {
+      "title": "Power and heat",
+      "picture": "mirror",
+      "body": "Every building needs workers, and most need power and heat.\n\nSolar Arrays make power from sunlight: weak on the cold night side (west), strong on the hot day side (east). Vent Taps sit on orange vents and give lots of heat. Buildings need more heat the further west they are.\n\nIf there isn't enough, some buildings sit idle and show a red dot. Select one to see why."
+    },
+    {
+      "title": "Keeping people alive",
+      "picture": "vat",
+      "body": "Everyone eats, breathes and drinks every turn.\n\nIce Drills sit on ice and make water. Splitters turn water into oxygen. Kelp Vats turn water into food.\n\nIf food, oxygen or water runs out, people die, and oxygen runs out fastest. Keep an eye on the numbers at the top: red means a shortage."
+    },
+    {
+      "title": "Homes and morale",
+      "picture": "bunk",
+      "body": "Bunkhouses give people somewhere to live. Overcrowding makes people sick and unhappy.\n\nMorale sets how hard everyone works. The Commons, Clinic, Lounge and Garden Cavern raise it; shortages, crowding, waste and missed payments lower it. Below 20, people walk out.\n\nThe Clinic also halves deaths from illness and old age."
+    },
+    {
+      "title": "Making money",
+      "picture": "rail",
+      "body": "Seam Cutters sit on teal ore seams and cut ore. Forges smelt ore into alloy, which is also what you build with.\n\nSpin Launchers sell alloy to orbit for marks, the money you pay the Company with. They never sell below your export reserve (set it in Company account), so you keep enough alloy to build.\n\nYou can pay the debt early from Company account."
+    },
+    {
+      "title": "Going underground",
+      "picture": "shaft",
+      "body": "A Shaft opens the Deep, a level under the surface. Switch levels with Surface and Deep (or Q and E).\n\nOpen caverns cost the normal price. Solid rock must be dug out first: it costs more alloy and takes longer, unless you own a Borer drone. Ore veins are richer than surface seams, deep vents give more heat, and Ice Drills work on underground water.\n\nIcequakes never reach the Deep.\n\nSome buildings belong on one level. On the surface only: Solar Arrays, the Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop and Rescue Station. In the Deep only: homes (Bunkhouses), the Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat and Splitter. Tunnels, drills, vent taps and cutters go on either. The menus say \"Surface only\" or \"Deep only\".\n\nSo build a Shaft early: your people need the Deep to live, eat and breathe. The rock right around a new Shaft Landing is already cleared."
+    },
+    {
+      "title": "Research and trouble",
+      "picture": "lab",
+      "body": "Survey Labs make research toward the topic you choose. Finished topics make buildings better and unlock new ones.\n\nMachines break down now and then; Workshops fix them faster. Crime grows with crowding and low morale; Warden Posts hold it down. A plague can break out in a big colony, and your labs must find a cure in time.\n\nThe Company and the Crews' Union both watch how you run things, and story events will ask you to choose."
+    },
+    {
+      "title": "Drones and orbit",
+      "picture": "dronebay",
+      "body": "A Fab Shop turns alloy into parts. Parts build drones, satellites and the biggest buildings.\n\nA Drone Bay runs work drones: Graders build faster on the surface, Borers dig faster below, Prospectors find loose ore and Haulers speed up Seam Cutters. You'll see them working on the map.\n\nA working Spin Launcher can launch satellites: weather (less storm damage), relay (morale) and power (for Beam Catchers). Use the Drones & orbit button."
+    },
+    {
+      "title": "Saving, trade and schools",
+      "picture": "battery",
+      "body": "Spare power and heat are lost at the end of a turn unless you save them. A Battery Bank holds up to 15 power and a Heat Store up to 10 heat for the next turn: handy in grit storms and cold spells.\n\nA Mushroom Farm grows food in the dark with very little heat. A Water Recycler means everyone needs less water.\n\nA Trading Post sells spare food, water and parts for marks; prices rise and fall. A Schoolhouse turns children into trained specialists as they grow up.\n\nNew rovers: Sweepers keep Solar Arrays clean in storms, Mechanics speed up repairs, Medics save lives, and Scouts bring back salvage. A Survey satellite makes cutters and drills work better."
+    },
+    {
+      "title": "Tips",
+      "picture": "commons",
+      "body": "Colony report shows where power, heat and workers go, what changed last turn, and which buildings are idle and why.\n\nRun 5 turns skips ahead, and stops if something needs your choice.\n\nThe game saves itself every 10 turns; Save keeps your own copy. On the title screen, Leaderboard shows how others did.\n\nGood luck, and keep the air on."
+    }
   ]
 }
