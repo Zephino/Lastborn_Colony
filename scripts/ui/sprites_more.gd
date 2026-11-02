@@ -859,27 +859,92 @@ static func draw_unit(ci: CanvasItem, type: String, c: Vector2, tw: float) -> vo
 			S._glow(ci, S._iso(c, tw, 0.04, -0.04, 0.24), tw * 0.014, Color(1.0, 0.25, 0.2), st)
 			S._glow(ci, S._iso(c, tw, 0.04, 0.04, 0.24), tw * 0.014, Color(0.3, 0.5, 1.0), st)
 		"scout":
-			# A fast sand-coloured buggy: big wheels, a roll cage, headlights, an
-			# antenna whip and a trail of dust.
-			var sand := Color(0.82, 0.68, 0.45)
+			# A dune buggy: a low open chassis with a bright tube roll cage, fat
+			# knobby tyres sticking out on a wide stance, an open engine at the back
+			# with exhaust pipes and a spare tyre, a sloped nose with a bumper and
+			# headlights, a helmeted driver, a light bar, an antenna flag and dust.
+			var sand := Color(0.86, 0.70, 0.42)
+			var cage := Color(1.0, 0.45, 0.18)
+			var dark := Color(0.16, 0.16, 0.18)
+			# Dust kicked up behind.
+			for k in 5:
+				ci.draw_circle(S._iso(c, tw, -0.32 - k * 0.05, 0.03 * k - 0.04, 0.04 + k * 0.025), tw * (0.028 + k * 0.012), Color(0.82, 0.72, 0.56, 0.42 - k * 0.07))
+			# Far wheels: fat tyres, drawn as two layers for width.
+			for u in [-0.16, 0.17]:
+				_wheel(ci, c, tw, u, -0.22, 0.075, 0.075)
+				_wheel(ci, c, tw, u, -0.18, 0.075, 0.075)
+			# Suspension arms out to the wheels.
+			for u in [-0.16, 0.17]:
+				ci.draw_line(S._iso(c, tw, u, -0.09, 0.10), S._iso(c, tw, u, -0.16, 0.075), md, 2.0)
+			# The open engine at the back, with cooling fins.
+			S._box(ci, c, tw, -0.27, -0.06, -0.15, 0.06, 0.09, dark, dark.lightened(0.15), 0.08)
 			for k in 4:
-				ci.draw_circle(S._iso(c, tw, -0.30 - k * 0.04, 0.02 * k, 0.03 + k * 0.02), tw * (0.025 + k * 0.01), Color(0.80, 0.72, 0.58, 0.40 - k * 0.08))
-			for u in [-0.14, 0.14]:
-				_wheel(ci, c, tw, u, -0.12, 0.065, 0.065)
-			S._box(ci, c, tw, -0.20, -0.08, 0.20, 0.08, 0.06, sand, sand.lightened(0.12), 0.07)
-			# Roll cage.
-			for v in [-0.08, 0.08]:
-				ci.draw_polyline(PackedVector2Array([S._iso(c, tw, -0.12, v, 0.13), S._iso(c, tw, -0.08, v, 0.27), S._iso(c, tw, 0.06, v, 0.27), S._iso(c, tw, 0.10, v, 0.13)]), md, 2.0)
-			ci.draw_line(S._iso(c, tw, -0.08, -0.08, 0.27), S._iso(c, tw, -0.08, 0.08, 0.27), md, 2.0)
-			ci.draw_line(S._iso(c, tw, 0.06, -0.08, 0.27), S._iso(c, tw, 0.06, 0.08, 0.27), md, 2.0)
-			# Antenna whip with a flag.
-			var whip := S._iso(c, tw, -0.16, -0.06, 0.48)
-			ci.draw_line(S._iso(c, tw, -0.16, -0.06, 0.13), whip, md, 1.0)
-			ci.draw_colored_polygon(PackedVector2Array([whip, whip + Vector2(tw * 0.05, tw * 0.012), whip + Vector2(0, tw * 0.03)]), Color(1.0, 0.45, 0.25))
-			for u in [-0.14, 0.14]:
-				_wheel(ci, c, tw, u, 0.12, 0.065, 0.065)
-			for v in [-0.05, 0.05]:
-				S._glow(ci, S._iso(c, tw, 0.20, v, 0.11), tw * 0.012, S.WHITE, st)
+				var z := 0.10 + k * 0.018
+				ci.draw_line(S._iso(c, tw, -0.27, -0.05, z), S._iso(c, tw, -0.27, 0.05, z), m, 1.0)
+			# Two exhaust pipes curving up.
+			for v in [-0.04, 0.04]:
+				ci.draw_polyline(PackedVector2Array([S._iso(c, tw, -0.24, v, 0.12), S._iso(c, tw, -0.29, v, 0.14), S._iso(c, tw, -0.30, v, 0.22)]), m.lightened(0.2), maxf(1.5, tw * 0.012))
+			# The spare tyre strapped on the engine.
+			var spare := S._iso(c, tw, -0.21, 0.0, 0.20)
+			ci.draw_colored_polygon(S._ellipse(spare, tw * 0.055, tw * 0.03), Color(0.10, 0.10, 0.11))
+			ci.draw_colored_polygon(S._ellipse(spare, tw * 0.028, tw * 0.015), m)
+			# The floor pan and a low sand-coloured tub.
+			S._box(ci, c, tw, -0.15, -0.10, 0.16, 0.10, 0.05, sand, sand.lightened(0.1), 0.07)
+			# Two bucket seats, and the driver in a helmet.
+			for v in [-0.04, 0.04]:
+				S._box(ci, c, tw, -0.08, v - 0.03, -0.02, v + 0.03, 0.05, dark, dark.lightened(0.1), 0.12)
+				ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, -0.08, v - 0.03, 0.17), S._iso(c, tw, -0.08, v + 0.03, 0.17), S._iso(c, tw, -0.10, v + 0.03, 0.21), S._iso(c, tw, -0.10, v - 0.03, 0.21)]), dark.lightened(0.05))
+			var head := S._iso(c, tw, -0.05, 0.04, 0.22)
+			ci.draw_circle(head, tw * 0.032, S.WHITE)
+			ci.draw_colored_polygon(S._ellipse(head + Vector2(tw * 0.012, tw * 0.004), tw * 0.02, tw * 0.012), Color(1.0, 0.65, 0.20))
+			ci.draw_line(S._iso(c, tw, -0.04, 0.04, 0.17), S._iso(c, tw, 0.04, 0.03, 0.18), S.WHITE.darkened(0.15), maxf(2.0, tw * 0.014))
+			# The steering wheel.
+			ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0.05, 0.04, 0.19), tw * 0.018, tw * 0.012), dark)
+			# The sloped nose, with a bumper bar and headlights.
+			var nose := PackedVector2Array([S._iso(c, tw, 0.16, -0.10, 0.12), S._iso(c, tw, 0.16, 0.10, 0.12), S._iso(c, tw, 0.28, 0.07, 0.08), S._iso(c, tw, 0.28, -0.07, 0.08)])
+			ci.draw_colored_polygon(nose, sand.lightened(0.12))
+			ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, 0.28, -0.06, 0.08), S._iso(c, tw, 0.28, 0.06, 0.08), S._iso(c, tw, 0.28, 0.06, 0.05), S._iso(c, tw, 0.28, -0.06, 0.05)]), sand.darkened(0.2))
+			ci.draw_line(S._iso(c, tw, 0.31, -0.08, 0.06), S._iso(c, tw, 0.31, 0.08, 0.06), cage.darkened(0.2), maxf(2.0, tw * 0.016))
+			for v in [-0.04, 0.04]:
+				S._glow(ci, S._iso(c, tw, 0.29, v, 0.10), tw * 0.013, S.WHITE, st)
+			# The tube roll cage: a hoop behind the seats, bars forward to the nose,
+			# and a top frame with a light bar.
+			var hoop := []
+			for v in [-0.10, 0.10]:
+				hoop.append(S._iso(c, tw, -0.12, v, 0.12))
+			var top_b: Array = [S._iso(c, tw, -0.10, -0.10, 0.27), S._iso(c, tw, -0.10, 0.10, 0.27)]
+			var top_f: Array = [S._iso(c, tw, 0.06, -0.10, 0.25), S._iso(c, tw, 0.06, 0.10, 0.25)]
+			var foot_f: Array = [S._iso(c, tw, 0.16, -0.10, 0.12), S._iso(c, tw, 0.16, 0.10, 0.12)]
+			var w := maxf(2.5, tw * 0.016)
+			# Far side first.
+			ci.draw_line(hoop[0], top_b[0], cage, w)
+			ci.draw_line(top_b[0], top_f[0], cage, w)
+			ci.draw_line(top_f[0], foot_f[0], cage, w)
+			ci.draw_line(top_b[0], top_b[1], cage, w)
+			ci.draw_line(top_f[0], top_f[1], cage, w)
+			# Light bar on the front of the top frame.
+			for k in 3:
+				S._glow(ci, top_f[0].lerp(top_f[1], 0.2 + k * 0.3) - Vector2(0, tw * 0.012), tw * 0.011, Color(1.0, 0.95, 0.75), st)
+			# Antenna whip with a flag, off the back hoop.
+			var whip: Vector2 = top_b[0] - Vector2(tw * 0.015, tw * 0.13)
+			ci.draw_line(top_b[0], whip, md, 1.0)
+			ci.draw_colored_polygon(PackedVector2Array([whip, whip + Vector2(tw * 0.06, tw * 0.014), whip + Vector2(0, tw * 0.032)]), Color(1.0, 0.85, 0.25))
+			# Near side of the cage.
+			ci.draw_line(hoop[1], top_b[1], cage, w)
+			ci.draw_line(top_b[1], top_f[1], cage, w)
+			ci.draw_line(top_f[1], foot_f[1], cage, w)
+			# A side bar along the tub.
+			ci.draw_line(S._iso(c, tw, -0.14, 0.11, 0.15), S._iso(c, tw, 0.15, 0.11, 0.14), cage.darkened(0.15), maxf(2.0, tw * 0.012))
+			# Near suspension arms and fat wheels.
+			for u in [-0.16, 0.17]:
+				ci.draw_line(S._iso(c, tw, u, 0.09, 0.10), S._iso(c, tw, u, 0.18, 0.075), md, 2.0)
+			for u in [-0.16, 0.17]:
+				_wheel(ci, c, tw, u, 0.18, 0.075, 0.075)
+				_wheel(ci, c, tw, u, 0.22, 0.075, 0.075)
+				# Knobby tread blocks round the outside.
+				for k in 10:
+					var th := k * TAU / 10.0
+					ci.draw_circle(S._iso(c, tw, u + 0.08 * cos(th), 0.22, 0.075 + 0.08 * sin(th)), maxf(1.2, tw * 0.007), Color(0.06, 0.06, 0.07))
 		"survey":
 			# A camera satellite: panels, a body, a big lens looking down and a
 			# green scanning beam sweeping the ground.

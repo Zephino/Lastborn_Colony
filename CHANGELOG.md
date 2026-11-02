@@ -2,6 +2,23 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.78
+Date: 11/02/2026
+Time: 12:23 PM
+
+### Changes
+- **The Scout rover is now a dune buggy.** It has:
+  - a low open sand-coloured tub with a wide orange tube roll cage;
+  - fat knobby tyres on suspension arms, sticking out on a wide stance;
+  - an open engine at the back with cooling fins, two exhaust pipes and a spare tyre;
+  - a sloped nose with a bumper bar and headlights;
+  - a helmeted driver and a steering wheel;
+  - a light bar on the cage, a yellow antenna flag, and a trail of dust.
+- Corrected the 00.01.77 entry: it added 47 test checks, not 46.
+
+### Reason
+The owner asked for the Scout to look more like a dune buggy.
+
 ## Version 00.01.77
 Date: 11/02/2026
 Time: 5:34 AM
@@ -24,7 +41,7 @@ Time: 5:34 AM
 - The building info shows what each new building does, the saved power and heat, and today's trade prices. The Colony report shows saved and used power and heat, trade earnings and water savings.
 - New saves keep the saved power and heat; older saves load with none.
 - README, How to play (new page "Saving, trade and schools") and the sprite sheets cover everything new. The units page now fits 8 rovers and 4 satellites.
-- 46 new test checks in `tests/test_new.gd` (541 in all).
+- 47 new test checks in `tests/test_new.gd` (541 in all). (Corrected in 00.01.78; this entry first said 46.)
 - The test bot doesn't use the new things yet, so its balance results are unchanged.
 
 ### Reason
