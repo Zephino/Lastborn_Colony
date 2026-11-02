@@ -38,6 +38,8 @@ Payments start on **turn 30** and come every **10 turns**, each a little bigger 
    | **Glasswater** | Hard | A frozen ocean: water is easy, but ore is rare, it's cold, and icequakes crack the crust. |
    | **Hollow** | Hardest | Icy and full of vents, but the sun is weak. |
    | **Rimefar** | Extreme | Almost no sunlight and bitter cold. Only vents and the Deep keep a colony alive. |
+
+   Each world looks different when you land: its own ground colours and sky, with grass on Tessel, rock shards on Shale, dunes on Cinder, glowing embers on Ashfall, ice cracks on Glasswater and frost on Hollow and Rimefar.
 3. **Send probes (optional).** Your ship carries **3 scouting probes**. Under each planet, **Send a probe** lets you pick a landing site and land a probe there. Its report shows:
    - a picture of the ground around the site;
    - how much sunlight and cold there is;
@@ -250,6 +252,7 @@ Dragging the map never builds anything by accident.
 - **Saving:** the game autosaves every 10 turns. **Save** keeps a manual save. On the web, saves stay in that browser on that device.
 - **How to play** (title screen or Menu): a short illustrated guide.
 - **Settings:** fullscreen, **Install app** (Chrome, Edge, Android) and **Update app**. On iPhone or iPad: **Share**, then **Add to Home Screen**.
+- **Animations** (Settings, on by default): lights blink, steam and smoke rise, the lift moves, rovers drive about, a truck brings junk to the Reclaimer, and the lander comes down when it arrives. Turn them off on a slow device.
 - **Updates:** for 30 seconds after opening, the game checks for a newer version and switches to it. Your saves are kept.
 - **Leaderboard** (title screen): one for each planet and difficulty. Type your name on the title screen, then post a score when a colony ends, or **Menu → Retire** to post one that's still running.
 - **Sign in with Google** (Settings, optional): keep one cloud save and carry on from another device.

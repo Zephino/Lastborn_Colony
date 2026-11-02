@@ -52,6 +52,9 @@ var toast: Label
 var toast_left := 0.0
 var player_name := ""
 var settings_open := false
+## Map animations on or off (Settings), remembered in user://settings.cfg.
+var animations := true
+const SETTINGS_PATH := "user://settings.cfg"
 var menus: RefCounted
 var fleet_menu: RefCounted
 ## The picture of the selected building at the top of the side panel.
@@ -67,6 +70,9 @@ var placing_label: Label
 
 
 func _ready() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(SETTINGS_PATH) == OK:
+		animations = bool(cfg.get_value("display", "animations", true))
 	_apply_ui_scale()
 	get_window().size_changed.connect(_apply_ui_scale)
 	var t := Theme.new()
@@ -361,6 +367,7 @@ func show_game() -> void:
 	map_view = MapView.new()
 	map_view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_view.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	map_view.animate = animations
 	map_view.tile_clicked.connect(_on_tile_clicked)
 	map_view.tile_hovered.connect(func(_c: Vector2i) -> void: _refresh_hint())
 	middle.add_child(map_view)
@@ -992,3 +999,15 @@ func close_modal() -> void:
 		modal.queue_free()
 	modal = null
 	settings_open = false
+
+
+## Turns the map's animations on or off, and remembers the choice.
+func set_animations(on: bool) -> void:
+	animations = on
+	if map_view != null:
+		map_view.animate = on
+		map_view.queue_redraw()
+	var cfg := ConfigFile.new()
+	cfg.load(SETTINGS_PATH)
+	cfg.set_value("display", "animations", on)
+	cfg.save(SETTINGS_PATH)

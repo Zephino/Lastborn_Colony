@@ -223,6 +223,7 @@ func _minimap(pid: String, site: int, fog: bool) -> Control:
 	mini.custom_minimum_size = Vector2(mini_w, mini_w * 0.75)
 	mini.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mini.fog = fog
+	mini.planet_id = pid
 	mini.show_map(MapGen.generate(game_seed, pid, site))
 	return mini
 
@@ -247,7 +248,7 @@ func show_probe_report(pid: String, site: int, back: Callable) -> void:
 	view.custom_minimum_size = Vector2(w, w * 0.55)
 	view.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(view)
-	view.show_map(r["map"], r["find"])
+	view.show_map(r["map"], r["find"], pid)
 	var near: Dictionary = r["near"]
 	var below: Dictionary = r["below"]
 	var lines := PackedStringArray()

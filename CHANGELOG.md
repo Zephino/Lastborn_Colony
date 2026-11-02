@@ -2,6 +2,33 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.81
+Date: 11/02/2026
+Time: 12:59 PM
+
+### Changes
+- **Each planet looks different in the game.** Every world has its own ground colours and a sky colour behind the map (in its "look" in `data/planets.json`):
+  - **Tessel:** green plains with grass tufts.
+  - **Shale:** grey slate with rock shards.
+  - **Cinder:** rust-orange with dune ripples.
+  - **Ashfall:** dark ash with glowing embers.
+  - **Glasswater:** snowy white with blue ice and ice cracks.
+  - **Hollow:** cold grey-blue with frost.
+  - **Rimefar:** deep navy with frost.
+  - **Brume:** keeps its look.
+  - The probe pictures and the small site maps use the same colours. The Deep keeps its cave look on every world.
+- **Animations on the map** (on by default; Settings, "Animations", turns them off and remembers it). The map redraws about 20 times a second while they're on:
+  - lights on buildings and rovers pulse gently;
+  - steam and smoke rise and fade from chimneys, cooling towers, tanks and vents;
+  - the lift car slides up and down the Shaft and the Shaft Landing;
+  - working rovers drive back and forth where they work, and colonists stroll;
+  - a truck comes round to each working Reclaimer every 12 seconds or so: it drives in, backs into the drop-off bay, waits, and drives off;
+  - the lander comes down from the sky with its engines firing and dust blowing, whenever it arrives.
+- New developer tools: `tools/planet_shot.gd` (every planet's surface) and `tools/anim_shot.gd` (animation frames).
+
+### Reason
+The owner asked for (1) each planet to have its own look in the game, and (2) simple animations.
+
 ## Version 00.01.80
 Date: 11/02/2026
 Time: 12:36 PM

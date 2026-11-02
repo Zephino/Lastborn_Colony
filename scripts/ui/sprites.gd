@@ -18,6 +18,8 @@
 ## Everything here is original.
 extends RefCounted
 
+const GameData = preload("res://scripts/sim/game_data.gd")
+
 const METAL := Color(0.46, 0.49, 0.54)
 const METAL_DARK := Color(0.22, 0.24, 0.28)
 const GLASS := Color(0.55, 0.80, 0.95, 0.42)
@@ -306,6 +308,11 @@ static func _ellipse(center: Vector2, rx: float, ry: float, from_deg: float = 0.
 static func _glow(ci: CanvasItem, p: Vector2, r: float, c: Color, state: Dictionary) -> void:
 	if not _lit(state):
 		return
+	if anim_t > 0.0:
+		# Lights pulse gently, each a little out of step with the others.
+		var pulse := 0.75 + 0.25 * sin(anim_t * 3.0 + p.x * 0.07 + p.y * 0.05)
+		c = Color(c.r, c.g, c.b, c.a * pulse)
+		r *= 0.9 + 0.1 * pulse
 	for i in 3:
 		ci.draw_circle(p, r * (1.0 + i * 0.6), Color(c.r, c.g, c.b, 0.16 / (i + 1)))
 	ci.draw_circle(p, r * 0.5, Color(c.r, c.g, c.b, 0.9))
@@ -986,8 +993,7 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 					ci.draw_line(_iso(c, tw, u + 0.05, v0, hgt), _iso(c, tw, u + 0.05, v0 + 0.32, hgt), _fade(Color(0.95, 0.72, 0.35), state), 1.2)
 			_cyl(ci, c, tw, -0.05, -0.36, 0.035, 0.40, m, m)
 			if _lit(state):
-				for k in 3:
-					ci.draw_circle(_iso(c, tw, -0.05, -0.36, 0.48 + k * 0.10) + Vector2(k * tw * 0.03, 0), tw * (0.04 + k * 0.018), Color(0.95, 0.95, 1.0, 0.30 - k * 0.07))
+				_steam(ci, _iso(c, tw, -0.05, -0.36, 0.44), tw, 1.0, 3, 0.30)
 		"workshop":
 			# Parts crates at the back.
 			var crate := _fade(Color(0.50, 0.44, 0.34), state)
@@ -1261,7 +1267,8 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	var top_z := 0.50
 	# The lift car is at the top unless it has gone down to the Deep.
 	var car_up: bool = str(state.get("car", "up")) == "up"
-	_lift_tube(ci, c, tw, tr, -0.04, top_z, false, top_z - 0.20 if car_up else 0.16, state)
+	var up := float(state.get("lift", 1.0 if car_up else 0.0))
+	_lift_tube(ci, c, tw, tr, -0.04, top_z, false, lerpf(0.16, top_z - 0.20, up), state)
 	var lid := _iso(c, tw, 0, 0, top_z)
 	ci.draw_colored_polygon(_ellipse(lid, trx * 1.08, trx * 0.54), m.lightened(0.15))
 	ci.draw_polyline(_ellipse(lid, trx * 1.08, trx * 0.54), orange, 2.0)
@@ -1334,8 +1341,7 @@ static func _iso_commons(ci: CanvasItem, c: Vector2, tw: float, links: Array, st
 	_cyl(ci, c, tw, -0.16, -0.18, 0.045, 0.50, m.darkened(0.1), md)
 	if lit:
 		var tip := _iso(c, tw, -0.16, -0.18, 0.52)
-		for k in 3:
-			ci.draw_circle(tip - Vector2(-k * tw * 0.02, tw * (0.04 + k * 0.05)), tw * (0.025 + k * 0.012), Color(0.95, 0.95, 1.0, 0.35 - k * 0.09))
+		_steam(ci, tip, tw, 0.8, 3, 0.35)
 	# The hall: a warm wooden drum.
 	var wood := _fade(Color(0.62, 0.40, 0.26), state)
 	_cyl(ci, c, tw, 0, 0, r, 0.22, wood, wood.lightened(0.1))
@@ -1717,8 +1723,7 @@ static func _cooling_tower(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, st
 	var top := base - Vector2(0, tw * hgt)
 	ci.draw_colored_polygon(_ellipse(top, (pts_r[8].x - pts_l[8].x) * 0.5, tw * 0.02), conc.darkened(0.5))
 	if _lit(state):
-		for k in 4:
-			ci.draw_circle(top - Vector2(-k * tw * 0.03, tw * (0.04 + k * 0.06)), tw * (0.05 + k * 0.018), Color(0.96, 0.97, 1.0, 0.45 - k * 0.09))
+		_steam(ci, top, tw, 1.4, 4, 0.45)
 
 
 ## The Fusion Core: a round reactor with a glass top showing a glowing blue
@@ -1872,6 +1877,17 @@ static func _iso_reclaimer(ci: CanvasItem, c: Vector2, tw: float, links: Array, 
 	# when the hall runs along u, matching the way the Hauler is drawn).
 	if state.get("truck", false) and not on_v:
 		more().draw_unit(ci, "hauler", at.call(park.x, park.y, 0.0), tw * 0.62)
+	elif state.has("truck_trip") and not on_v:
+		# A truck on its round: drives in from the right, backs into the bay,
+		# waits while it tips its load, then drives off again.
+		var f := float(state["truck_trip"])
+		var off := 0.0
+		if f < 0.3:
+			off = (1.0 - f / 0.3) * 0.75
+		elif f > 0.7:
+			off = (f - 0.7) / 0.3 * 0.75
+		if off < 0.7:
+			more().draw_unit(ci, "hauler", at.call(park.x + off, park.y, 0.0), tw * 0.62)
 	if lit:
 		_glow(ci, at.call(0.20, f1, 0.12), tw * 0.016, _fade(GREEN, state), state)
 	for d in links:
@@ -2491,8 +2507,7 @@ static func _melt_tank(ci: CanvasItem, c: Vector2, tw: float, at: Vector2, state
 	ci.draw_line(g0, g0.lerp(g1, 0.65), _fade(WATER, state).lightened(0.2), maxf(1.0, tw * 0.008))
 	if _lit(state):
 		var lid := _iso(c, tw, at.x, at.y, hgt)
-		for k in 3:
-			ci.draw_circle(lid - Vector2(-k * tw * 0.02, tw * (0.05 + k * 0.05)), tw * (0.03 + k * 0.012), Color(0.95, 0.97, 1.0, 0.35 - k * 0.09))
+		_steam(ci, lid, tw, 0.8, 3, 0.35)
 
 
 ## The Ice Drill from above.
@@ -2941,7 +2956,8 @@ static func _iso_landing(ci: CanvasItem, c: Vector2, tw: float, links: Array, st
 	var z1 := 1.45
 	# The lift car rests on the deck unless it has gone up to the surface.
 	var car_down: bool = str(state.get("car", "down")) == "down"
-	_lift_tube(ci, c, tw, tr, 0.06, z1, true, 0.30 if car_down else 0.78, state)
+	var up := float(state.get("lift", 0.0 if car_down else 1.0))
+	_lift_tube(ci, c, tw, tr, 0.06, z1, true, lerpf(0.30, 0.78, up), state)
 	# Where the tube meets the cave roof: a rough collar of rock.
 	var roof := _iso(c, tw, 0, 0, z1)
 	var rock := _fade(Color(0.30, 0.27, 0.25), state)
@@ -3761,6 +3777,83 @@ const TERRAIN := {
 }
 
 
+## The animation clock in seconds, set by the map before it draws (0 when
+## animations are off, and on the sprite sheets, so pictures stay still).
+static var anim_t := 0.0
+
+
+## Puffs of steam or smoke rising from p and fading. Still when animations are off.
+static func _steam(ci: CanvasItem, p: Vector2, tw: float, size: float, n: int = 3, alpha: float = 0.35) -> void:
+	for k in n:
+		var f := float(k) / n
+		if anim_t > 0.0:
+			f = fmod(anim_t * 0.35 + float(k) / n + p.x * 0.001, 1.0)
+		var rise := p - Vector2(-f * tw * 0.06 * size, tw * (0.04 + f * 0.22) * size)
+		ci.draw_circle(rise, tw * (0.025 + f * 0.04) * size, Color(0.95, 0.96, 1.0, alpha * (1.0 - f)))
+
+
+## The planet whose ground is being drawn: its colours replace TERRAIN's, and
+## it may add a ground detail (grass, embers, frost and so on). Set by the map
+## and the probe picture before they draw; "" means the default look.
+static var ground_planet := ""
+static var ground := {}
+static var ground_detail := ""
+
+
+static func set_planet(planet_id: String) -> void:
+	if planet_id == ground_planet:
+		return
+	ground_planet = planet_id
+	ground = {}
+	ground_detail = ""
+	if planet_id == "":
+		return
+	var look: Dictionary = GameData.planet(planet_id).get("look", {})
+	var g: Dictionary = look.get("ground", {})
+	for k in g:
+		var a: Array = g[k]
+		ground[k] = Color(float(a[0]), float(a[1]), float(a[2]))
+	ground_detail = str(look.get("detail", ""))
+
+
+## A planet's sky colour (behind the map), or the default.
+static func sky(planet_id: String) -> Color:
+	var a: Array = GameData.planet(planet_id).get("look", {}).get("sky", [])
+	return Color(float(a[0]), float(a[1]), float(a[2])) if a.size() == 3 else Color(0.05, 0.06, 0.08)
+
+
+## The colour of a kind of ground on the current planet.
+static func tcol(t: String) -> Color:
+	return ground.get(t, TERRAIN.get(t, Color.MAGENTA))
+
+
+## The current planet's ground detail on a plain tile, varied by position.
+static func _ground_detail(ci: CanvasItem, c: Vector2, tw: float) -> void:
+	if ground_detail == "":
+		return
+	var h := (int(c.x * 3.0) * 73856093) ^ (int(c.y * 5.0) * 19349663)
+	for k in 3:
+		var q := Vector2(float((h >> (k * 4)) & 15) / 15.0 - 0.5, float((h >> (k * 4 + 2)) & 15) / 15.0 - 0.5) * 0.7
+		var p := _iso(c, tw, q.x, q.y)
+		match ground_detail:
+			"grass":
+				for j in 3:
+					ci.draw_line(p + Vector2((j - 1) * tw * 0.012, 0), p + Vector2((j - 1) * tw * 0.02, -tw * 0.035), Color(0.45, 0.62, 0.35), maxf(1.0, tw * 0.008))
+			"embers":
+				ci.draw_circle(p, maxf(1.0, tw * 0.012), Color(1.0, 0.45, 0.15, 0.8))
+				if k == 0:
+					ci.draw_line(p + Vector2(-tw * 0.08, tw * 0.01), p + Vector2(tw * 0.06, -tw * 0.02), Color(0.10, 0.08, 0.08), maxf(1.0, tw * 0.01))
+			"cracks":
+				ci.draw_polyline(PackedVector2Array([p + Vector2(-tw * 0.08, 0), p + Vector2(-tw * 0.02, -tw * 0.015), p + Vector2(tw * 0.03, tw * 0.01), p + Vector2(tw * 0.09, -tw * 0.01)]), Color(0.55, 0.70, 0.85, 0.8), 1.0)
+			"frost":
+				ci.draw_circle(p, maxf(1.0, tw * 0.01), Color(0.85, 0.92, 1.0, 0.55))
+			"shards":
+				ci.draw_colored_polygon(PackedVector2Array([p + Vector2(-tw * 0.03, 0), p + Vector2(0, -tw * 0.03), p + Vector2(tw * 0.025, tw * 0.005)]), Color(0.60, 0.58, 0.60))
+			"dunes":
+				if k < 2:
+					ci.draw_arc(p, tw * 0.07, deg_to_rad(200), deg_to_rad(340), 6, Color(0.70, 0.50, 0.34, 0.8), 1.0)
+
+
 static func _terrain_marks(ci: CanvasItem, t: String, at: Vector2, s: float) -> void:
 	match t:
 		"vent", "deepvent":
@@ -3776,14 +3869,14 @@ static func _terrain_marks(ci: CanvasItem, t: String, at: Vector2, s: float) -> 
 
 
 static func terrain_top(ci: CanvasItem, t: String, r: Rect2) -> void:
-	ci.draw_rect(r, TERRAIN.get(t, Color.MAGENTA))
+	ci.draw_rect(r, tcol(t))
 	if t == "ridge" or t == "bedrock":
 		ci.draw_colored_polygon(PackedVector2Array([r.position + Vector2(r.size.x * 0.12, r.size.y * 0.85), r.get_center() + Vector2(0, -r.size.y * 0.32), r.position + Vector2(r.size.x * 0.88, r.size.y * 0.85)]), Color(0.30, 0.30, 0.33))
 	_terrain_marks(ci, t, r.get_center(), r.size.x)
 
 
 static func terrain_iso(ci: CanvasItem, t: String, c: Vector2, tw: float, raised: bool = true) -> void:
-	var col: Color = TERRAIN.get(t, Color.MAGENTA)
+	var col: Color = tcol(t)
 	var diamond := PackedVector2Array([_iso(c, tw, -0.5, -0.5), _iso(c, tw, 0.5, -0.5), _iso(c, tw, 0.5, 0.5), _iso(c, tw, -0.5, 0.5)])
 	# Solid rock in the Deep stands up as rough blocks (you dig into them to
 	# build); open cavern is the floor between them. Built-on rock is dug out.
@@ -3806,8 +3899,11 @@ static func terrain_iso(ci: CanvasItem, t: String, c: Vector2, tw: float, raised
 		col = TERRAIN["cavern"].darkened(0.1)
 	ci.draw_colored_polygon(diamond, col)
 	ci.draw_polyline(PackedVector2Array([diamond[0], diamond[1], diamond[2], diamond[3], diamond[0]]), Color(0, 0, 0, 0.18), 1.0)
+	if t == "regolith":
+		_ground_detail(ci, c, tw)
 	if t == "ridge" or t == "bedrock":
-		_box(ci, c, tw, -0.30, -0.30, 0.30, 0.30, 0.22, Color(0.30, 0.30, 0.33) if t == "ridge" else Color(0.14, 0.13, 0.14))
+		var rcol := Color(0.14, 0.13, 0.14) if t == "bedrock" else (tcol("ridge").lightened(0.35) if ground.has("ridge") else Color(0.30, 0.30, 0.33))
+		_box(ci, c, tw, -0.30, -0.30, 0.30, 0.30, 0.22, rcol)
 	if t == "cavern":
 		# Pebbles on the cave floor.
 		var hsh := int(c.x * 3.0) ^ int(c.y * 5.0)

@@ -34,6 +34,18 @@ var build_type := ""
 var build_rot := -1
 ## Which level is shown: 0 the surface, 1 the Deep.
 var level := 0
+## Whether the map moves: blinking lights, steam, the lift, rovers driving,
+## the Reclaimer's truck and the lander coming down. Settings can turn it off.
+var animate := true
+## Seconds since the map started, for the animations.
+var clock := 0.0
+var _since_draw := 0.0
+## When the lander last started coming down (in clock seconds), and the turn
+## that brought it, so it lands once per arrival.
+var _land_start := -100.0
+var _land_turn := -1
+## Seconds the lander takes to come down.
+const LAND_TIME := 2.6
 var _dragging := false
 ## A left press becomes a pan once it moves this far; otherwise it is a click.
 const DRAG_THRESHOLD := 10.0
@@ -54,7 +66,20 @@ func _ready() -> void:
 func set_state(s: Dictionary) -> void:
 	state = s
 	pan = Vector2.ZERO
+	# A game that starts (or loads) with the lander already down doesn't replay it.
+	_land_turn = int(s.get("turn", -1)) if int(s.get("lander", 0)) > 0 else -1
 	queue_redraw()
+
+
+func _process(delta: float) -> void:
+	if not animate or state.is_empty() or not is_visible_in_tree():
+		return
+	clock += delta
+	_since_draw += delta
+	# About 20 pictures a second is smooth enough, and kind to phones.
+	if _since_draw >= 0.05:
+		_since_draw = 0.0
+		queue_redraw()
 
 
 ## Screen offset of a (fractional) tile position from the map's origin.
@@ -201,9 +226,17 @@ func _zoom(factor: float, at: Vector2) -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.05, 0.06, 0.08))
 	if state.is_empty():
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.05, 0.06, 0.08))
 		return
+	Sprites.anim_t = clock if animate else 0.0
+	# The lander comes down when it arrives (once per arrival).
+	if animate and int(state.get("lander", 0)) > 0 and _land_turn != int(state["turn"]):
+		_land_turn = int(state["turn"])
+		_land_start = clock
+	# Each planet has its own ground colours and sky; the Deep keeps its own.
+	Sprites.set_planet(str(state.get("planet", "")) if level == 0 else "")
+	draw_rect(Rect2(Vector2.ZERO, size), Sprites.sky(str(state.get("planet", ""))) if level == 0 else Color(0.05, 0.06, 0.08))
 	var w := int(state["width"])
 	var h := int(state["height"])
 	var tw := tile_size
@@ -263,9 +296,16 @@ func _draw() -> void:
 				_draw_structure(s, c)
 			for type in drones.get(cell, []):
 				# Each drone sits at the tile's front corner, at half a tile's scale.
-				Sprites.more().draw_unit(self, type, c + _proj(Vector2(0.26, 0.26)), tile_size * 0.62)
+				Sprites.more().draw_unit(self, type, c + _proj(Vector2(0.26, 0.26) + _drive(cell, type)), tile_size * 0.62)
 			for p in people.get(cell, []):
-				People.draw_colonist(self, c + _proj(p["at"]), tile_size * 0.22, p["job"], p["facing"], p["stride"])
+				var walk := Vector2.ZERO
+				var stride: bool = p["stride"]
+				if animate:
+					# Colonists stroll a little way back and forth.
+					var ph: float = clock * 0.6 + float(p["at"].x) * 7.0 + float(cell.x)
+					walk = Vector2(sin(ph), 0.0) * 0.08 * float(p["facing"])
+					stride = int(clock * 4.0 + cell.y) % 2 == 0
+				People.draw_colonist(self, c + _proj(p["at"] + walk), tile_size * 0.22, p["job"], p["facing"], stride)
 	if level == 0:
 		_draw_orbit()
 	# The building being placed, see-through, turned the way it would be built,
@@ -338,11 +378,18 @@ func _draw_structure(s: Dictionary, c: Vector2) -> void:
 	if Actions.door_rules(state):
 		look["doors"] = Actions.door_dirs(str(s["type"]), int(s.get("rot", 0)))
 	if s["type"] == "shaft" or s["type"] == "shaft_base":
-		# The lift goes up and down between turns.
+		# The lift goes up and down between turns, or all the time when animating.
 		look["car"] = "up" if int(state["turn"]) % 2 == 0 else "down"
+		if animate:
+			look["lift"] = 0.5 + 0.5 * sin(clock * 0.5)
+	if s["type"] == "reclaimer" and s["active"] and animate:
+		# A truck comes round every 12 seconds or so to drop off junk.
+		look["truck_trip"] = fmod(clock / 12.0 + float(int(s["x"]) * 3 + int(s["y"])) * 0.17, 1.0)
 	if s["type"] == "hull":
 		look["ship"] = int(state.get("lander", 0)) > 0
 		look["ship_door"] = int(state.get("lander_door", 0))
+		if animate and clock - _land_start < LAND_TIME:
+			look["ship_drop"] = 1.0 - (clock - _land_start) / LAND_TIME
 	Sprites.draw_iso(self, s["type"], c, tw, look)
 	# Status markers above the tile.
 	var mark := c - Vector2(0, tw * 0.42)
@@ -551,3 +598,14 @@ func _colonist_spots() -> Dictionary:
 	for cell in out:
 		(out[cell] as Array).sort_custom(func(a, b): return a["at"].x + a["at"].y < b["at"].x + b["at"].y)
 	return out
+
+
+## How far a working rover has driven from its parking spot right now (in tile
+## units): each drives back and forth along its own line, out of step with the
+## others. Nothing moves when animations are off.
+func _drive(cell: Vector2i, type: String) -> Vector2:
+	if not animate:
+		return Vector2.ZERO
+	var phase := float(cell.x * 13 + cell.y * 7 + type.length() * 3)
+	var along := Vector2(-1.0, 0.0) if (cell.x + cell.y) % 2 == 0 else Vector2(0.0, -1.0)
+	return along * (0.5 - 0.5 * cos(clock * 0.7 + phase)) * 0.35

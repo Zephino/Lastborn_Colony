@@ -12,10 +12,12 @@ var tiles: Array = []
 var hull := Vector2i(-1, -1)
 ## The site's lucky find ("" for none), drawn two tiles from the probe.
 var find := ""
+var planet_id := ""
 
 
-func show_map(map: Dictionary, lucky: String = "") -> void:
+func show_map(map: Dictionary, lucky: String = "", planet: String = "") -> void:
 	find = lucky
+	planet_id = planet
 	tiles = map["tiles"]
 	var h: Array = map["hull"]
 	hull = Vector2i(int(h[0]), int(h[1]))
@@ -23,9 +25,10 @@ func show_map(map: Dictionary, lucky: String = "") -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0.05, 0.06, 0.08))
+	draw_rect(Rect2(Vector2.ZERO, size), Sprites.sky(planet_id) if planet_id != "" else Color(0.05, 0.06, 0.08))
 	if tiles.is_empty():
 		return
+	Sprites.set_planet(planet_id)
 	# Fit a diamond of (2 * RADIUS + 1) tiles across.
 	var n := 2 * RADIUS + 1
 	var tw := minf(size.x / n, size.y * 2.0 / n) * 0.98

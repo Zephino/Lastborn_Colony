@@ -453,6 +453,21 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 	var body_h := 0.36
 	var r0 := 0.105
 	var r1 := 0.085
+	# Coming down: "ship_drop" runs from 1 (high in the sky) to 0 (landed). The
+	# ship is drawn higher up, with its engines firing and no boarding tube yet.
+	var drop := float(state.get("ship_drop", 0.0))
+	var pad := c
+	if drop > 0.0:
+		c = c - Vector2(0, tw * 2.4 * drop * drop)
+		var flame := S._iso(c, tw, 0, 0, pad_z + 0.02)
+		var length := tw * (0.18 + 0.10 * absf(sin(S.anim_t * 18.0)))
+		ci.draw_colored_polygon(PackedVector2Array([flame + Vector2(-tw * 0.07, 0), flame + Vector2(tw * 0.07, 0), flame + Vector2(0, length)]), Color(1.0, 0.65, 0.20, 0.85))
+		ci.draw_colored_polygon(PackedVector2Array([flame + Vector2(-tw * 0.035, 0), flame + Vector2(tw * 0.035, 0), flame + Vector2(0, length * 0.6)]), Color(1.0, 0.95, 0.75, 0.95))
+		# Dust blown off the pad as it nears the ground.
+		var near := 1.0 - drop
+		for k in 6:
+			var a := k * TAU / 6.0 + S.anim_t
+			ci.draw_circle(pad + Vector2(cos(a) * tw * 0.25 * near, sin(a) * tw * 0.12 * near), tw * 0.04 * near, Color(0.82, 0.74, 0.62, 0.35 * near))
 	# Scorch on the pad, and the engine glow under the skirt.
 	ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0, 0, pad_z), tw * 0.17, tw * 0.085), Color(0.04, 0.04, 0.05, 0.4 * white.a))
 	var legs := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
@@ -463,7 +478,7 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 	# side it docked at this time, so nobody has to walk outside. One docked at
 	# a back airlock goes behind the ship, so it is drawn first.
 	var back_dock := dock_dir(state)
-	if back_dock.x + back_dock.y < 0:
+	if back_dock.x + back_dock.y < 0 and drop <= 0.0:
 		_boarding_tube(ci, c, tw, Vector3(back_dock.x * 0.09, back_dock.y * 0.09, body_z + 0.06), Vector3(back_dock.x * 0.37, back_dock.y * 0.37, 0.12), 0.035, state)
 	# Three engine bells.
 	for k in 3:
@@ -553,6 +568,8 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 			_lander_leg(ci, c, tw, q.normalized(), pad_z, body_z, m, md)
 	# The boarding tube, when it docks at one of the two front airlocks.
 	var dock := dock_dir(state)
+	if drop > 0.0:
+		return
 	if dock.x + dock.y > 0:
 		_boarding_tube(ci, c, tw, Vector3(dock.x * 0.09, dock.y * 0.09, body_z + 0.06), Vector3(dock.x * 0.37, dock.y * 0.37, 0.12), 0.035, state)
 

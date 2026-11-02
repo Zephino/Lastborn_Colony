@@ -22,6 +22,7 @@ func _text(t: String, p: Vector2, sz: int, col: Color = Color.WHITE) -> void:
 
 
 func _draw() -> void:
+	Sprites.set_planet("")
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.06, 0.07, 0.09))
 	if page == "surface":
 		_buildings("Surface buildings. Left: top-down. Right: angled. Small: under construction / idle.", _level_ids("surface"), false)
