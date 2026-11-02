@@ -904,6 +904,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	if type == "shaft_base":
 		_iso_landing(ci, c, tw, links, state)
 		return
+	if type == "catcher":
+		_iso_catcher(ci, c, tw, links, state)
+		return
 	if type == "rail":
 		_iso_spin(ci, c, tw, links, state)
 		return
@@ -1295,6 +1298,80 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true, d)
+
+
+## The Beam Catcher: power beamed down from orbit lands on a golden target
+## ring and pours into a funnel lens on a collector tower. Capacitor coils
+## round it hold the power, and a converter drum at the base feeds the colony.
+static func _iso_catcher(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var gold := _fade(GOLD, state)
+	var orange := _fade(ORANGE, state)
+	var lit := _lit(state)
+	var base_r := 0.20
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, base_r, state)
+	# The target ring on the ground: where the beam is aimed.
+	var g := _iso(c, tw, 0, 0, 0.0)
+	for k in 4:
+		var rr := (0.46 - k * 0.10) * tw * 0.72
+		ci.draw_colored_polygon(_ellipse(g, rr, rr * 0.5), md.darkened(0.2) if k % 2 == 0 else Color(gold.r, gold.g, gold.b, gold.a * (0.55 if lit else 0.3)))
+	for i in 8:
+		var ang := i * TAU / 8.0
+		ci.draw_line(g + Vector2(cos(ang), sin(ang) * 0.5) * 0.30 * tw * 0.72, g + Vector2(cos(ang), sin(ang) * 0.5) * 0.46 * tw * 0.72, md.darkened(0.3), 1.0)
+	# Capacitor coils: stacks of discs on poles, with a glowing cap.
+	for q in [Vector2(-0.30, -0.30), Vector2(0.32, -0.30), Vector2(-0.30, 0.32)]:
+		var top_z := 0.30
+		ci.draw_line(_iso(c, tw, q.x, q.y, 0.0), _iso(c, tw, q.x, q.y, top_z), md.lightened(0.1), maxf(2.0, tw * 0.016))
+		for k in 4:
+			var dz := 0.07 + k * 0.06
+			var dp := _iso(c, tw, q.x, q.y, dz)
+			var dr := tw * (0.055 - k * 0.004)
+			ci.draw_colored_polygon(_ellipse(dp, dr, dr * 0.5), m.lightened(0.1) if k % 2 == 0 else Color(0.55, 0.45, 0.30, m.a))
+			ci.draw_polyline(_ellipse(dp, dr, dr * 0.5, 0, 180, 10), md, 1.0)
+		_glow(ci, _iso(c, tw, q.x, q.y, top_z + 0.02), tw * 0.022, gold, state)
+	# The converter drum at the base.
+	_cyl(ci, c, tw, 0, 0, base_r, 0.13, m, m.lightened(0.15))
+	ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.065), base_r * tw * 0.72, base_r * tw * 0.36, 0, 180, 16), orange, maxf(1.5, tw * 0.012))
+	# The collector tower: a lattice mast.
+	var t0 := 0.13
+	var t1 := 0.34
+	for side in [-1.0, 1.0]:
+		ci.draw_line(_iso(c, tw, 0, 0, t0) + Vector2(side * tw * 0.05, 0), _iso(c, tw, 0, 0, t1) + Vector2(side * tw * 0.025, 0), md.lightened(0.2), maxf(2.0, tw * 0.014))
+	for k in 3:
+		var za := t0 + (t1 - t0) * float(k) / 3.0
+		var zb := t0 + (t1 - t0) * float(k + 1) / 3.0
+		var wa := tw * (0.05 - 0.025 * float(k) / 3.0)
+		var wb := tw * (0.05 - 0.025 * float(k + 1) / 3.0)
+		ci.draw_line(_iso(c, tw, 0, 0, za) + Vector2(-wa, 0), _iso(c, tw, 0, 0, zb) + Vector2(wb, 0), md, 1.0)
+		ci.draw_line(_iso(c, tw, 0, 0, za) + Vector2(wa, 0), _iso(c, tw, 0, 0, zb) + Vector2(-wb, 0), md, 1.0)
+	# The funnel lens on top, catching the beam.
+	var lens := _iso(c, tw, 0, 0, t1 + 0.10)
+	var lr := 0.26 * tw * 0.72
+	var cone := _ellipse(lens, lr, lr * 0.5, 0, 180, 16)
+	cone.append(_iso(c, tw, 0, 0, t1))
+	ci.draw_colored_polygon(cone, m.darkened(0.1))
+	ci.draw_colored_polygon(_ellipse(lens, lr, lr * 0.5), md)
+	ci.draw_colored_polygon(_ellipse(lens, lr * 0.82, lr * 0.41), Color(gold.r, gold.g, gold.b, gold.a * (0.9 if lit else 0.35)))
+	ci.draw_colored_polygon(_ellipse(lens, lr * 0.45, lr * 0.22), Color(1.0, 0.97, 0.85, gold.a) if lit else md)
+	ci.draw_polyline(_ellipse(lens, lr, lr * 0.5), m.lightened(0.25), maxf(1.5, tw * 0.012))
+	# The beam from orbit, when it's working.
+	if lit:
+		var sky := lens - Vector2(0, tw * 0.62)
+		ci.draw_colored_polygon(PackedVector2Array([sky + Vector2(-lr * 0.30, 0), sky + Vector2(lr * 0.30, 0), lens + Vector2(lr * 0.75, 0), lens + Vector2(-lr * 0.75, 0)]), Color(gold.r, gold.g, gold.b, 0.22))
+		ci.draw_colored_polygon(PackedVector2Array([sky + Vector2(-lr * 0.12, 0), sky + Vector2(lr * 0.12, 0), lens + Vector2(lr * 0.35, 0), lens + Vector2(-lr * 0.35, 0)]), Color(1.0, 0.92, 0.6, 0.45))
+		ci.draw_line(sky, lens, Color(1.0, 1.0, 0.92, 0.95), maxf(1.5, tw * 0.01))
+		for k in 3:
+			var rp := lens - Vector2(0, tw * (0.08 + k * 0.14))
+			ci.draw_polyline(_ellipse(rp, lr * (0.42 - k * 0.07), lr * (0.21 - k * 0.035)), Color(1.0, 0.9, 0.55, 0.6), 1.0)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, base_r, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]):
+			_iso_port(ci, _iso(c, tw, d.x * base_r * 0.95, d.y * base_r * 0.95, 0.06), tw, state, true, d)
 
 
 ## The lift tube shared by the Shaft (its top) and the Shaft Landing (its

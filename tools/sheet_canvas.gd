@@ -56,14 +56,17 @@ func _buildings(from: int, to: int) -> void:
 		# Each building sits on the ground of the level it's built on.
 		var note := GameData.level_note(GameData.building(id))
 		var ground := "cavern" if note == "Deep only." else "regolith"
-		if note != "":
-			_text(note.trim_suffix("."), o + Vector2(cw - 210, 26), 16, Color(0.55, 0.80, 0.95) if ground == "cavern" else Color(0.95, 0.80, 0.55))
 		Sprites.terrain_top(self, ground, r)
 		Sprites.draw_top(self, id, r, sample)
 		# Angled, on one diamond.
 		var c := o + Vector2(290, 150)
 		Sprites.terrain_iso(self, ground, c, 200.0)
 		Sprites.draw_iso(self, id, c, 200.0, sample)
+		# The level note goes on last, so a tall building can't cover it.
+		if note != "":
+			var tag := o + Vector2(cw - 214, 10)
+			draw_rect(Rect2(tag, Vector2(108, 22)), Color(0.10, 0.11, 0.14))
+			_text(note.trim_suffix("."), tag + Vector2(4, 16), 16, Color(0.55, 0.80, 0.95) if ground == "cavern" else Color(0.95, 0.80, 0.55))
 		# Under construction and idle, small.
 		var y := o.y + ch - 64
 		for j in 2:

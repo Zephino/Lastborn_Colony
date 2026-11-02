@@ -36,15 +36,14 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 					for k in 3:
 						ci.draw_circle(t + Vector2(s * (0.02 + k * 0.03), -s * (0.02 + k * 0.03)), s * (0.08 + k * 0.02), Color(STEAM.r, STEAM.g, STEAM.b, 0.45 - k * 0.12))
 		"catcher":
-			# Four fields of receiving mesh round the receiver.
-			for p in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
-				var q := Rect2(c + Vector2(p.x * s * 0.27 - s * 0.19, p.y * s * 0.27 - s * 0.19), Vector2(s * 0.38, s * 0.38))
-				ci.draw_rect(q, md)
-				ci.draw_rect(q.grow(-s * 0.02), _f(Color(0.20, 0.24, 0.32), state))
-				for k in 5:
-					var t := float(k + 1) / 6.0
-					ci.draw_line(Vector2(q.position.x + q.size.x * t, q.position.y), Vector2(q.position.x + q.size.x * t, q.end.y), _f(Color(0.55, 0.62, 0.75), state), 1.0)
-					ci.draw_line(Vector2(q.position.x, q.position.y + q.size.y * t), Vector2(q.end.x, q.position.y + q.size.y * t), _f(Color(0.40, 0.46, 0.58), state), 1.0)
+			# The target ring the beam is aimed at, and the capacitor coils.
+			for k in 4:
+				ci.draw_circle(c, s * (0.46 - k * 0.10), md.darkened(0.2) if k % 2 == 0 else _f(Color(S.GOLD.r, S.GOLD.g, S.GOLD.b, 0.55), state))
+			for p in [Vector2(-0.30, -0.30), Vector2(0.32, -0.30), Vector2(-0.30, 0.32)]:
+				var q: Vector2 = c + p * s
+				ci.draw_circle(q, s * 0.055, md)
+				ci.draw_circle(q, s * 0.04, m.lightened(0.1))
+				S._glow(ci, q, s * 0.018, _f(S.GOLD, state), state)
 		"reclaimer":
 			# A heap of mixed junk at the back-right, carried into the dome on a conveyor.
 			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
@@ -155,9 +154,11 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			S._glow(ci, c + Vector2(rad * 0.62, rad * 0.62), s * 0.025, _f(FUSION, state), state)
 			ci.draw_arc(c - Vector2(rad * 0.3, rad * 0.3), rad * 0.4, deg_to_rad(200), deg_to_rad(260), 8, Color(1, 1, 1, 0.5 * concrete.a), 2.0)
 		"catcher":
-			# The beam coming down from orbit onto the receiver.
-			S._glow(ci, c, s * 0.06, _f(S.GOLD, state), state)
-			ci.draw_arc(c, rad * 0.6, 0, TAU, 20, _f(S.GOLD, state), 2.0)
+			# The funnel lens seen from above, glowing where the beam lands.
+			ci.draw_circle(c, rad * 1.3, md)
+			ci.draw_circle(c, rad * 1.1, _f(S.GOLD, state))
+			ci.draw_circle(c, rad * 0.55, Color(1.0, 0.97, 0.85, _f(S.GOLD, state).a) if S._lit(state) else md)
+			S._glow(ci, c, s * 0.05, _f(S.GOLD, state), state)
 		"reclaimer":
 			# The shredder: two toothed rollers.
 			for k in 2:
@@ -280,18 +281,6 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 			# Two big cooling towers at the sides, waisted like hourglasses, with clouds of steam.
 			for p in [Vector2(-0.34, 0.34), Vector2(0.34, -0.34)]:
 				_cooling_tower(ci, c, tw, p, 0.44, state)
-		"catcher":
-			# The mesh fields, tilted toward the sky, round the receiver.
-			for p in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
-				var u0: float = p.x * 0.27 - 0.19
-				var v0: float = p.y * 0.27 - 0.19
-				var panel := PackedVector2Array([S._iso(c, tw, u0, v0, 0.06), S._iso(c, tw, u0 + 0.38, v0, 0.06), S._iso(c, tw, u0 + 0.38, v0 + 0.38, 0.02), S._iso(c, tw, u0, v0 + 0.38, 0.02)])
-				ci.draw_colored_polygon(panel, _f(Color(0.20, 0.24, 0.32), state))
-				for k in 5:
-					var t := float(k + 1) / 6.0
-					ci.draw_line(panel[0].lerp(panel[1], t), panel[3].lerp(panel[2], t), _f(Color(0.55, 0.62, 0.75), state), 1.0)
-					ci.draw_line(panel[0].lerp(panel[3], t), panel[1].lerp(panel[2], t), _f(Color(0.40, 0.46, 0.58), state), 1.0)
-				ci.draw_polyline(PackedVector2Array([panel[0], panel[1], panel[2], panel[3], panel[0]]), md, 1.5)
 		"reclaimer":
 			# A tank of recovered water at the back.
 			S._cyl(ci, c, tw, -0.36, -0.36, 0.12, 0.26, _f(S.WATER, state).darkened(0.25), _f(S.WATER, state).darkened(0.05))
@@ -379,14 +368,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			var door := S._iso(c, tw, r * 0.7, r * 0.7, 0.05)
 			ci.draw_colored_polygon(S._ellipse(door - Vector2(0, tw * 0.03), tw * 0.035, tw * 0.035, 180, 360, 8) + PackedVector2Array([door + Vector2(tw * 0.035, 0), door + Vector2(-tw * 0.035, 0)]), concrete.darkened(0.4))
 			S._glow(ci, door - Vector2(0, tw * 0.02), tw * 0.015, _f(FUSION, state), state)
-		"catcher":
-			# A shaft of light from orbit down onto the receiver.
-			var gold := _f(S.GOLD, state)
-			if S._lit(state):
-				var top := apex - Vector2(0, tw * 0.5)
-				ci.draw_colored_polygon(PackedVector2Array([top + Vector2(-tw * 0.02, 0), top + Vector2(tw * 0.02, 0), apex + Vector2(tw * 0.06, 0), apex + Vector2(-tw * 0.06, 0)]), Color(gold.r, gold.g, gold.b, 0.30))
-				ci.draw_line(top, apex, Color(1.0, 0.95, 0.8, 0.9), 2.0)
-			S._glow(ci, apex, tw * 0.035, gold, state)
 		"reclaimer":
 			# Inside: the shredder's two toothed rollers, with a green glow below.
 			var mid := S._iso(c, tw, 0, 0, 0.10)

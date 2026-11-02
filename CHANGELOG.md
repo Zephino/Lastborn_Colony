@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.66
+Date: 11/02/2026
+Time: 4:21 AM
+
+### Changes
+- **The Beam Catcher no longer looks like a solar farm.** It is now a beam receiver:
+  - a golden target ring on the ground, where the beam is aimed;
+  - three capacitor coils (stacks of discs with glowing caps);
+  - a converter drum at the base;
+  - a lattice tower with a funnel lens on top, with the beam from orbit pouring into it.
+- Seen from above, it is a bullseye with the glowing lens in the middle. The old mesh panels are gone.
+- Sprite sheet: the "Surface only" / "Deep only" labels are drawn last, so tall buildings no longer cover them.
+
+### Reason
+The owner said the Beam Catcher looked like a solar farm and should show what it really does.
+
 ## Version 00.01.65
 Date: 11/02/2026
 Time: 4:09 AM
