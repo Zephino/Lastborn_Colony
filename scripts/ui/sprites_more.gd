@@ -660,7 +660,15 @@ static func _lander_leg(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, pad_z
 # ============================================================ units
 
 ## Draws a drone or satellite at an angle, centred on c, about tw pixels wide.
-static func draw_unit(ci: CanvasItem, type: String, c: Vector2, tw: float) -> void:
+## Draws a drone, rover or satellite at c. along_v turns it to face along v
+## instead of u (a left-right mirror in this view).
+static func draw_unit(ci: CanvasItem, type: String, c: Vector2, tw: float, along_v: bool = false) -> void:
+	S.swap_uv = along_v
+	_unit_body(ci, type, c, tw)
+	S.swap_uv = false
+
+
+static func _unit_body(ci: CanvasItem, type: String, c: Vector2, tw: float) -> void:
 	var st := {}
 	var md := S.METAL_DARK
 	var m := S.METAL

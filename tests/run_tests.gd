@@ -287,7 +287,7 @@ func _play_until_event(s: Dictionary, id: String, turns: int) -> bool:
 
 func test_story() -> void:
 	print("Story and factions")
-	var known := ["company", "union", "flag", "ending", "morale", "credits", "alloy", "rest", "debt", "adults", "food", "oxygen", "water", "ore"]
+	var known := ["company", "union", "flag", "ending", "morale", "credits", "alloy", "rest", "debt", "adults", "food", "oxygen", "water", "ore", "parts", "storm", "surge", "damage"]
 	for e in GameData.story_events():
 		var has_way_on := false
 		for c in e["choices"]:
@@ -332,6 +332,21 @@ func test_story() -> void:
 	f["story_cooldown"] = 0
 	Turn.end_turn(f)
 	check(f["pending_event"] == "promise_kept", "the follow-up comes once the flag is set")
+	# Some story events belong to one world only.
+	for pid in ["tessel", "brume"]:
+		var w := NewGame.create(5, "Margin", {"planet": pid})
+		w["turn"] = 13
+		w["story_done"] = []
+		for e in GameData.story_events():
+			if e["id"] != "tessel_bloom":
+				w["story_done"].append(e["id"])
+		Turn.end_turn(w)
+		check((w["pending_event"] == "tessel_bloom") == (pid == "tessel"), "a Tessel story happens on Tessel and nowhere else (%s)" % pid)
+	var worlds := {}
+	for e in GameData.story_events():
+		if e.get("when", {}).has("planet"):
+			worlds[e["when"]["planet"]] = true
+	check(worlds.size() == GameData.planets().size(), "every world has its own story events")
 	# Company relations change who comes on the supply drop.
 	var p := NewGame.create(4, "Margin")
 	p["turn"] = 30

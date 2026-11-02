@@ -13,6 +13,7 @@ static var _cargo: Dictionary = {}
 static var _difficulties: Array = []
 static var _story_events: Array = []
 static var _help: Dictionary = {}
+static var _tips: Dictionary = {}
 
 
 static func _load_json(path: String) -> Variant:
@@ -39,6 +40,7 @@ static func ensure_loaded() -> void:
 	_difficulties = _load_json("res://data/difficulty.json")
 	_story_events = _load_json("res://data/story_events.json")
 	_help = _load_json("res://data/help.json")
+	_tips = _load_json("res://data/tips.json")
 
 
 static func balance() -> Dictionary:
@@ -96,6 +98,12 @@ static func topic(id: String) -> Dictionary:
 
 
 ## The How to play guide's pages (data/help.json).
+## First-game tips (data/tips.json).
+static func tips() -> Array:
+	ensure_loaded()
+	return _tips.get("tips", [])
+
+
 static func help_pages() -> Array:
 	ensure_loaded()
 	return _help["pages"]

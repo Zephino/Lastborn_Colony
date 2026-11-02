@@ -48,6 +48,10 @@ static func end_turn(state: Dictionary) -> void:
 	rep["net"] = net
 	state["report"] = rep
 	_quantize(state)
+	# One row a turn for the graphs: turn, people, marks, debt left, morale.
+	if not state.has("history"):
+		state["history"] = []
+	state["history"].append([int(state["turn"]), q(population(state)), q(float(state["stock"]["credits"])), q(float(state["debt"])), q(float(state["morale"]))])
 	state["turn"] = int(state["turn"]) + 1
 
 
@@ -758,6 +762,9 @@ static func _shift_faction(state: Dictionary, key: String, delta: float) -> void
 ## Whether a story event's "when" conditions hold now.
 static func story_ready(state: Dictionary, when: Dictionary) -> bool:
 	var f: Dictionary = state["factions"]
+	# Some story events only happen on one world.
+	if when.has("planet") and str(when["planet"]) != str(state.get("planet", "")):
+		return false
 	if int(state["turn"]) < int(when.get("turn_min", 0)):
 		return false
 	if population(state) < float(when.get("pop_min", 0)):

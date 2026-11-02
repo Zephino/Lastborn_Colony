@@ -16,6 +16,7 @@ const SaveGame = preload("res://scripts/sim/save_game.gd")
 const Fleet = preload("res://scripts/sim/fleet.gd")
 const TestFleet = preload("res://tests/test_fleet.gd")
 const Probe = preload("res://scripts/sim/probe.gd")
+const Tips = preload("res://scripts/sim/tips.gd")
 const Manifest = preload("res://scripts/sim/manifest.gd")
 
 
@@ -31,6 +32,8 @@ static func run(check: Callable) -> void:
 	_survey(check)
 	_saves(check)
 	_probes(check)
+	_tips(check)
+	_history(check)
 
 
 ## A colony with plenty of power and heat (a Fusion Core) and everything stocked.
@@ -231,3 +234,39 @@ static func _probes(check: Callable) -> void:
 			after += 1 if seam["tiles"][y][x] == "seam" else 0
 	check.call(after > before, "a rich ore seam adds seams by the pad (%d more)" % (after - before))
 	check.call(NewGame.create(3, "Margin", {"find": ""})["stock"] == plain["stock"], "no find, no change")
+
+
+static func _tips(check: Callable) -> void:
+	var known := ["start", "no_shaft", "deep_open", "low_oxygen", "low_food", "low_water", "no_power", "no_heat", "crowded", "payment_soon", "idle_workers", "storm", "low_morale", "turn_8"]
+	var ids := {}
+	for tip in Tips.all():
+		check.call(str(tip["when"]) in known, "tip %s has a known condition" % tip["id"])
+		check.call(not ids.has(tip["id"]) and str(tip["text"]).length() > 10, "tip %s is unique and has text" % tip["id"])
+		ids[tip["id"]] = true
+	var s := NewGame.create(3, "Margin")
+	var first := Tips.next(s)
+	check.call(first.get("id", "") == "welcome", "a new game starts with the welcome tip")
+	check.call(Tips.next(s).is_empty(), "no other tip fits on turn 1")
+	s["turn"] = 5
+	check.call(Tips.next(s).get("id", "") == "no_shaft", "with no Shaft by turn 5, a tip says to build one")
+	s["stock"]["oxygen"] = 0.0
+	check.call(Tips.next(s).get("id", "") == "oxygen", "running out of oxygen brings the oxygen tip")
+	s["stock"]["oxygen"] = 0.0
+	check.call(Tips.next(s).get("id", "") != "oxygen", "each tip shows only once")
+	var back: Variant = SaveGame.from_text(SaveGame.to_text(s))
+	check.call(back is Dictionary and "welcome" in back["tips_seen"], "tips already shown are saved")
+
+
+static func _history(check: Callable) -> void:
+	var s := NewGame.create(3, "Margin")
+	for _i in 3:
+		TestFleet._turn(s)
+	check.call(s["history"].size() == 3 and int(s["history"][0][0]) == 1, "each turn adds a row to the graph history")
+	check.call(is_equal_approx(float(s["history"][2][3]), float(s["debt"])), "the history records the debt left")
+	var back: Variant = SaveGame.from_text(SaveGame.to_text(s))
+	check.call(back is Dictionary and back["history"].size() == 3, "the history survives a save and load")
+	var bad := s.duplicate(true)
+	bad["history"] = [[1, 2], "x", [1, 2, 3, 4, "five"], [5, 6.0, 7.0, 8.0, 9.0]]
+	bad["tips_seen"] = ["welcome", 7, "x".repeat(99)]
+	var cleaned: Variant = SaveGame.from_text(SaveGame.to_text(bad))
+	check.call(cleaned is Dictionary and cleaned["history"].size() == 1 and cleaned["tips_seen"] == ["welcome"], "broken history rows and tips in a save are dropped")

@@ -55,6 +55,8 @@ const DEFAULTS := {
 	"waste": 0.0,
 	"trained": 0.0,
 	"battery": 0.0,
+	"tips_seen": [],
+	"history": [],
 	"heat_bank": 0.0,
 	# Saves from before door rules keep joining on any side.
 	"door_rules": false,
@@ -69,6 +71,19 @@ static func normalize(state: Dictionary) -> void:
 			state[k] = d.duplicate(true) if (typeof(d) == TYPE_DICTIONARY or typeof(d) == TYPE_ARRAY) else d
 	if not state.has("debt_total"):
 		state["debt_total"] = 6000.0
+	# Graph history and seen tips come from the save too: keep only well-formed rows.
+	var rows: Array = []
+	if typeof(state["history"]) == TYPE_ARRAY:
+		for row in state["history"]:
+			if typeof(row) == TYPE_ARRAY and row.size() == 5 and row.all(func(v: Variant) -> bool: return typeof(v) == TYPE_FLOAT or typeof(v) == TYPE_INT):
+				rows.append(row)
+	state["history"] = rows.slice(maxi(0, rows.size() - 2000))
+	var seen: Array = []
+	if typeof(state["tips_seen"]) == TYPE_ARRAY:
+		for t in state["tips_seen"]:
+			if typeof(t) == TYPE_STRING and str(t).length() <= 32:
+				seen.append(t)
+	state["tips_seen"] = seen
 	# A save can come from a file or the cloud: never trust its text or ids.
 	state["colony_name"] = TextRules.clean_colony_name(str(state.get("colony_name", "")))
 	if not GameData.has_planet(str(state["planet"])):

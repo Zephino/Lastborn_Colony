@@ -74,6 +74,7 @@ func show_settings() -> void:
 	if AppActions.can_fullscreen():
 		options.append(["Fullscreen: %s" % ("On" if AppActions.is_fullscreen() else "Off"), _on_fullscreen, true])
 	options.append(["Animations: %s" % ("On" if main.animations else "Off"), _on_animations, true])
+	options.append(["Tips for new players: %s" % ("On" if main.tips_on else "Off"), _on_tips, true])
 	notes.append("Animations make the map move: lights blink, steam rises, rovers drive and the lander comes down. Turn them off on a slow device.")
 	if AppActions.is_web():
 		var install := AppActions.install_state()
@@ -112,6 +113,11 @@ func show_settings() -> void:
 
 func _close_settings() -> void:
 	main.close_modal()
+
+
+func _on_tips() -> void:
+	main.set_tips(not main.tips_on)
+	show_settings.call_deferred()
 
 
 func _on_animations() -> void:

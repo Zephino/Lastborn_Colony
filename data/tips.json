@@ -1,0 +1,19 @@
+{
+  "_comment": "First-game tips. Each shows once per game, at most one a turn, the first in this list whose 'when' holds (see scripts/sim/tips.gd for the conditions). Settings can turn tips off.",
+  "tips": [
+    {"id": "welcome", "when": "start", "text": "Welcome! First, build a Shaft next to the Landing Pad: homes, food and air all go in the Deep, under the surface."},
+    {"id": "no_shaft", "when": "no_shaft", "text": "You still have no Shaft. Homes, food and air can only be built in the Deep, so build one next to the colony soon."},
+    {"id": "deep_open", "when": "deep_open", "text": "The Deep is open! Press Deep (or E) and build a Splitter (air), a Kelp Vat or Mushroom Farm (food) and a Bunkhouse (homes) around the landing."},
+    {"id": "oxygen", "when": "low_oxygen", "text": "Oxygen will run out in a few turns. Build a Splitter in the Deep; it turns water into air, so it needs an Ice Drill too."},
+    {"id": "food", "when": "low_food", "text": "Food is running low. Build a Kelp Vat (lots of food, needs heat) or a Mushroom Farm (less food, needs very little heat) in the Deep."},
+    {"id": "water", "when": "low_water", "text": "Water is running low. Build an Ice Drill on ice (pale blue ground), or on underground water in the Deep."},
+    {"id": "power", "when": "no_power", "text": "Some buildings are idle for lack of power. Build Solar Arrays: they make more toward the sunny side of the map."},
+    {"id": "heat", "when": "no_heat", "text": "Some buildings are idle for lack of heat. Build a Vent Tap on an orange vent: it gives lots of steady heat."},
+    {"id": "crowded", "when": "crowded", "text": "The colony is crowded: people get sick and unhappy. Build another Bunkhouse in the Deep."},
+    {"id": "payment", "when": "payment_soon", "text": "A Company payment is due soon. To make money: a Seam Cutter digs ore, a Forge turns it into alloy, and a Spin Launcher sells the alloy."},
+    {"id": "idle", "when": "idle_workers", "text": "Lots of people have no work. Put them to use: build more, or a Survey Lab to start research."},
+    {"id": "storm", "when": "storm", "text": "A grit storm is cutting your solar power. Battery Banks save spare power for times like this, and Sweeper rovers keep the panels clean."},
+    {"id": "morale", "when": "low_morale", "text": "Morale is low, so everyone works slower. A Commons, Lounge, Garden Cavern or Radio Station cheers people up."},
+    {"id": "report", "when": "turn_8", "text": "Tip: the Colony report (next to End turn) shows where your power, heat and workers go, and why any building is idle."}
+  ]
+}

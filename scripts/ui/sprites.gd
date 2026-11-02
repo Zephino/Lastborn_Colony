@@ -724,7 +724,15 @@ static func _top_cap(ci: CanvasItem, p: Vector2, s: float, state: Dictionary) ->
 # ============================================================ isometric
 
 ## Ground point at (u, v) within the tile (each -0.5..0.5), raised by h tile-widths.
+## When true, u and v trade places: a drawing made facing along u then faces
+## along v instead. In this view that is a left-right mirror, and nearer and
+## farther stay the same, so a rover can be turned without redrawing it.
+static var swap_uv := false
+
+
 static func _iso(c: Vector2, tw: float, u: float, v: float, h: float = 0.0) -> Vector2:
+	if swap_uv:
+		return c + Vector2((v - u) * tw * 0.5, (u + v) * tw * 0.25 - h * tw)
 	return c + Vector2((u - v) * tw * 0.5, (u + v) * tw * 0.25 - h * tw)
 
 
@@ -1873,11 +1881,11 @@ static func _iso_reclaimer(ci: CanvasItem, c: Vector2, tw: float, links: Array, 
 			_box(ci, c, tw, 0.30, a0, 0.40, a0 + 0.10, 0.06, _fade(Color(0.58, 0.52, 0.42), state), Color(0, 0, 0, 0), z)
 		else:
 			_box(ci, c, tw, a0, 0.30, a0 + 0.10, 0.40, 0.06, _fade(Color(0.58, 0.52, 0.42), state), Color(0, 0, 0, 0), z)
-	# A truck parked in the bay (for now drawn only when asked for, and only
-	# when the hall runs along u, matching the way the Hauler is drawn).
-	if state.get("truck", false) and not on_v:
-		more().draw_unit(ci, "hauler", at.call(park.x, park.y, 0.0), tw * 0.62)
-	elif state.has("truck_trip") and not on_v:
+	# A truck parked in the bay when asked for, or coming and going when the
+	# map is animated. It is turned to match the hall.
+	if state.get("truck", false):
+		more().draw_unit(ci, "hauler", at.call(park.x, park.y, 0.0), tw * 0.62, on_v)
+	elif state.has("truck_trip"):
 		# A truck on its round: drives in from the right, backs into the bay,
 		# waits while it tips its load, then drives off again.
 		var f := float(state["truck_trip"])
@@ -1887,7 +1895,7 @@ static func _iso_reclaimer(ci: CanvasItem, c: Vector2, tw: float, links: Array, 
 		elif f > 0.7:
 			off = (f - 0.7) / 0.3 * 0.75
 		if off < 0.7:
-			more().draw_unit(ci, "hauler", at.call(park.x + off, park.y, 0.0), tw * 0.62)
+			more().draw_unit(ci, "hauler", at.call(park.x + off, park.y, 0.0), tw * 0.62, on_v)
 	if lit:
 		_glow(ci, at.call(0.20, f1, 0.12), tw * 0.016, _fade(GREEN, state), state)
 	for d in links:

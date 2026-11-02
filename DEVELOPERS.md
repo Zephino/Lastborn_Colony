@@ -46,12 +46,14 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 | `scripts/sim/research.gd` | Research topics and their effects. |
 | `scripts/sim/fleet.gd` | Drones, satellites, supply pods, waste and specialists. |
 | `scripts/sim/text_rules.gd` | Cleaning rules for everything a player types. |
+| `scripts/sim/tips.gd`, `data/tips.json` | First-game tips: when each shows (once per game). |
 | `scripts/sim/probe.gd` | Scouting probes before landing: site reports and lucky finds (fixed by seed, planet and site). |
 | `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
 | `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd`, `scripts/ui/probe_view.gd`, `scripts/ui/planet_card.gd` | The screens before landing (with probe scouting), the small map previews (fogged until scouted), the probe report picture, and the planet cards (globe, difficulty pips and stat bars, styled by each planet's "look" in `data/planets.json`). |
 | `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
 | `scripts/ui/people.gd`, `scripts/ui/stat_icon.gd` | Colonists in space suits, and the resource icons in the top bar. |
 | `scripts/ui/sprite_icon.gd` | A small picture of one building, for the build list, Build menu and Info panel. |
+| `scripts/ui/stats_graph.gd`, `scripts/ui/records.gd` | The graphs (from `state["history"]`, one row a turn) and personal records (kept in `user://records.cfg`). |
 | `scripts/ui/menus.gd` | Research, Settings, Leaderboard and cloud-save dialogs. |
 | `scripts/ui/fleet_menu.gd` | The Drones & orbit dialog. |
 | `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |

@@ -226,7 +226,7 @@ Power and heat you don't use are normally lost at the end of a turn. A **Battery
 - The **Company** and the **Crews' Union** each like you from 0 to 100.
   - Paying on time pleases the Company: it softens penalties and sends extra settlers.
   - Shortages anger the Union. A happy Union lifts morale; a very unhappy one goes on strike.
-- **Story events** arrive as the colony grows and ask you to choose. Some choices matter later.
+- **Story events** arrive as the colony grows and ask you to choose. Some choices matter later. Every world also has its own stories, such as an eruption on Ashfall, lights under the ice on Glasswater and the long dark on Rimefar.
 - **Research:** pick a topic and your labs work on it. Finished topics improve buildings, housing and sales, or cut breakdowns, plague and crime. Some unlock new buildings.
 
 ---
@@ -253,6 +253,8 @@ Dragging the map never builds anything by accident.
 - **How to play** (title screen or Menu): a short illustrated guide.
 - **Settings:** fullscreen, **Install app** (Chrome, Edge, Android) and **Update app**. On iPhone or iPad: **Share**, then **Add to Home Screen**.
 - **Animations** (Settings, on by default): lights blink, steam and smoke rise, the lift moves, rovers drive about, a truck brings junk to the Reclaimer, and the lander comes down when it arrives. Turn them off on a slow device.
+- **Tips for new players** (Settings, on by default): a short tip appears at the bottom of the map when it can help, such as "build a Shaft first" or "oxygen will run out soon". Each shows once per game. Press **Got it**, or **No more tips** to turn them off.
+- **Graphs and records** (in the Colony report, and when a colony ends): graphs of people, marks, debt left and morale, turn by turn, and your best results on every world and difficulty, kept on this device.
 - **Updates:** for 30 seconds after opening, the game checks for a newer version and switches to it. Your saves are kept.
 - **Leaderboard** (title screen): one for each planet and difficulty. Type your name on the title screen, then post a score when a colony ends, or **Menu → Retire** to post one that's still running.
 - **Sign in with Google** (Settings, optional): keep one cloud save and carry on from another device.

@@ -2,6 +2,37 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.82
+Date: 11/02/2026
+Time: 1:15 PM
+
+### Changes
+- **Rovers face the way they drive.** A rover can now be drawn facing either way along the map (in this angled view, a quarter turn is a left-right mirror), so each rover faces along the line it drives on. The Reclaimer's truck now visits in either layout, backing into the bay whichever way the hall runs.
+- **First-game tips.** A small Tip bar appears at the bottom of the map when a tip can help, with **Got it** and **No more tips**. Each tip shows once per game and at most one a turn. 14 tips (in `data/tips.json`) cover:
+  - the first Shaft, opening the Deep, and missing power or heat;
+  - running low on oxygen, food or water;
+  - crowding, idle workers, low morale and grit storms;
+  - the first payment, and the Colony report.
+  - Settings has "Tips for new players: On/Off", which is remembered.
+- **World stories.** 13 new story events, each tied to one world (story events can now require a planet):
+  - **Tessel:** a lichen bloom, and a family ship asking to join.
+  - **Shale:** a cliff fall full of ore, and a crystal cave.
+  - **Ashfall:** an eruption, and fields of black glass.
+  - **Glasswater:** lights under the ice, and later a warm current beneath it.
+  - **Rimefar:** the long dark, and a lost survey team's beacon.
+  - **Brume:** a thaw season.
+  - **Cinder:** a solar flare.
+  - **Hollow:** an aurora.
+- **Graphs and records.**
+  - The game keeps one row of history each turn: people, marks, debt left and morale.
+  - "Graphs and records" (in the Colony report, and on the ending screen) shows four line graphs, plus your best results on every world and difficulty: games, wins, fastest buyout and most debt paid. Records are kept on this device.
+  - The ending screen tells you when you set a new record.
+  - Saves keep the history. Broken rows in a loaded save are dropped.
+- 681 checks in all.
+
+### Reason
+The owner asked for rovers that face any direction, first-game tips, planet stories, a stats screen, and a smarter test bot with a balance retune. The bot and retune follow in the next update.
+
 ## Version 00.01.81
 Date: 11/02/2026
 Time: 12:59 PM

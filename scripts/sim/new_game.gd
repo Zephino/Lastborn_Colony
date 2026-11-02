@@ -49,6 +49,10 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 		"trained": 0.0,
 		# Power and heat saved by Battery Banks and Heat Stores.
 		"battery": 0.0,
+		# First-game tips already shown (scripts/sim/tips.gd).
+		"tips_seen": [],
+		# One row a turn for the graphs (scripts/sim/turn.gd).
+		"history": [],
 		"heat_bank": 0.0,
 		"width": int(b["map_width"]),
 		"height": int(b["map_height"]),

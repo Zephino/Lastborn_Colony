@@ -1,13 +1,614 @@
 [
-  {"id": "first_shift", "title": "The First Rota", "when": {"turn_min": 3}, "body": "Tamsin Orrell, a cutter from the second berth, asks for a fair shift rota. The crews are working until they drop.", "choices": [{"label": "Agree to the rota (Union +10, morale +3)", "effects": {"union": 10, "morale": 3}}, {"label": "Production comes first (Company +5, Union -10)", "effects": {"company": 5, "union": -10}}]},
-  {"id": "company_inspector", "title": "An Inspector Calls", "when": {"turn_min": 15}, "body": "A Harrow & Vell inspector walks the colony with a clipboard. He wants to know when the first shipments will go up.", "choices": [{"label": "Promise faster shipments (Company +10, Union -5)", "effects": {"company": 10, "union": -5, "flag": "promised_shipments"}}, {"label": "Show him the shortages (Company -5, Union +5)", "effects": {"company": -5, "union": 5}}]},
-  {"id": "union_hall", "title": "A Place to Meet", "when": {"turn_min": 22, "pop_min": 34}, "body": "The crews ask for a hall of their own: somewhere warm to meet, argue and vote.", "choices": [{"label": "Give 30 alloy for a hall (Union +15, morale +5)", "requires": {"alloy": 30}, "effects": {"union": 15, "morale": 5, "alloy": -30}}, {"label": "Not now (Union -10)", "effects": {"union": -10}}]},
-  {"id": "company_store", "title": "The Company Store", "when": {"turn_min": 28}, "body": "Harrow & Vell offer to open a store at the landing pad. They will pay the colony a fee, and sell to the crews at Company prices.", "choices": [{"label": "Allow the store (+150 marks, Company +10, Union -10, morale -3)", "effects": {"credits": 150, "company": 10, "union": -10, "morale": -3}}, {"label": "Refuse (Company -10, Union +5)", "effects": {"company": -10, "union": 5}}]},
-  {"id": "promise_kept", "title": "The Inspector Returns", "when": {"turn_min": 36, "flag": "promised_shipments"}, "body": "The inspector is back, and he remembers your promise.", "choices": [{"label": "Pay a goodwill bonus of 200 marks (Company +10)", "requires": {"credits": 200}, "effects": {"credits": -200, "company": 10}}, {"label": "Ask for patience (Company -10)", "effects": {"company": -10}}]},
-  {"id": "cutter_accident", "title": "Accident on the Seam", "when": {"turn_min": 42}, "body": "A cutter rig slipped its anchors. Two of the crew are badly hurt. Their families are waiting for the colony's answer.", "choices": [{"label": "Compensate the families, 100 marks (Union +10)", "requires": {"credits": 100}, "effects": {"credits": -100, "union": 10}}, {"label": "Call it the crew's own fault (Union -15, Company +5)", "effects": {"union": -15, "company": 5}}]},
-  {"id": "letters_home", "title": "Letters to Other Colonies", "when": {"turn_min": 50, "union_min": 60}, "body": "The Union wants to write to the other charter colonies, to compare terms and wages. The Company would not approve.", "choices": [{"label": "Send the letters (Union +10, Company -10)", "effects": {"union": 10, "company": -10, "flag": "solidarity"}}, {"label": "Keep quiet (Company +5, Union -5)", "effects": {"company": 5, "union": -5}}]},
-  {"id": "audit_threat", "title": "A Warning from the Board", "when": {"turn_min": 45, "company_max": 35}, "body": "A sealed message from the Harrow & Vell board: relations have soured, and an audit is being discussed.", "choices": [{"label": "Pay a 300-mark settlement (Company +15)", "requires": {"credits": 300}, "effects": {"credits": -300, "company": 15}}, {"label": "Stand firm (Company -10, Union +10)", "effects": {"company": -10, "union": 10}}]},
-  {"id": "strike", "title": "Strike", "when": {"turn_min": 20, "union_max": 20}, "body": "The crews have downed tools. Nobody works until the colony listens.", "choices": [{"label": "Meet their demands: 100 marks (Union +20, morale +5)", "requires": {"credits": 100}, "effects": {"credits": -100, "union": 20, "morale": 5}}, {"label": "Wait it out: no work for 3 turns (Union -5)", "effects": {"rest": 3, "union": -5}}]},
-  {"id": "assembly", "title": "The Assembly", "when": {"turn_min": 60, "union_min": 75, "company_max": 30}, "body": "The whole colony crowds into the hall. The Union has a motion: the charter is unjust, and the colony should declare itself free of the Company, debt and all.", "choices": [{"label": "Not yet (Union -10)", "effects": {"union": -10}}, {"label": "Declare the colony free (ends the game)", "effects": {"ending": "independence"}}]},
-  {"id": "generous_offer", "title": "A Generous Offer", "when": {"turn_min": 60, "company_min": 80, "union_max": 40}, "body": "The Harrow & Vell board are pleased with you. They offer to cancel the debt, if the colony becomes Company property, with you as its manager.", "choices": [{"label": "Keep the charter (Company -10)", "effects": {"company": -10}}, {"label": "Sign the colony over (ends the game)", "effects": {"ending": "company_town"}}]}
+  {
+    "id": "first_shift",
+    "title": "The First Rota",
+    "when": {
+      "turn_min": 3
+    },
+    "body": "Tamsin Orrell, a cutter from the second berth, asks for a fair shift rota. The crews are working until they drop.",
+    "choices": [
+      {
+        "label": "Agree to the rota (Union +10, morale +3)",
+        "effects": {
+          "union": 10,
+          "morale": 3
+        }
+      },
+      {
+        "label": "Production comes first (Company +5, Union -10)",
+        "effects": {
+          "company": 5,
+          "union": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "company_inspector",
+    "title": "An Inspector Calls",
+    "when": {
+      "turn_min": 15
+    },
+    "body": "A Harrow & Vell inspector walks the colony with a clipboard. He wants to know when the first shipments will go up.",
+    "choices": [
+      {
+        "label": "Promise faster shipments (Company +10, Union -5)",
+        "effects": {
+          "company": 10,
+          "union": -5,
+          "flag": "promised_shipments"
+        }
+      },
+      {
+        "label": "Show him the shortages (Company -5, Union +5)",
+        "effects": {
+          "company": -5,
+          "union": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "union_hall",
+    "title": "A Place to Meet",
+    "when": {
+      "turn_min": 22,
+      "pop_min": 34
+    },
+    "body": "The crews ask for a hall of their own: somewhere warm to meet, argue and vote.",
+    "choices": [
+      {
+        "label": "Give 30 alloy for a hall (Union +15, morale +5)",
+        "requires": {
+          "alloy": 30
+        },
+        "effects": {
+          "union": 15,
+          "morale": 5,
+          "alloy": -30
+        }
+      },
+      {
+        "label": "Not now (Union -10)",
+        "effects": {
+          "union": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "company_store",
+    "title": "The Company Store",
+    "when": {
+      "turn_min": 28
+    },
+    "body": "Harrow & Vell offer to open a store at the landing pad. They will pay the colony a fee, and sell to the crews at Company prices.",
+    "choices": [
+      {
+        "label": "Allow the store (+150 marks, Company +10, Union -10, morale -3)",
+        "effects": {
+          "credits": 150,
+          "company": 10,
+          "union": -10,
+          "morale": -3
+        }
+      },
+      {
+        "label": "Refuse (Company -10, Union +5)",
+        "effects": {
+          "company": -10,
+          "union": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "promise_kept",
+    "title": "The Inspector Returns",
+    "when": {
+      "turn_min": 36,
+      "flag": "promised_shipments"
+    },
+    "body": "The inspector is back, and he remembers your promise.",
+    "choices": [
+      {
+        "label": "Pay a goodwill bonus of 200 marks (Company +10)",
+        "requires": {
+          "credits": 200
+        },
+        "effects": {
+          "credits": -200,
+          "company": 10
+        }
+      },
+      {
+        "label": "Ask for patience (Company -10)",
+        "effects": {
+          "company": -10
+        }
+      }
+    ]
+  },
+  {
+    "id": "cutter_accident",
+    "title": "Accident on the Seam",
+    "when": {
+      "turn_min": 42
+    },
+    "body": "A cutter rig slipped its anchors. Two of the crew are badly hurt. Their families are waiting for the colony's answer.",
+    "choices": [
+      {
+        "label": "Compensate the families, 100 marks (Union +10)",
+        "requires": {
+          "credits": 100
+        },
+        "effects": {
+          "credits": -100,
+          "union": 10
+        }
+      },
+      {
+        "label": "Call it the crew's own fault (Union -15, Company +5)",
+        "effects": {
+          "union": -15,
+          "company": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "letters_home",
+    "title": "Letters to Other Colonies",
+    "when": {
+      "turn_min": 50,
+      "union_min": 60
+    },
+    "body": "The Union wants to write to the other charter colonies, to compare terms and wages. The Company would not approve.",
+    "choices": [
+      {
+        "label": "Send the letters (Union +10, Company -10)",
+        "effects": {
+          "union": 10,
+          "company": -10,
+          "flag": "solidarity"
+        }
+      },
+      {
+        "label": "Keep quiet (Company +5, Union -5)",
+        "effects": {
+          "company": 5,
+          "union": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "audit_threat",
+    "title": "A Warning from the Board",
+    "when": {
+      "turn_min": 45,
+      "company_max": 35
+    },
+    "body": "A sealed message from the Harrow & Vell board: relations have soured, and an audit is being discussed.",
+    "choices": [
+      {
+        "label": "Pay a 300-mark settlement (Company +15)",
+        "requires": {
+          "credits": 300
+        },
+        "effects": {
+          "credits": -300,
+          "company": 15
+        }
+      },
+      {
+        "label": "Stand firm (Company -10, Union +10)",
+        "effects": {
+          "company": -10,
+          "union": 10
+        }
+      }
+    ]
+  },
+  {
+    "id": "strike",
+    "title": "Strike",
+    "when": {
+      "turn_min": 20,
+      "union_max": 20
+    },
+    "body": "The crews have downed tools. Nobody works until the colony listens.",
+    "choices": [
+      {
+        "label": "Meet their demands: 100 marks (Union +20, morale +5)",
+        "requires": {
+          "credits": 100
+        },
+        "effects": {
+          "credits": -100,
+          "union": 20,
+          "morale": 5
+        }
+      },
+      {
+        "label": "Wait it out: no work for 3 turns (Union -5)",
+        "effects": {
+          "rest": 3,
+          "union": -5
+        }
+      }
+    ]
+  },
+  {
+    "id": "assembly",
+    "title": "The Assembly",
+    "when": {
+      "turn_min": 60,
+      "union_min": 75,
+      "company_max": 30
+    },
+    "body": "The whole colony crowds into the hall. The Union has a motion: the charter is unjust, and the colony should declare itself free of the Company, debt and all.",
+    "choices": [
+      {
+        "label": "Not yet (Union -10)",
+        "effects": {
+          "union": -10
+        }
+      },
+      {
+        "label": "Declare the colony free (ends the game)",
+        "effects": {
+          "ending": "independence"
+        }
+      }
+    ]
+  },
+  {
+    "id": "generous_offer",
+    "title": "A Generous Offer",
+    "when": {
+      "turn_min": 60,
+      "company_min": 80,
+      "union_max": 40
+    },
+    "body": "The Harrow & Vell board are pleased with you. They offer to cancel the debt, if the colony becomes Company property, with you as its manager.",
+    "choices": [
+      {
+        "label": "Keep the charter (Company -10)",
+        "effects": {
+          "company": -10
+        }
+      },
+      {
+        "label": "Sign the colony over (ends the game)",
+        "effects": {
+          "ending": "company_town"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tessel_bloom",
+    "title": "Lichen Bloom",
+    "when": {
+      "planet": "tessel",
+      "turn_min": 12
+    },
+    "body": "After the frost melts, a pale green lichen spreads across the plains round the colony. The botanists think it could be eaten, once treated.",
+    "choices": [
+      {
+        "label": "Harvest and treat it (+40 food, morale +2)",
+        "effects": {
+          "food": 40,
+          "morale": 2
+        }
+      },
+      {
+        "label": "Let it grow: the crews like having green to look at (morale +6)",
+        "effects": {
+          "morale": 6
+        }
+      }
+    ]
+  },
+  {
+    "id": "tessel_family",
+    "title": "A Quiet Place",
+    "when": {
+      "planet": "tessel",
+      "turn_min": 30,
+      "pop_min": 35
+    },
+    "body": "Word has spread that Tessel is gentle. A family ship asks to join the colony.",
+    "choices": [
+      {
+        "label": "Welcome them (+6 adults, Company -5)",
+        "effects": {
+          "adults": 6,
+          "company": -5
+        }
+      },
+      {
+        "label": "Send them on to the Company's port (Company +5)",
+        "effects": {
+          "company": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "shale_fall",
+    "title": "Cliff Fall",
+    "when": {
+      "planet": "shale",
+      "turn_min": 15
+    },
+    "body": "A tremor shears a slab off a ridge. It tumbles across the plain, scattering rubble and fresh ore.",
+    "choices": [
+      {
+        "label": "Clear it up and keep the ore (+30 ore, a building is damaged)",
+        "effects": {
+          "ore": 30,
+          "damage": 1
+        }
+      },
+      {
+        "label": "Fence it off and let the dust settle (a rest day, morale +2)",
+        "effects": {
+          "rest": 1,
+          "morale": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "shale_geode",
+    "title": "The Crystal Cave",
+    "when": {
+      "planet": "shale",
+      "turn_min": 35
+    },
+    "body": "Cutters break into a hollow lined with glittering crystal.",
+    "choices": [
+      {
+        "label": "Sell the crystals (+250 marks, Union -5)",
+        "effects": {
+          "credits": 250,
+          "union": -5
+        }
+      },
+      {
+        "label": "Keep it as a place to visit (morale +8, Union +5)",
+        "effects": {
+          "morale": 8,
+          "union": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "ashfall_eruption",
+    "title": "Eruption",
+    "when": {
+      "planet": "ashfall",
+      "turn_min": 10
+    },
+    "body": "A cone to the west erupts. Ash rains down and the vents roar.",
+    "choices": [
+      {
+        "label": "Seal up and ride it out (an ash storm; vents surge)",
+        "effects": {
+          "storm": 4,
+          "surge": 4
+        }
+      },
+      {
+        "label": "Send crews out to keep the panels clear (morale -4, Union -5)",
+        "effects": {
+          "morale": -4,
+          "union": -5,
+          "surge": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "ashfall_glass",
+    "title": "Glass Fields",
+    "when": {
+      "planet": "ashfall",
+      "turn_min": 32
+    },
+    "body": "Lava has cooled into fields of black glass near the colony. It smelts into fine alloy.",
+    "choices": [
+      {
+        "label": "Smelt it (+40 alloy, Company +5)",
+        "effects": {
+          "alloy": 40,
+          "company": 5
+        }
+      },
+      {
+        "label": "Leave it: the crews say it brings luck (Union +8, morale +3)",
+        "effects": {
+          "union": 8,
+          "morale": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "glasswater_lights",
+    "title": "Lights Under the Ice",
+    "when": {
+      "planet": "glasswater",
+      "turn_min": 14
+    },
+    "body": "Something glows far below the ice: drifting lights, slow and silent. Probably minerals. Probably.",
+    "choices": [
+      {
+        "label": "Send a probe down (-5 parts, morale +4)",
+        "effects": {
+          "parts": -5,
+          "morale": 4,
+          "flag": "glasswater_probe"
+        }
+      },
+      {
+        "label": "Leave them be (morale -2: people keep watching)",
+        "effects": {
+          "morale": -2
+        }
+      }
+    ]
+  },
+  {
+    "id": "glasswater_current",
+    "title": "The Warm Current",
+    "when": {
+      "planet": "glasswater",
+      "turn_min": 30,
+      "flag": "glasswater_probe"
+    },
+    "body": "The probe found a warm current flowing under the ice, close to the colony.",
+    "choices": [
+      {
+        "label": "Tap it (+60 water; vents surge)",
+        "effects": {
+          "water": 60,
+          "surge": 5
+        }
+      },
+      {
+        "label": "Leave it for now (morale +3)",
+        "effects": {
+          "morale": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "rimefar_dark",
+    "title": "The Long Dark",
+    "when": {
+      "planet": "rimefar",
+      "turn_min": 12
+    },
+    "body": "Rimefar's star slips behind a dust lane. For a while, even noon is night.",
+    "choices": [
+      {
+        "label": "Ration power and keep spirits up (morale -3; a long dark)",
+        "effects": {
+          "storm": 6,
+          "morale": -3
+        }
+      },
+      {
+        "label": "Burn reserves for light and warmth (-20 alloy, morale +3; a long dark)",
+        "effects": {
+          "storm": 6,
+          "alloy": -20,
+          "morale": 3
+        }
+      }
+    ]
+  },
+  {
+    "id": "rimefar_beacon",
+    "title": "A Beacon at the Edge",
+    "when": {
+      "planet": "rimefar",
+      "turn_min": 40
+    },
+    "body": "A faint signal: the beacon of a survey team lost years ago. Their supply cache is close by.",
+    "choices": [
+      {
+        "label": "Fetch the cache (+30 food, +30 oxygen, +10 parts)",
+        "effects": {
+          "food": 30,
+          "oxygen": 30,
+          "parts": 10
+        }
+      },
+      {
+        "label": "Report it to the Company (Company +10, debt -100)",
+        "effects": {
+          "company": 10,
+          "debt": -100
+        }
+      }
+    ]
+  },
+  {
+    "id": "brume_thaw",
+    "title": "Thaw Season",
+    "when": {
+      "planet": "brume",
+      "turn_min": 45
+    },
+    "body": "The thaw line drifts east for a season. Ice near the colony softens to slush, and water is easy to come by.",
+    "choices": [
+      {
+        "label": "Fill every tank (+60 water)",
+        "effects": {
+          "water": 60
+        }
+      },
+      {
+        "label": "Let the crews swim in the melt pools (morale +6)",
+        "effects": {
+          "morale": 6
+        }
+      }
+    ]
+  },
+  {
+    "id": "cinder_flare",
+    "title": "Solar Flare",
+    "when": {
+      "planet": "cinder",
+      "turn_min": 45
+    },
+    "body": "A flare from Cinder's star washes over the colony. Instruments crackle and spark.",
+    "choices": [
+      {
+        "label": "Shelter the crews (a rest day, morale +2)",
+        "effects": {
+          "rest": 1,
+          "morale": 2
+        }
+      },
+      {
+        "label": "Keep working through it (+20 alloy, a building is damaged)",
+        "effects": {
+          "alloy": 20,
+          "damage": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "hollow_aurora",
+    "title": "Aurora",
+    "when": {
+      "planet": "hollow",
+      "turn_min": 45
+    },
+    "body": "Faint green lights ripple across Hollow's sky: the first colour anyone has seen in months.",
+    "choices": [
+      {
+        "label": "Declare a holiday (a rest day, morale +8)",
+        "effects": {
+          "rest": 1,
+          "morale": 8
+        }
+      },
+      {
+        "label": "Watch from work (morale +3)",
+        "effects": {
+          "morale": 3
+        }
+      }
+    ]
+  }
 ]

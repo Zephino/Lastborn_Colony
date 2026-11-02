@@ -11,6 +11,9 @@ const SaveGame = preload("res://scripts/sim/save_game.gd")
 const MapView = preload("res://scripts/ui/map_view.gd")
 const AppActions = preload("res://scripts/ui/app_actions.gd")
 const Research = preload("res://scripts/sim/research.gd")
+const Tips = preload("res://scripts/sim/tips.gd")
+const StatsGraph = preload("res://scripts/ui/stats_graph.gd")
+const Records = preload("res://scripts/ui/records.gd")
 const Online = preload("res://scripts/net/online.gd")
 const OnlineConfig = preload("res://scripts/net/online_config.gd")
 const ScoreEntry = preload("res://scripts/net/score_entry.gd")
@@ -54,6 +57,12 @@ var player_name := ""
 var settings_open := false
 ## Map animations on or off (Settings), remembered in user://settings.cfg.
 var animations := true
+## First-game tips on or off (Settings), remembered in user://settings.cfg.
+var tips_on := true
+var tip_bar: PanelContainer
+var tip_label: Label
+## The turn a tip was last checked, so at most one new tip shows a turn.
+var _tip_turn := -1
 const SETTINGS_PATH := "user://settings.cfg"
 var menus: RefCounted
 var fleet_menu: RefCounted
@@ -73,6 +82,7 @@ func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SETTINGS_PATH) == OK:
 		animations = bool(cfg.get_value("display", "animations", true))
+		tips_on = bool(cfg.get_value("display", "tips", true))
 	_apply_ui_scale()
 	get_window().size_changed.connect(_apply_ui_scale)
 	var t := Theme.new()
@@ -269,10 +279,18 @@ func _start_new(options: Dictionary, seed_value: int, colony: String) -> void:
 	var body := "The ship is down on the landing pad on %s. Starting debt: %d marks. The first payment is due on turn %d." % [planet["name"], int(state["debt"]), int(GameData.balance()["first_payment_turn"])]
 	if not kits.is_empty():
 		body += "\n\nPrefab kits in the hold (free to place, shown on the left): " + ", ".join(kits) + "."
-	show_modal("Landed", body, [["Begin", close_modal, true]], true)
+	_tip_turn = -1
+	show_modal("Landed", body, [["Begin", _begin, true]], true)
+
+
+## Closes the landing message and shows the first tip.
+func _begin() -> void:
+	close_modal()
+	_check_tip()
 
 
 func _load(slot: String) -> void:
+	_tip_turn = -1
 	var loaded: Variant = SaveGame.load_slot(slot)
 	if typeof(loaded) == TYPE_STRING:
 		show_modal("Could not load", loaded, [["OK", close_modal, true]])
@@ -428,6 +446,36 @@ func show_game() -> void:
 	var cancel := _button("Cancel", func() -> void: _set_build(""))
 	cancel.custom_minimum_size = Vector2(88, 44)
 	placing_row.add_child(cancel)
+
+	# A tip for new players, over the bottom of the map: Got it, or No more tips.
+	tip_bar = PanelContainer.new()
+	tip_bar.visible = false
+	var tip_style := StyleBoxFlat.new()
+	tip_style.bg_color = Color(0.12, 0.16, 0.22, 0.95)
+	tip_style.border_color = ACCENT
+	tip_style.set_border_width_all(2)
+	tip_style.set_corner_radius_all(6)
+	tip_style.set_content_margin_all(10)
+	tip_bar.add_theme_stylebox_override("panel", tip_style)
+	map_view.add_child(tip_bar)
+	tip_bar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	tip_bar.offset_left = 12
+	tip_bar.offset_right = -12
+	tip_bar.offset_bottom = -12
+	tip_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var tip_row := HBoxContainer.new()
+	tip_row.add_theme_constant_override("separation", 8)
+	tip_bar.add_child(tip_row)
+	tip_label = _label("", 0, Color.WHITE)
+	tip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tip_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tip_row.add_child(tip_label)
+	var got := _button("Got it", func() -> void: tip_bar.visible = false)
+	got.custom_minimum_size = Vector2(88, 40)
+	tip_row.add_child(got)
+	var off := _button("No more tips", func() -> void: set_tips(false))
+	off.custom_minimum_size = Vector2(120, 40)
+	tip_row.add_child(off)
 
 	# Bottom: log and turn controls.
 	var bottom := PanelContainer.new()
@@ -651,6 +699,7 @@ func _run_turns(count: int) -> void:
 
 func _after_turn() -> void:
 	refresh()
+	_check_tip()
 	if state["ending"] != "":
 		_show_ending()
 	elif state["pending_event"] != "":
@@ -677,7 +726,10 @@ func _show_ending() -> void:
 	var st: Dictionary = state["stats"]
 	var body := "%s\n\nTurn %d. Population %d. Born %d, died %d, arrived %d. Alloy exported: %d." % [
 		e["body"], int(state["turn"]) - 1, int(_pop()), int(st["births"]), int(st["deaths"]), int(st["arrivals"]), int(st["exported"])]
-	show_modal(e["title"], body, [["Post score to the leaderboard", menus._post_score.bind(""), OnlineConfig.enabled()], ["Look around", close_modal, true], ["Back to title", show_title, true]])
+	var best := Records.note_game(state)
+	if best != "":
+		body += "\n\n" + best
+	show_modal(e["title"], body, [["Post score to the leaderboard", menus._post_score.bind(""), OnlineConfig.enabled()], ["Graphs and records", show_stats, true], ["Look around", close_modal, true], ["Back to title", show_title, true]])
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -863,7 +915,7 @@ func _plain(bbcode: String) -> String:
 
 
 func show_report() -> void:
-	show_modal("Colony report, turn %d" % (int(state["turn"]) - 1), ColonyText.report(state), [["Back", close_modal, true]], true)
+	show_modal("Colony report, turn %d" % (int(state["turn"]) - 1), ColonyText.report(state), [["Graphs and records", show_stats, true], ["Back", close_modal, true]], true)
 
 
 func _refresh_log() -> void:
@@ -930,11 +982,12 @@ func _process(delta: float) -> void:
 ## options: [label, Callable, enabled] or [label, Callable, enabled, building id];
 ## with a building id the option shows that building's picture beside it.
 ## picture: a building id to show large under the title.
-func show_modal(title: String, body: String, options: Array, can_cancel: bool = false, picture: String = "") -> void:
+## extra: an optional control (such as graphs) shown under the heading.
+func show_modal(title: String, body: String, options: Array, can_cancel: bool = false, picture: String = "", extra: Control = null, wide: float = 560.0) -> void:
 	close_modal()
 	modal_can_cancel = can_cancel
 	var view := _view_size()
-	var width := minf(560.0, view.x - 24.0)
+	var width := minf(wide, view.x - 24.0)
 	var layer := Control.new()
 	layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(layer)
@@ -965,6 +1018,9 @@ func show_modal(title: String, body: String, options: Array, can_cancel: bool = 
 		var pic := SpriteIcon.new(picture, 150.0)
 		pic.custom_minimum_size = Vector2(width - 24.0, 150.0)
 		box.add_child(pic)
+	if extra != null:
+		extra.custom_minimum_size = Vector2(width - 24.0, maxf(extra.custom_minimum_size.y, 200.0))
+		box.add_child(extra)
 	var text := Label.new()
 	text.text = body
 	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1011,3 +1067,39 @@ func set_animations(on: bool) -> void:
 	cfg.load(SETTINGS_PATH)
 	cfg.set_value("display", "animations", on)
 	cfg.save(SETTINGS_PATH)
+
+
+## Shows the next first-game tip, if tips are on and none showed this turn.
+func _check_tip() -> void:
+	if not tips_on or tip_bar == null or state.is_empty() or state["ending"] != "":
+		return
+	if _tip_turn == int(state["turn"]):
+		return
+	var tip := Tips.next(state)
+	if tip.is_empty():
+		return
+	_tip_turn = int(state["turn"])
+	tip_label.text = "Tip: " + str(tip["text"])
+	tip_bar.visible = true
+
+
+## Turns first-game tips on or off, and remembers the choice.
+func set_tips(on: bool) -> void:
+	tips_on = on
+	if tip_bar != null and not on:
+		tip_bar.visible = false
+	var cfg := ConfigFile.new()
+	cfg.load(SETTINGS_PATH)
+	cfg.set_value("display", "tips", on)
+	cfg.save(SETTINGS_PATH)
+
+
+## Graphs of how the colony has done turn by turn, and your best results.
+func show_stats() -> void:
+	var graph := StatsGraph.new()
+	graph.history = state.get("history", [])
+	graph.custom_minimum_size = Vector2(0, 360)
+	var body := Records.summary(str(state.get("planet", "")))
+	if graph.history.size() < 2:
+		body = "Play a few turns to see the graphs.\n\n" + body
+	show_modal("Graphs and records", body, [["Back", close_modal, true]], true, "", graph, 820.0)

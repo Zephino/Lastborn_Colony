@@ -296,7 +296,8 @@ func _draw() -> void:
 				_draw_structure(s, c)
 			for type in drones.get(cell, []):
 				# Each drone sits at the tile's front corner, at half a tile's scale.
-				Sprites.more().draw_unit(self, type, c + _proj(Vector2(0.26, 0.26) + _drive(cell, type)), tile_size * 0.62)
+				# Each rover faces along the line it drives on.
+				Sprites.more().draw_unit(self, type, c + _proj(Vector2(0.26, 0.26) + _drive(cell, type)), tile_size * 0.62, (cell.x + cell.y) % 2 != 0)
 			for p in people.get(cell, []):
 				var walk := Vector2.ZERO
 				var stride: bool = p["stride"]
