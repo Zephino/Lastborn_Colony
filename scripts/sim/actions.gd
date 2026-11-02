@@ -322,6 +322,7 @@ static func call_pod(state: Dictionary) -> Dictionary:
 		state["stock"][k] = float(state["stock"][k]) + float(pod[k])
 	state["log"].append({"turn": int(state["turn"]), "text": "A supply lander comes down from the ship onto the landing pad with the pod's cargo."})
 	state["lander"] = 1
+	state["lander_door"] = (int(state.get("lander_door", 0)) + 1) % 4
 	return result(true)
 
 

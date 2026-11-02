@@ -40,6 +40,8 @@ static func create(game_seed: int, colony_name: String, options: Dictionary = {}
 		"pods": 0,
 		# Turns the lander stays on the pad (it's there when you land).
 		"lander": 1,
+		# Which of the pad's four airlocks the lander docks at (0-3; it moves round each landing).
+		"lander_door": 0,
 		"drones": {},
 		"satellites": {},
 		"waste": 0.0,

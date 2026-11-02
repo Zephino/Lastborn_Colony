@@ -732,6 +732,12 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 	for q in legs:
 		if q.x + q.y < 0.0:
 			_lander_leg(ci, c, tw, q.normalized(), pad_z, body_z, m, md)
+	# A sealed boarding tube from the hatch down into the pad's airlock on the
+	# side it docked at this time, so nobody has to walk outside. One docked at
+	# a back airlock goes behind the ship, so it is drawn first.
+	var back_dock := dock_dir(state)
+	if back_dock.x + back_dock.y < 0:
+		_boarding_tube(ci, c, tw, Vector3(back_dock.x * 0.09, back_dock.y * 0.09, body_z + 0.06), Vector3(back_dock.x * 0.37, back_dock.y * 0.37, 0.12), 0.035, state)
 	# Three engine bells.
 	for k in 3:
 		var a := k * TAU / 3.0 + 0.5
@@ -818,9 +824,16 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 	for q in legs:
 		if q.x + q.y >= 0.0:
 			_lander_leg(ci, c, tw, q.normalized(), pad_z, body_z, m, md)
-	# A sealed boarding tube from the hatch (on the +v side) down into the pad's
-	# airlock building on that side, so nobody has to walk outside.
-	_boarding_tube(ci, c, tw, Vector3(0.0, 0.09, body_z + 0.06), Vector3(0.0, 0.37, 0.12), 0.035, state)
+	# The boarding tube, when it docks at one of the two front airlocks.
+	var dock := dock_dir(state)
+	if dock.x + dock.y > 0:
+		_boarding_tube(ci, c, tw, Vector3(dock.x * 0.09, dock.y * 0.09, body_z + 0.06), Vector3(dock.x * 0.37, dock.y * 0.37, 0.12), 0.035, state)
+
+
+## Which of the pad's airlocks the lander docks at: "ship_door" 0-3 in the state.
+static func dock_dir(state: Dictionary) -> Vector2i:
+	var sides := [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
+	return sides[posmod(int(state.get("ship_door", 0)), 4)]
 
 
 ## A body of revolution between heights z0 and z1 (radius r0 at the bottom,

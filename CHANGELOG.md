@@ -2,6 +2,19 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.60
+Date: 11/02/2026
+Time: 1:30 AM
+
+### Changes
+- **The lander docks at a different airlock each time it lands.** It goes round the Landing Pad's four airlock buildings in turn (new state field `lander_door`, 0-3), and its boarding tube runs to that one.
+- A tube to one of the back airlocks is drawn behind the ship.
+- Saves from before start at the first airlock.
+- A new test checks each landing moves to the next airlock (465 checks pass).
+
+### Reason
+The owner asked for the lander to turn to a different door each time it lands.
+
 ## Version 00.01.59
 Date: 11/02/2026
 Time: 1:15 AM

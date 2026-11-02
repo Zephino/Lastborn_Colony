@@ -341,6 +341,7 @@ static func _lander(check: Callable) -> void:
 	p["lander"] = 0
 	Actions.call_pod(p)
 	check.call(int(p["lander"]) == 1, "calling a supply pod brings the lander down")
+	check.call(int(p["lander_door"]) == 1, "each landing docks at the next airlock round")
 	var q := NewGame.create(5, "Margin")
 	q["lander"] = 0
 	q["turn"] = int(GameData.balance()["first_payment_turn"])

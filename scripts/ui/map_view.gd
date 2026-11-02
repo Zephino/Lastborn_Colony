@@ -324,6 +324,7 @@ func _draw_structure(s: Dictionary, c: Vector2) -> void:
 		look["doors"] = Actions.door_dirs(str(s["type"]), int(s.get("rot", 0)))
 	if s["type"] == "hull":
 		look["ship"] = int(state.get("lander", 0)) > 0
+		look["ship_door"] = int(state.get("lander_door", 0))
 	Sprites.draw_iso(self, s["type"], c, tw, look)
 	# Status markers above the tile.
 	var mark := c - Vector2(0, tw * 0.42)

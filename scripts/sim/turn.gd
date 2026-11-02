@@ -625,8 +625,10 @@ static func _payments(state: Dictionary, rep: Dictionary) -> void:
 			state["adults"] = float(state["adults"]) + arriving
 			state["stats"]["arrivals"] = float(state["stats"]["arrivals"]) + arriving
 			log_msg(state, "Paid the Company %d marks. %d new colonists came down on the supply lander." % [int(amount), int(arriving)])
-			# The lander stands on the pad until the end of the next turn.
+			# The lander stands on the pad until the end of the next turn, docked
+			# at the next of the pad's airlocks round from last time.
 			state["lander"] = 2
+			state["lander_door"] = (int(state.get("lander_door", 0)) + 1) % 4
 		else:
 			log_msg(state, "Paid the Company %d marks. No room for new colonists this time." % int(amount))
 	else:
