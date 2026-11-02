@@ -2,6 +2,30 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.72
+Date: 11/02/2026
+Time: 4:53 AM
+
+### Changes
+- **The Commons is now a canteen hall.** It has:
+  - a round wooden hall with a warm glowing band of windows and a green trim;
+  - a skylight drum with a glass dome;
+  - a tall kitchen chimney with steam;
+  - three café tables with coloured umbrellas outside.
+- **The Clinic looks like a hospital.** It has:
+  - a white two-storey block with a teal stripe and rows of windows;
+  - a rooftop unit and a teal cross sign on the roof (teal, not red: the red cross is a protected emblem);
+  - an ambulance rover parked at the front corner.
+- **The Garden Cavern is an open cave park instead of a dome.** It has:
+  - a lawn with stone paths, a pond with lily pads, trees, flower beds and a bench;
+  - two tall grow-lights shining down like a little sun;
+  - a small glass pavilion in the middle where the tunnels meet.
+  - Inside the park the tunnels become slim glass walkways, with a metal collar at the tile edge.
+- The top-down pictures match.
+
+### Reason
+The owner asked for the Commons, the Clinic (to look more like a hospital) and the Garden Cavern to be reworked.
+
 ## Version 00.01.71
 Date: 11/02/2026
 Time: 4:43 AM

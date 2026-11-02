@@ -209,15 +209,6 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			var sp := c + Vector2(s * 0.38, s * 0.38)
 			ci.draw_colored_polygon(PackedVector2Array([sp + Vector2(0, -s * 0.06), sp + Vector2(s * 0.055, s * 0.04), sp + Vector2(-s * 0.055, s * 0.04)]), _f(S.HAZARD, state))
 			ci.draw_line(sp + Vector2(0, -s * 0.025), sp + Vector2(0, s * 0.012), Color(0.05, 0.05, 0.05, m.a), 1.5)
-		"garden":
-			# A pond, a path and trees.
-			ci.draw_circle(c + Vector2(rad * 0.25, rad * 0.25), rad * 0.28, _f(S.WATER, state).darkened(0.1))
-			ci.draw_line(c + Vector2(-rad * 0.8, rad * 0.1), c + Vector2(rad * 0.1, -rad * 0.8), _f(Color(0.75, 0.68, 0.52), state), maxf(2.0, s * 0.03))
-			for p in [Vector2(-0.45, -0.25), Vector2(-0.1, -0.5), Vector2(0.4, -0.3), Vector2(-0.45, 0.35), Vector2(-0.05, 0.55)]:
-				ci.draw_circle(c + p * rad, rad * 0.17, _f(Color(0.25, 0.55, 0.28), state))
-				ci.draw_circle(c + p * rad - Vector2(rad * 0.04, rad * 0.04), rad * 0.10, _f(Color(0.40, 0.78, 0.40), state))
-			for k in 3:
-				ci.draw_circle(c + Vector2(-rad * 0.2 + k * rad * 0.15, -rad * 0.2), rad * 0.04, _f([S.PINK, S.GOLD, S.WHITE][k], state))
 		"lounge":
 			# A glowing dance floor, a round bar, a neon rim and string lights.
 			var cols := [S.PINK, S.CYAN, S.GOLD, S.VIOLET]
@@ -404,15 +395,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			ci.draw_colored_polygon(PackedVector2Array([sign + Vector2(0, -tw * 0.05), sign + Vector2(tw * 0.045, tw * 0.03), sign + Vector2(-tw * 0.045, tw * 0.03)]), _f(S.HAZARD, state))
 			ci.draw_line(sign + Vector2(0, -tw * 0.02), sign + Vector2(0, tw * 0.008), Color(0.05, 0.05, 0.05, m.a), 2.0)
 			ci.draw_circle(sign + Vector2(0, tw * 0.02), 1.2, Color(0.05, 0.05, 0.05, m.a))
-		"garden":
-			var floor_c := S._iso(c, tw, 0, 0, 0.06)
-			ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0.12, 0.12, 0.06), r * tw * 0.22, r * tw * 0.11), _f(S.WATER, state).darkened(0.1))
-			for p in [Vector2(-0.2, -0.12), Vector2(-0.04, -0.24), Vector2(0.18, -0.14), Vector2(-0.22, 0.14), Vector2(0.0, 0.22)]:
-				var foot := S._iso(c, tw, p.x, p.y, 0.06)
-				ci.draw_line(foot, foot - Vector2(0, tw * 0.07), _f(Color(0.4, 0.3, 0.2), state), tw * 0.012)
-				S._iso_sphere(ci, foot - Vector2(0, tw * 0.10), tw * 0.05, _f(Color(0.32, 0.68, 0.34), state))
-			for k in 3:
-				ci.draw_circle(floor_c + Vector2(-tw * 0.06 + k * tw * 0.04, tw * 0.03), tw * 0.008, _f([S.PINK, S.GOLD, S.WHITE][k], state))
 		"lounge":
 			var cols := [S.PINK, S.CYAN, S.GOLD, S.VIOLET]
 			for i in 3:

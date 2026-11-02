@@ -56,7 +56,7 @@ const INTERIOR := {
 const DOME_SIZE := {"hull": 0.46, "mirror": 0.42, "drill": 0.40, "cache": 0.34, "warden": 0.28, "shaft": 0.40, "rail": 0.40, "vent": 0.34, "forge": 0.34, "lab": 0.44,
 	"vat": 0.44, "bunk": 0.36, "cutter": 0.38, "workshop": 0.30,
 	"fusion": 0.36, "catcher": 0.16, "reclaimer": 0.30, "fab": 0.32, "dronebay": 0.28, "mast": 0.22,
-	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.44, "lounge": 0.34}
+	"rescue": 0.32, "academy": 0.36, "hazlab": 0.26, "garden": 0.19, "lounge": 0.34, "commons": 0.36, "clinic": 0.24}
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 ## How many doors (tunnel entrances) each building has. Sides with a tunnel
 ## always get an open door; spare doors show as capped ones, front sides first.
@@ -416,6 +416,15 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	if type == "rescue":
 		_top_rescue(ci, c, s, links, state)
 		return
+	if type == "commons":
+		_top_commons(ci, c, s, links, state)
+		return
+	if type == "clinic":
+		_top_clinic(ci, c, s, links, state)
+		return
+	if type == "garden":
+		_top_garden(ci, c, s, links, state)
+		return
 	if type == "rail":
 		_top_spin(ci, c, s, links, state)
 		return
@@ -533,12 +542,6 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			_rot_rect(ci, c + dd * rad * 0.98, dd, s * 0.04, s * 0.10, _fade(AMBER, state))
 		"rail":
 			_glow(ci, c, s * 0.035, a, state)
-		"commons":
-			for p in [Vector2(-0.3, -0.25), Vector2(0.32, -0.1), Vector2(0, 0.35), Vector2(-0.28, 0.25)]:
-				ci.draw_circle(c + p * rad, rad * 0.20, a)
-		"clinic":
-			ci.draw_rect(Rect2(c - Vector2(rad * 0.14, rad * 0.5), Vector2(rad * 0.28, rad * 1.0)), a)
-			ci.draw_rect(Rect2(c - Vector2(rad * 0.5, rad * 0.14), Vector2(rad * 1.0, rad * 0.28)), a)
 		"cache":
 			# Crates and barrels stacked in the warehouse hall.
 			for i in 6:
@@ -917,6 +920,15 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	if type == "rescue":
 		_iso_rescue(ci, c, tw, links, state)
 		return
+	if type == "commons":
+		_iso_commons(ci, c, tw, links, state)
+		return
+	if type == "clinic":
+		_iso_clinic(ci, c, tw, links, state)
+		return
+	if type == "garden":
+		_iso_garden(ci, c, tw, links, state)
+		return
 	if type == "rail":
 		_iso_spin(ci, c, tw, links, state)
 		return
@@ -1029,13 +1041,6 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			_glow(ci, _iso(c, tw, 0.42, 0.24, 0.23), tw * 0.018, _fade(AMBER, state), state)
 		"rail":
 			_glow(ci, _iso(c, tw, 0, 0, 0.10), tw * 0.03, a, state)
-		"commons":
-			for p in [Vector2(-0.12, 0.05), Vector2(0.12, -0.06), Vector2(0.0, 0.14)]:
-				ci.draw_circle(_iso(c, tw, p.x, p.y, 0.14), tw * 0.05, a)
-		"clinic":
-			var mid := _iso(c, tw, 0, 0, 0.05 + h * 0.55)
-			ci.draw_rect(Rect2(mid - Vector2(tw * 0.025, tw * 0.07), Vector2(tw * 0.05, tw * 0.14)), a)
-			ci.draw_rect(Rect2(mid - Vector2(tw * 0.07, tw * 0.025), Vector2(tw * 0.14, tw * 0.05)), a)
 		"cache":
 			# Stacks of crates and barrels inside the warehouse hall.
 			var crate := _fade(Color(0.62, 0.50, 0.34), state)
@@ -1294,6 +1299,262 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true, d)
+
+
+## Tunnels on the far sides of a hub (drawn before it), with radius r.
+static func _back_links(ci: CanvasItem, c: Vector2, tw: float, links: Array, r: float, state: Dictionary) -> void:
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, r, state)
+
+
+## Tunnels on the near sides of a hub (drawn after it), and capped ports on
+## near sides with a door but no tunnel.
+static func _front_links(ci: CanvasItem, c: Vector2, tw: float, links: Array, r: float, state: Dictionary) -> void:
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, r, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]):
+			_iso_port(ci, _iso(c, tw, d.x * r, d.y * r, 0.06), tw, state, true, d)
+
+
+## A café table with a coloured umbrella.
+static func _umbrella_table(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, col: Color, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var top := _iso(c, tw, q.x, q.y, 0.17)
+	ci.draw_colored_polygon(_ellipse(_iso(c, tw, q.x, q.y, 0.05), tw * 0.04, tw * 0.02), _fade(Color(0.85, 0.80, 0.70), state))
+	ci.draw_line(_iso(c, tw, q.x, q.y, 0.0), top, md, maxf(1.0, tw * 0.008))
+	var shade := PackedVector2Array()
+	shade.append(top - Vector2(0, tw * 0.035))
+	shade.append_array(_ellipse(top, tw * 0.075, tw * 0.035, 0, 180, 10))
+	ci.draw_colored_polygon(shade, _fade(col, state))
+	for side in [-1.0, 1.0]:
+		ci.draw_circle(_iso(c, tw, q.x + side * 0.05, q.y + side * 0.03, 0.03), maxf(1.5, tw * 0.012), md.lightened(0.2))
+
+
+## The Commons: a round canteen hall with a band of warm windows, a skylight
+## drum on top, a kitchen chimney, and café tables with umbrellas outside.
+static func _iso_commons(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var lit := _lit(state)
+	var r := 0.36
+	_back_links(ci, c, tw, links, r, state)
+	_umbrella_table(ci, c, tw, Vector2(0.40, -0.40), Color(0.95, 0.45, 0.30), state)
+	# The kitchen chimney at the back, with steam.
+	_cyl(ci, c, tw, -0.16, -0.18, 0.045, 0.50, m.darkened(0.1), md)
+	if lit:
+		var tip := _iso(c, tw, -0.16, -0.18, 0.52)
+		for k in 3:
+			ci.draw_circle(tip - Vector2(-k * tw * 0.02, tw * (0.04 + k * 0.05)), tw * (0.025 + k * 0.012), Color(0.95, 0.95, 1.0, 0.35 - k * 0.09))
+	# The hall: a warm wooden drum.
+	var wood := _fade(Color(0.62, 0.40, 0.26), state)
+	_cyl(ci, c, tw, 0, 0, r, 0.22, wood, wood.lightened(0.1))
+	var rx := r * tw * 0.72
+	var base := _iso(c, tw, 0, 0, 0.0)
+	# A band of warm windows round the hall, with frames between them.
+	var w0 := _iso(c, tw, 0, 0, 0.07)
+	var w1 := _iso(c, tw, 0, 0, 0.17)
+	var band := _ellipse(w0, rx * 0.995, rx * 0.4975, 0, 180, 20)
+	band.append_array(_ellipse(w1, rx * 0.995, rx * 0.4975, 180, 0, 20))
+	ci.draw_colored_polygon(band, _fade(Color(1.0, 0.80, 0.45), state) if lit else md)
+	for k in 13:
+		var ang := deg_to_rad(k * 15.0)
+		var off := Vector2(cos(ang) * rx, sin(ang) * rx * 0.5)
+		ci.draw_line(w0 + off, w1 + off, wood.darkened(0.3), maxf(1.5, tw * 0.010))
+	ci.draw_polyline(_ellipse(_iso(c, tw, 0, 0, 0.20), rx, rx * 0.5, 0, 180, 18), _fade(GREEN, state), maxf(1.5, tw * 0.012))
+	# The roof, and the skylight drum on top with a glass dome.
+	var roof := _iso(c, tw, 0, 0, 0.22)
+	ci.draw_colored_polygon(_ellipse(roof, rx, rx * 0.5), _fade(Color(0.42, 0.30, 0.22), state))
+	_cyl(ci, c, tw, 0, 0, 0.18, 0.08, _fade(Color(0.85, 0.82, 0.74), state), _fade(Color(0.85, 0.82, 0.74), state), 0.22)
+	var sky := _iso(c, tw, 0, 0, 0.30)
+	var srx := 0.18 * tw * 0.72
+	var dome := _ellipse(sky, srx, srx * 0.5, 0, 180, 14)
+	dome.append_array(_ellipse(sky, srx, tw * 0.07, 180, 360, 14))
+	ci.draw_colored_polygon(dome, Color(1.0, 0.85, 0.55, 0.55) if lit else _fade(GLASS, state))
+	ci.draw_polyline(_ellipse(sky, srx, srx * 0.5), m.lightened(0.2), 1.5)
+	_umbrella_table(ci, c, tw, Vector2(-0.40, 0.40), Color(0.35, 0.70, 0.95), state)
+	_umbrella_table(ci, c, tw, Vector2(0.41, 0.41), Color(0.95, 0.80, 0.30), state)
+	_front_links(ci, c, tw, links, r, state)
+
+
+## The Commons from above.
+static func _top_commons(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	for q in [[Vector2(0.40, -0.40), Color(0.95, 0.45, 0.30)], [Vector2(-0.40, 0.40), Color(0.35, 0.70, 0.95)], [Vector2(0.41, 0.41), Color(0.95, 0.80, 0.30)]]:
+		ci.draw_circle(c + q[0] * s, s * 0.075, _fade(q[1], state))
+		ci.draw_circle(c + q[0] * s, s * 0.012, md)
+	ci.draw_circle(c, s * 0.36, _fade(Color(0.42, 0.30, 0.22), state))
+	ci.draw_arc(c, s * 0.36, 0, TAU, 28, _fade(GREEN, state), 2.0)
+	ci.draw_circle(c, s * 0.18, _fade(Color(0.85, 0.82, 0.74), state))
+	ci.draw_circle(c, s * 0.11, Color(1.0, 0.85, 0.55, 0.8) if _lit(state) else _fade(GLASS, state))
+	ci.draw_circle(c + Vector2(-0.14, -0.16) * s, s * 0.04, md)
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * s * 0.36, s, state, not (d in links), d)
+
+
+## The Clinic: a white two-storey hospital block with a teal stripe, rows of
+## windows, a teal cross sign on the roof and an ambulance rover outside.
+static func _iso_clinic(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var teal := _fade(TEAL, state)
+	var lit := _lit(state)
+	var hw := 0.24
+	var hh := 0.32
+	_back_links(ci, c, tw, links, hw, state)
+	var white := _fade(Color(0.92, 0.94, 0.96), state)
+	_box(ci, c, tw, -hw, -hw, hw, hw, hh, white, _fade(Color(0.80, 0.84, 0.88), state))
+	# A teal stripe between the floors.
+	ci.draw_polyline(PackedVector2Array([_iso(c, tw, -hw, hw, 0.16), _iso(c, tw, hw, hw, 0.16), _iso(c, tw, hw, -hw, 0.16)]), teal, maxf(2.5, tw * 0.02))
+	# Two floors of windows on both visible walls (skipping the door in the middle).
+	var glass := _fade(Color(0.70, 0.88, 0.98), state) if not lit else _fade(Color(0.95, 0.97, 1.0), state)
+	for floor_z in [0.05, 0.20]:
+		for k in 4:
+			var a := -hw + 0.03 + k * 0.12
+			if floor_z < 0.1 and absf(a + 0.04) < 0.09:
+				continue
+			ci.draw_colored_polygon(PackedVector2Array([_iso(c, tw, a, hw, floor_z), _iso(c, tw, a + 0.08, hw, floor_z), _iso(c, tw, a + 0.08, hw, floor_z + 0.07), _iso(c, tw, a, hw, floor_z + 0.07)]), glass.darkened(0.15))
+			ci.draw_colored_polygon(PackedVector2Array([_iso(c, tw, hw, a, floor_z), _iso(c, tw, hw, a + 0.08, floor_z), _iso(c, tw, hw, a + 0.08, floor_z + 0.07), _iso(c, tw, hw, a, floor_z + 0.07)]), glass.darkened(0.3))
+	# Roof: a parapet, a rooftop unit and the cross sign standing up.
+	ci.draw_polyline(PackedVector2Array([_iso(c, tw, -hw, -hw, hh), _iso(c, tw, hw, -hw, hh), _iso(c, tw, hw, hw, hh), _iso(c, tw, -hw, hw, hh), _iso(c, tw, -hw, -hw, hh)]), white.darkened(0.15), maxf(2.0, tw * 0.015))
+	_box(ci, c, tw, -0.16, -0.16, -0.04, -0.06, 0.05, m, m.lightened(0.15), hh)
+	var sign := _iso(c, tw, 0.06, 0.04, hh) - Vector2(0, tw * 0.13)
+	ci.draw_line(_iso(c, tw, 0.06, 0.04, hh), sign + Vector2(0, tw * 0.06), md, maxf(1.5, tw * 0.012))
+	var cw := tw * 0.11
+	ci.draw_rect(Rect2(sign - Vector2(cw * 0.6, cw * 0.6), Vector2(cw * 1.2, cw * 1.2)), white)
+	ci.draw_rect(Rect2(sign - Vector2(cw * 0.6, cw * 0.6), Vector2(cw * 1.2, cw * 1.2)), md, false, 1.0)
+	ci.draw_rect(Rect2(sign - Vector2(cw * 0.15, cw * 0.48), Vector2(cw * 0.3, cw * 0.96)), teal)
+	ci.draw_rect(Rect2(sign - Vector2(cw * 0.48, cw * 0.15), Vector2(cw * 0.96, cw * 0.3)), teal)
+	if lit:
+		_glow(ci, sign, tw * 0.02, teal, state)
+	# An ambulance rover parked at the front corner.
+	var at := func(a: float, f: float, z: float) -> Vector2:
+		return _iso(c, tw, a, f, z)
+	_rescue_rover(ci, at, tw, 0.36, 0.36, state)
+	_front_links(ci, c, tw, links, hw, state)
+
+
+## The Clinic from above.
+static func _top_clinic(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
+	var hw := s * 0.24
+	var teal := _fade(TEAL, state)
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.85, 0.88, 0.92), state))
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), teal, false, 2.0)
+	ci.draw_rect(Rect2(c + Vector2(-s * 0.03, -s * 0.10), Vector2(s * 0.06, s * 0.20)), teal)
+	ci.draw_rect(Rect2(c + Vector2(-s * 0.10, -s * 0.03), Vector2(s * 0.20, s * 0.06)), teal)
+	ci.draw_rect(Rect2(c + Vector2(-s * 0.16, -s * 0.16), Vector2(s * 0.12, s * 0.10)), _fade(METAL, state))
+	ci.draw_rect(Rect2(c + Vector2(s * 0.26, s * 0.30), Vector2(s * 0.20, s * 0.12)), _fade(Color(0.88, 0.22, 0.18), state))
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * hw, s, state, not (d in links), d)
+
+
+## A round tree: a trunk and a leafy ball.
+static func _tree(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, size: float, state: Dictionary) -> void:
+	ci.draw_line(_iso(c, tw, q.x, q.y, 0.0), _iso(c, tw, q.x, q.y, 0.10 * size), _fade(Color(0.40, 0.28, 0.18), state), maxf(2.0, tw * 0.016))
+	_iso_sphere(ci, _iso(c, tw, q.x, q.y, 0.15 * size), tw * 0.07 * size, _fade(Color(0.30, 0.66, 0.30), state))
+
+
+## A slim glass walkway from a hub at radius r to the tile edge, with a metal
+## collar at the edge where it meets the tunnel next door.
+static func _glass_walk(ci: CanvasItem, c: Vector2, tw: float, d: Vector2i, r: float, state: Dictionary) -> void:
+	var axis := 0 if d.x != 0 else 1
+	var sign := float(d.x if d.x != 0 else d.y)
+	var glass := _fade(Color(0.70, 0.88, 1.0, 0.55), state)
+	var m := _fade(METAL, state)
+	_iso_tube(ci, c, tw, axis, sign * r, sign * 0.44, 0.05, 0.07, glass, Color(0, 0, 0, 0), false)
+	_iso_tube(ci, c, tw, axis, sign * 0.44, sign * 0.5, 0.07, 0.09, m, _fade(ORANGE, state), false)
+
+
+## The Garden Cavern: an open cave park. Grass, trees, a pond with lily pads,
+## flower beds, tall grow-lights shining like a little sun, and a small glass
+## pavilion in the middle where the tunnels meet.
+static func _iso_garden(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var lit := _lit(state)
+	var r := 0.19
+	# The lawn, with a stone edge.
+	var lawn := PackedVector2Array([_iso(c, tw, -0.46, -0.46), _iso(c, tw, 0.46, -0.46), _iso(c, tw, 0.46, 0.46), _iso(c, tw, -0.46, 0.46)])
+	ci.draw_colored_polygon(lawn, _fade(Color(0.36, 0.58, 0.30), state))
+	ci.draw_polyline(PackedVector2Array([lawn[0], lawn[1], lawn[2], lawn[3], lawn[0]]), _fade(Color(0.62, 0.60, 0.55), state), maxf(1.5, tw * 0.012))
+	# Warm light pooled on the grass under the grow-lights.
+	if lit:
+		for q in [Vector2(-0.30, 0.0), Vector2(0.30, 0.0)]:
+			ci.draw_colored_polygon(_ellipse(_iso(c, tw, q.x, q.y), tw * 0.22, tw * 0.11), Color(1.0, 0.95, 0.65, 0.18))
+	# Stone paths out to the four sides.
+	for d in [Vector2(1, 0), Vector2(0, 1)]:
+		var p0 := _iso(c, tw, -0.46 * d.x, -0.46 * d.y)
+		var p1 := _iso(c, tw, 0.46 * d.x, 0.46 * d.y)
+		ci.draw_line(p0, p1, _fade(Color(0.72, 0.68, 0.60), state), maxf(3.0, tw * 0.04))
+	# The pond in the back-left corner, with lily pads.
+	var pond := _iso(c, tw, -0.27, -0.27)
+	ci.draw_colored_polygon(_ellipse(pond, tw * 0.17, tw * 0.085), _fade(Color(0.62, 0.60, 0.55), state))
+	ci.draw_colored_polygon(_ellipse(pond, tw * 0.15, tw * 0.072), _fade(WATER, state).darkened(0.1))
+	for k in 3:
+		ci.draw_circle(pond + Vector2(-tw * 0.06 + k * tw * 0.05, (k % 2) * tw * 0.02 - tw * 0.01), maxf(1.5, tw * 0.014), _fade(Color(0.35, 0.70, 0.35), state))
+	ci.draw_arc(pond - Vector2(tw * 0.03, tw * 0.02), tw * 0.05, deg_to_rad(200), deg_to_rad(300), 6, Color(1, 1, 1, 0.5), 1.0)
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_glass_walk(ci, c, tw, d, r, state)
+	# Flower beds in the front-right corner.
+	var flowers := [Color(0.95, 0.45, 0.55), Color(0.98, 0.85, 0.35), Color(0.75, 0.55, 0.95), Color(1.0, 1.0, 1.0)]
+	for k in 10:
+		var fq := Vector2(0.20 + (k % 5) * 0.05, 0.26 + (k / 5) * 0.08 + (k % 2) * 0.02)
+		ci.draw_circle(_iso(c, tw, fq.x, fq.y, 0.01), maxf(1.5, tw * 0.013), _fade(flowers[k % 4], state))
+	# Trees, back to front.
+	for q in [Vector2(0.30, -0.32), Vector2(0.38, -0.14), Vector2(-0.34, 0.20)]:
+		_tree(ci, c, tw, q, 1.0, state)
+	# The glass pavilion in the middle.
+	_cyl(ci, c, tw, 0, 0, r, 0.16, _fade(Color(0.85, 0.85, 0.80), state), _fade(Color(0.85, 0.85, 0.80), state))
+	var top := _iso(c, tw, 0, 0, 0.16)
+	var rx := r * tw * 0.72
+	var cone := _ellipse(top, rx * 1.15, rx * 0.57, 0, 180, 14)
+	cone.append(top - Vector2(0, tw * 0.09))
+	ci.draw_colored_polygon(cone, _fade(Color(0.30, 0.55, 0.30), state))
+	ci.draw_colored_polygon(_ellipse(top, rx * 1.15, rx * 0.57, 180, 360, 14) + PackedVector2Array([top - Vector2(0, tw * 0.09)]), _fade(Color(0.38, 0.65, 0.38), state))
+	for k in 5:
+		var ang := deg_to_rad(20.0 + k * 35.0)
+		var wp := _iso(c, tw, 0, 0, 0.0) + Vector2(cos(ang) * rx, sin(ang) * rx * 0.5)
+		ci.draw_line(wp - Vector2(0, tw * 0.02), wp - Vector2(0, tw * 0.10), _fade(GLASS, state).lightened(0.3), maxf(1.5, tw * 0.012))
+	# A bench, and the front tree.
+	var b0 := _iso(c, tw, -0.30, 0.38, 0.04)
+	var b1 := _iso(c, tw, -0.14, 0.38, 0.04)
+	ci.draw_line(b0, b1, _fade(Color(0.55, 0.38, 0.24), state), maxf(2.5, tw * 0.02))
+	_tree(ci, c, tw, Vector2(0.36, 0.06), 0.8, state)
+	# Two tall grow-lights shining down like a little sun.
+	for q in [Vector2(-0.30, 0.0), Vector2(0.30, 0.0)]:
+		var foot := _iso(c, tw, q.x, q.y + 0.08)
+		var lamp := _iso(c, tw, q.x, q.y + 0.08, 0.55)
+		ci.draw_line(foot, lamp, md.lightened(0.2), maxf(1.5, tw * 0.012))
+		ci.draw_colored_polygon(_ellipse(lamp, tw * 0.05, tw * 0.02), md)
+		if lit:
+			ci.draw_colored_polygon(PackedVector2Array([lamp + Vector2(-tw * 0.04, 0), lamp + Vector2(tw * 0.04, 0), _iso(c, tw, q.x, q.y) + Vector2(tw * 0.15, 0), _iso(c, tw, q.x, q.y) + Vector2(-tw * 0.15, 0)]), Color(1.0, 0.95, 0.65, 0.10))
+			_glow(ci, lamp + Vector2(0, tw * 0.01), tw * 0.03, _fade(Color(1.0, 0.95, 0.70), state), state)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_glass_walk(ci, c, tw, d, r, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]):
+			_iso_port(ci, _iso(c, tw, d.x * r, d.y * r, 0.06), tw, state, true, d)
+
+
+## The Garden Cavern from above.
+static func _top_garden(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
+	ci.draw_rect(Rect2(c - Vector2(s * 0.46, s * 0.46), Vector2(s * 0.92, s * 0.92)), _fade(Color(0.36, 0.58, 0.30), state))
+	ci.draw_line(c - Vector2(s * 0.46, 0), c + Vector2(s * 0.46, 0), _fade(Color(0.72, 0.68, 0.60), state), maxf(3.0, s * 0.05))
+	ci.draw_line(c - Vector2(0, s * 0.46), c + Vector2(0, s * 0.46), _fade(Color(0.72, 0.68, 0.60), state), maxf(3.0, s * 0.05))
+	ci.draw_circle(c + Vector2(-0.27, -0.27) * s, s * 0.15, _fade(WATER, state).darkened(0.1))
+	for q in [Vector2(0.30, -0.32), Vector2(0.38, -0.14), Vector2(-0.34, 0.20), Vector2(0.36, 0.06)]:
+		ci.draw_circle(c + q * s, s * 0.07, _fade(Color(0.25, 0.55, 0.25), state))
+	var flowers := [Color(0.95, 0.45, 0.55), Color(0.98, 0.85, 0.35), Color(0.75, 0.55, 0.95), Color(1.0, 1.0, 1.0)]
+	for k in 10:
+		ci.draw_circle(c + Vector2(0.20 + (k % 5) * 0.05, 0.26 + (k / 5) * 0.08) * s, s * 0.015, _fade(flowers[k % 4], state))
+	ci.draw_circle(c, s * 0.19, _fade(Color(0.38, 0.65, 0.38), state))
+	for q in [Vector2(-0.30, 0.08), Vector2(0.30, 0.08)]:
+		_glow(ci, c + q * s, s * 0.03, _fade(Color(1.0, 0.95, 0.70), state), state)
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * s * 0.19, s, state, not (d in links), d)
 
 
 ## Whether a two-door building runs along v (doors facing ±y) rather than u.
