@@ -99,7 +99,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 
 ## Status and next steps
 
-- All headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. A colony that builds nothing dies out. `tools/balance.gd` replays the bot (`-- <planet> <difficulty> <games>`). After the surface/Deep split (v00.01.62), over 6 maps each, the bot wins 6/6 on Brume at every difficulty, 4–6 of 6 on Cinder and 5–6 of 6 on Hollow. It now takes about 160–220 turns to buy out, against about 90–190 before the split. Headless tests are not playtesting: play it to judge how it feels.
+- All headless test checks pass in Godot 4.3, and the Worker's tests pass. A colony that builds nothing dies out. `tools/balance.gd` replays the bot (`-- <planet> <difficulty> <games>`). With the smarter bot (v00.01.83), on Normal over 6 maps each, it wins Brume, Shale, Tessel, Cinder, Glasswater and Hollow 6/6, Ashfall 5/6 and Rimefar 1/6. On Brume it takes about 126 turns on Easy, 131 on Normal and 144 on Hard. The bot is a rough stand-in for a player: it still builds too few Seam Cutters on ore-poor sites (Tessel is slower for it than it should be). Headless tests are not playtesting: play it to judge how it feels.
 - Ideas: changing trade prices, difficulty settings, and sound.
 
 ## Input safety

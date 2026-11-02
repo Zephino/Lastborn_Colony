@@ -1,8 +1,8 @@
 [
-  {"id": "easy", "name": "Easy", "desc": "A smaller debt, gentler payments, fewer disasters, slower wear, less crime, and no plague. A good first game.",
-   "debt": 0.75, "payment_step": 0.5, "event_chance": 0.6, "plague_chance": 0.0, "wear": 0.5, "crime": 0.7, "morale": 5},
+  {"id": "easy", "name": "Easy", "desc": "A smaller debt, better prices for alloy, gentler payments, fewer disasters, slower wear, less crime, and no plague. A good first game.",
+   "debt": 0.7, "payment_step": 0.5, "alloy_price": 1.15, "event_chance": 0.6, "plague_chance": 0.0, "wear": 0.5, "crime": 0.7, "morale": 5},
   {"id": "normal", "name": "Normal", "desc": "The game as designed.",
-   "debt": 1.0, "payment_step": 1.0, "event_chance": 1.0, "plague_chance": 1.0, "wear": 1.0, "crime": 1.0, "morale": 0},
-  {"id": "hard", "name": "Hard", "desc": "A bigger debt, steeper payments, more disasters and plague, faster wear, more crime, and a grumpier colony.",
-   "debt": 1.25, "payment_step": 1.5, "event_chance": 1.5, "plague_chance": 2.0, "wear": 1.5, "crime": 1.3, "morale": -5}
+   "debt": 1.0, "payment_step": 1.0, "alloy_price": 1.0, "event_chance": 1.0, "plague_chance": 1.0, "wear": 1.0, "crime": 1.0, "morale": 0},
+  {"id": "hard", "name": "Hard", "desc": "A bigger debt, lower prices for alloy, steeper payments, more disasters and plague, faster wear, more crime, and a grumpier colony.",
+   "debt": 1.25, "payment_step": 1.5, "alloy_price": 0.9, "event_chance": 1.5, "plague_chance": 2.0, "wear": 1.5, "crime": 1.3, "morale": -5}
 ]

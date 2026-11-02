@@ -22,6 +22,13 @@ const MUST_AFFORD := ["shaft", "mirror", "splitter", "drill", "vat", "rail"]
 const CASH_BUFFER := 1200.0
 const BUILD_RESERVE := 40.0
 const SAVING_RESERVE := 0.0
+## When true the bot keeps its tunnel network open (see _keep_open). The
+## balance tool can turn it off to compare.
+static var smart := true
+## Fewest tiles a level's network should keep free to grow from.
+const KEEP_OPEN := 3
+## The smart bot sells alloy until it has at least this many marks.
+const SELL_UNTIL := 700.0
 const ESSENTIAL := ["shaft", "mirror", "vent", "splitter", "drill", "vat", "bunk", "cutter", "forge", "rail", "lab", "warden"]
 ## Research order the bot prefers; anything else available comes after.
 const TOPIC_ORDER := ["seals", "seam_mapping", "smelting", "mag_rail", "insulation", "coatings", "kelp", "field_medicine", "commons_charter"]
@@ -42,7 +49,12 @@ static func act(state: Dictionary) -> void:
 	# Spin Launchers sell alloy above the reserve. While the next payment is not covered,
 	# keep the reserve low so alloy is sold, and build only essentials.
 	var saving := _saving(state)
-	Actions.set_export_reserve(state, SAVING_RESERVE if saving else BUILD_RESERVE)
+	var reserve: float = SAVING_RESERVE if saving else BUILD_RESERVE
+	# Ore piling up means another Forge pays better than selling: keep enough
+	# alloy back to build one.
+	if smart and _forge_starved(state):
+		reserve = maxf(reserve, GameData.num(GameData.building("forge"), "cost") + 2.0)
+	Actions.set_export_reserve(state, reserve)
 	if state["research"]["current"] == "":
 		var options := Research.available(state)
 		if not options.is_empty():
@@ -60,6 +72,11 @@ static func act(state: Dictionary) -> void:
 		Actions.pay_extra(state, credits - CASH_BUFFER)
 	if advanced:
 		_advanced_extras(state)
+	# Keep the network open: if few tiles on a level can still take a Tunnel,
+	# lay one where it opens up the most new ground before anything else.
+	if smart:
+		for z in ([0, 1] if _landing(state).x >= 0 else [0]):
+			_keep_open(state, z)
 	# Try the wanted buildings in order until one can actually be placed.
 	for choice in _choose(state):
 		if _build(state, choice):
@@ -69,7 +86,12 @@ static func act(state: Dictionary) -> void:
 static func _saving(state: Dictionary) -> bool:
 	if _count(state, "rail") == 0:
 		return false
-	return float(state["stock"]["credits"]) < Turn.next_payment_amount(state) * 1.5
+	var cushion := Turn.next_payment_amount(state) * 1.5
+	# The smart bot also keeps selling until it has a healthy cushion of marks,
+	# so small payments (Easy) don't stop it paying the debt down.
+	if smart:
+		cushion = maxf(cushion, SELL_UNTIL)
+	return float(state["stock"]["credits"]) < cushion
 
 
 static func _count(state: Dictionary, type: String) -> int:
@@ -141,6 +163,12 @@ static func _choose(state: Dictionary) -> Array:
 	# Once ore is coming in, the first Forge comes first: save alloy for it
 	# rather than spending it on anything else.
 	if _count(state, "forge") < 1 and _count(state, "cutter") >= 1 and float(state["stock"]["food"]) > 40.0 and float(state["stock"]["oxygen"]) > 40.0:
+		want.erase("forge")
+		want.push_front("forge")
+		if alloy < GameData.num(GameData.building("forge"), "cost"):
+			return picks
+	# With ore piling up, the next Forge comes first (and the bot saves for it).
+	if smart and _forge_starved(state):
 		want.erase("forge")
 		want.push_front("forge")
 		if alloy < GameData.num(GameData.building("forge"), "cost"):
@@ -345,3 +373,45 @@ static func _advanced_extras(state: Dictionary) -> void:
 				break
 	if (only == "" or only == "relay") and float(state["stock"]["credits"]) > CASH_BUFFER * 0.8 and Actions.check_satellite(state, "relay")["ok"]:
 		Actions.launch_satellite(state, "relay")
+
+
+## Tiles on level z where a new Tunnel would join the colony: the edge the
+## network can still grow from.
+static func _frontier(state: Dictionary, z: int) -> Array:
+	var out: Array = []
+	for y in int(state["height"]):
+		for x in int(state["width"]):
+			if _open(state, x, y, z) and Actions.touches_colony(state, x, y, z) and Actions.auto_rot(state, "main", x, y, z) >= 0:
+				out.append(Vector2i(x, y))
+	return out
+
+
+## Lays a Tunnel when the network on level z is close to boxed in, on the
+## frontier tile with the most open ground around it.
+static func _keep_open(state: Dictionary, z: int) -> void:
+	var edge := _frontier(state, z)
+	if edge.size() >= KEEP_OPEN or float(state["stock"]["alloy"]) < 3.0:
+		return
+	var best := Vector2i(-1, -1)
+	var best_n := -1
+	for c in edge:
+		var n := 0
+		for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(2, 0), Vector2i(-2, 0), Vector2i(0, 2), Vector2i(0, -2)]:
+			if Actions.inside(state, c.x + d.x, c.y + d.y) and _open(state, c.x + d.x, c.y + d.y, z):
+				n += 1
+		# Plain ground is cheaper than solid rock in the Deep.
+		if z == 1 and Actions.terrain_at(state, c.x, c.y, z) == "rock":
+			n -= 2
+		if n > best_n:
+			best_n = n
+			best = c
+	if best.x >= 0:
+		Actions.place(state, "main", best.x, best.y, z)
+
+
+## Whether ore is piling up for want of Forges: lots of ore stored, and fewer
+## Forges than the colony could use.
+static func _forge_starved(state: Dictionary) -> bool:
+	var forges := _count(state, "forge")
+	var cutters := _count(state, "cutter")
+	return forges >= 1 and float(state["stock"]["ore"]) > 80.0 and forges < mini(10, cutters + 1)

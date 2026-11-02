@@ -258,7 +258,7 @@ func test_difficulty() -> void:
 	check(normal["difficulty"] == "normal" and float(normal["debt"]) == 6000.0, "Normal is the default and keeps the 6,000-mark debt")
 	var easy := NewGame.create(1, "Margin", {"difficulty": "easy"})
 	var hard := NewGame.create(1, "Margin", {"difficulty": "hard"})
-	check(float(easy["debt"]) == 4500.0 and float(hard["debt"]) == 7500.0, "Easy and Hard scale the debt (4,500 and 7,500)")
+	check(float(easy["debt"]) == 4200.0 and float(hard["debt"]) == 7500.0, "Easy and Hard scale the debt (4,200 and 7,500)")
 	check(Turn.payment_for(normal, 3) == 180.0 and Turn.payment_for(easy, 3) == 150.0 and Turn.payment_for(hard, 3) == 210.0, "payments grow faster on Hard and slower on Easy")
 	check(not NewGame.create(1, "Margin", {"difficulty": "nightmare"})["difficulty"] != "normal", "an unknown difficulty falls back to Normal")
 	var old: Dictionary = JSON.parse_string(SaveGame.to_text(normal))

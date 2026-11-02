@@ -2,6 +2,36 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.83
+Date: 11/02/2026
+Time: 1:36 PM
+
+### Changes
+- **A smarter test bot** (`tests/bot.gd`, on by default; `Bot.smart` turns it off to compare):
+  - **It keeps its tunnel network open.** When fewer than 3 tiles on a level could still take a new Tunnel, it first lays one on the most open tile. Before, it often walled in its Deep network and could never place another Splitter, Lab or Clinic.
+  - **It builds more Forges.** When ore piles up, the next Forge comes first, and enough alloy is kept back from selling to build it. Before, it often had one Forge all game, with ore stuck at the storage cap.
+  - **It sells alloy until it has a cushion of 700 marks,** so small payments (on Easy) don't stop it paying the debt down.
+  - Two other rules were tried and dropped, because they made it lose more games: building Seam Cutters first when ore ran dry, and keeping alloy back while saving.
+- **Easy, Normal and Hard differ more.** Difficulty now also sets the alloy price: Easy +15%, Hard -10%. Easy's debt is now 70% of Normal's (was 75%). The difficulty descriptions say so.
+- **Balance** (smart bot, Normal, 6 maps each):
+
+  | World | Wins | Turns to buy out |
+  | --- | --- | --- |
+  | Brume | 6/6 | about 131 (Easy 126, Hard 144) |
+  | Shale | 6/6 | 128 |
+  | Glasswater | 6/6 | 131 |
+  | Ashfall | 5/6 | 135 |
+  | Cinder | 6/6 | 149 |
+  | Tessel | 6/6 | 181 |
+  | Hollow | 6/6 | 194 |
+  | Rimefar | 1/6 | 146 |
+
+  Before, the bot took about 210 turns on Brume. Tessel is still slow for the bot, which builds too few Seam Cutters there; a person playing it should find it the gentlest world.
+- The debt test now expects Easy's 4,200. 681 checks pass.
+
+### Reason
+This finishes the owner's request from 00.01.82: a smarter test bot and a balance retune so Easy, Normal and Hard feel different.
+
 ## Version 00.01.82
 Date: 11/02/2026
 Time: 1:15 PM

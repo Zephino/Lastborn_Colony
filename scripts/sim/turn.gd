@@ -415,7 +415,7 @@ static func _produce(state: Dictionary, rep: Dictionary) -> void:
 				var amount := minf(cap, float(stock["alloy"]) - float(state["export_reserve"]))
 				if amount > 0.0:
 					stock["alloy"] = float(stock["alloy"]) - amount
-					stock["credits"] = float(stock["credits"]) + amount * (float(b["alloy_price"]) + float(rep.get("trade_bonus", 0.0)))
+					stock["credits"] = float(stock["credits"]) + amount * (float(b["alloy_price"]) * GameData.diff(state, "alloy_price") + float(rep.get("trade_bonus", 0.0)))
 					state["stats"]["exported"] = float(state["stats"]["exported"]) + amount
 	# Prospectors bring in loose ore.
 	var found := float(work.get("prospector", 0)) * float(Fleet.drone_def("prospector").get("ore", 0.0))
