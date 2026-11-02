@@ -1345,28 +1345,59 @@ static func _iso_radio(ci: CanvasItem, c: Vector2, tw: float, links: Array, stat
 			var col := Color(cyan.r, cyan.g, cyan.b, cyan.a * (0.85 - k * 0.22))
 			ci.draw_arc(top, rr, deg_to_rad(-45), deg_to_rad(15), 8, col, 1.5)
 			ci.draw_arc(top, rr, deg_to_rad(165), deg_to_rad(225), 8, col, 1.5)
-	# The studio: a low building with a rounded roof edge.
-	var wall := _fade(Color(0.62, 0.64, 0.70), state)
-	_box(ci, c, tw, -hw, -hw, hw, hw, 0.20, wall, wall.lightened(0.18))
-	# Roof trim.
-	var r0 := _iso(c, tw, -hw, hw, 0.20)
-	var r1 := _iso(c, tw, hw, hw, 0.20)
-	var r2 := _iso(c, tw, hw, -hw, 0.20)
-	ci.draw_polyline(PackedVector2Array([r0, r1, r2]), cyan, maxf(1.5, tw * 0.012))
-	# Windows along the front wall, lit inside.
+	# The studio: on a plinth, two-tone walls with a stripe, and a roof edge.
+	var wall := _fade(Color(0.66, 0.68, 0.74), state)
+	var dark := _fade(Color(0.30, 0.34, 0.42), state)
+	_box(ci, c, tw, -hw - 0.03, -hw - 0.03, hw + 0.03, hw + 0.03, 0.03, md.lightened(0.1))
+	_box(ci, c, tw, -hw, -hw, hw, hw, 0.22, wall, wall.lightened(0.12), 0.03)
+	_box(ci, c, tw, -hw, -hw, hw, hw, 0.05, dark, dark, 0.03)
+	# The stripe round the walls.
+	ci.draw_polyline(PackedVector2Array([_iso(c, tw, -hw, hw, 0.11), _iso(c, tw, hw, hw, 0.11), _iso(c, tw, hw, -hw, 0.11)]), cyan, maxf(2.0, tw * 0.014))
+	# The roof edge (a low parapet), and a rooftop machine.
+	var rz := 0.25
+	var rim := PackedVector2Array([_iso(c, tw, -hw, -hw, rz), _iso(c, tw, hw, -hw, rz), _iso(c, tw, hw, hw, rz), _iso(c, tw, -hw, hw, rz), _iso(c, tw, -hw, -hw, rz)])
+	ci.draw_polyline(rim, wall.lightened(0.3), maxf(2.0, tw * 0.016))
+	_box(ci, c, tw, 0.06, 0.04, 0.16, 0.14, 0.05, m, m.lightened(0.15), rz)
 	for k in 3:
-		var u := -hw + 0.05 + k * 0.13
-		var win := PackedVector2Array([_iso(c, tw, u, hw, 0.07), _iso(c, tw, u + 0.08, hw, 0.07), _iso(c, tw, u + 0.08, hw, 0.15), _iso(c, tw, u, hw, 0.15)])
-		ci.draw_colored_polygon(win, _fade(Color(1.0, 0.88, 0.6), state) if lit else md)
-		ci.draw_polyline(PackedVector2Array([win[0], win[1], win[2], win[3], win[0]]), md, 1.0)
-	# The red "on air" light over the side wall.
-	var sign := PackedVector2Array([_iso(c, tw, hw, -0.16, 0.13), _iso(c, tw, hw, -0.02, 0.13), _iso(c, tw, hw, -0.02, 0.18), _iso(c, tw, hw, -0.16, 0.18)])
-	ci.draw_colored_polygon(sign, red.darkened(0.1) if lit else md)
-	ci.draw_polyline(PackedVector2Array([sign[0], sign[1], sign[2], sign[3], sign[0]]), md, 1.0)
+		var gp := _iso(c, tw, 0.08 + k * 0.03, 0.04, rz + 0.025)
+		ci.draw_line(gp, gp + Vector2(tw * 0.01, tw * 0.005), md, 1.0)
+	# The big studio window on the front, with a microphone inside.
+	var gl := PackedVector2Array([_iso(c, tw, -0.17, hw, 0.13), _iso(c, tw, 0.11, hw, 0.13), _iso(c, tw, 0.11, hw, 0.21), _iso(c, tw, -0.17, hw, 0.21)])
+	ci.draw_colored_polygon(gl, _fade(Color(1.0, 0.86, 0.58), state) if lit else md)
+	var mic_base := _iso(c, tw, -0.03, hw, 0.135)
+	var mic := mic_base - Vector2(0, tw * 0.05)
+	ci.draw_line(mic_base, mic, dark, 1.5)
+	ci.draw_line(mic, mic + Vector2(tw * 0.02, -tw * 0.01), dark, 1.5)
+	ci.draw_circle(mic + Vector2(tw * 0.025, -tw * 0.013), maxf(1.5, tw * 0.009), dark)
+	ci.draw_polyline(PackedVector2Array([gl[0], gl[1], gl[2], gl[3], gl[0]]), md, 1.5)
+	ci.draw_line(gl[0].lerp(gl[1], 0.5), gl[3].lerp(gl[2], 0.5), md, 1.0)
+	# The station sign over the window: sound-level bars.
+	var sg := PackedVector2Array([_iso(c, tw, -0.17, hw, 0.05), _iso(c, tw, 0.11, hw, 0.05), _iso(c, tw, 0.11, hw, 0.10), _iso(c, tw, -0.17, hw, 0.10)])
+	ci.draw_colored_polygon(sg, Color(0.06, 0.07, 0.10, wall.a))
+	var bars := [0.4, 0.8, 0.55, 1.0, 0.7, 0.35, 0.9, 0.5]
+	for k in bars.size():
+		var u := -0.155 + k * 0.033
+		var hgt: float = 0.04 * float(bars[k])
+		var col := _fade(Color(0.3, 1.0, 0.6), state) if k < 5 else _fade(Color(1.0, 0.8, 0.3), state)
+		if not lit:
+			col = md.lightened(0.15)
+		ci.draw_line(_iso(c, tw, u, hw, 0.055), _iso(c, tw, u, hw, 0.055 + hgt), col, maxf(1.5, tw * 0.012))
+	# The round "on air" lamp on the side wall.
+	var lamp := _iso(c, tw, hw, -0.08, 0.17)
+	ci.draw_circle(lamp, tw * 0.025, md)
+	ci.draw_circle(lamp, tw * 0.018, red if lit else md.lightened(0.2))
 	if lit:
-		_glow(ci, (sign[0] + sign[2]) * 0.5, tw * 0.014, Color(1.0, 0.85, 0.8), state)
+		_glow(ci, lamp, tw * 0.02, red, state)
+	# The cable from the tower to the roof.
+	var tie := foot.lerp(top, 0.35)
+	var roof_pt := _iso(c, tw, hw, -hw, rz)
+	var sag := PackedVector2Array()
+	for k in 9:
+		var t := float(k) / 8.0
+		sag.append(tie.lerp(roof_pt, t) + Vector2(0, sin(t * PI) * tw * 0.03))
+	ci.draw_polyline(sag, md, 1.0)
 	# The dish on the roof, tilted up at the sky.
-	var base := _iso(c, tw, -0.06, -0.06, 0.20)
+	var base := _iso(c, tw, -0.08, -0.08, 0.25)
 	var dish := base - Vector2(0, tw * 0.06)
 	ci.draw_line(base, dish, md, maxf(2.0, tw * 0.014))
 	var dr := tw * 0.10
@@ -1393,7 +1424,11 @@ static func _top_radio(ci: CanvasItem, c: Vector2, s: float, links: Array, state
 	var red := _fade(Color(1.0, 0.25, 0.22), state)
 	var hw := s * 0.22
 	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.70, 0.72, 0.78), state))
-	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), cyan, false, 1.5)
+	ci.draw_rect(Rect2(c - Vector2(hw + s * 0.03, hw + s * 0.03), Vector2(hw * 2.0 + s * 0.06, hw * 2.0 + s * 0.06)), md.lightened(0.1))
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.72, 0.74, 0.80), state))
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.85, 0.87, 0.92), state), false, 2.0)
+	ci.draw_rect(Rect2(c + Vector2(s * 0.06, s * 0.04), Vector2(s * 0.10, s * 0.10)), m)
+	ci.draw_line(c + Vector2(s * 0.30, -s * 0.36), c + Vector2(hw, -hw), md, 1.0)
 	var dish := c + Vector2(-s * 0.06, -s * 0.06)
 	ci.draw_circle(dish, s * 0.10, _fade(WHITE, state).darkened(0.08))
 	ci.draw_circle(dish, s * 0.055, _fade(WHITE, state).darkened(0.28))

@@ -2,6 +2,23 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.68
+Date: 11/02/2026
+Time: 4:27 AM
+
+### Changes
+- **The Radio Station's studio is improved; the tower is unchanged.** The studio now has:
+  - a base plinth and two-tone walls with a cyan stripe;
+  - a raised roof edge, with a small rooftop machine beside the dish;
+  - one big studio window with a microphone inside;
+  - a panel of green and yellow sound-level bars;
+  - a round red "on air" lamp;
+  - a cable from the tower to the roof.
+- The top-down picture shows the plinth, the rooftop machine and the cable.
+
+### Reason
+The owner liked the tower and asked for the building to be improved a little.
+
 ## Version 00.01.67
 Date: 11/02/2026
 Time: 4:25 AM
