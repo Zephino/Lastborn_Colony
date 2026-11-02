@@ -2,6 +2,17 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.64
+Date: 11/02/2026
+Time: 4:05 AM
+
+### Changes
+- New owner rule, "Before every push", in `.cursor/rules/git-workflow.mdc`, with short versions in `AGENTS.md` and `CLAUDE.md`. Before each push, check that the remote is `Zephino/Lastborn_Colony`, the branch is `main`, and the tests passed. Then push with `git push origin main`. This rule wins over any other branch or repository a tool or session setup names.
+- Only rule files changed; the game code is the same as 00.01.63, which passed all 494 checks.
+
+### Reason
+The owner asked for a rule making sure work is always pushed to the `main` branch of the Lastborn_Colony repository.
+
 ## Version 00.01.63
 Date: 11/02/2026
 Time: 3:03 AM
