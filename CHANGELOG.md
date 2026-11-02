@@ -2,6 +2,17 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.75
+Date: 11/02/2026
+Time: 5:05 AM
+
+### Changes
+- **New "all" sprite sheet page: every building on one sheet.** It has three groups with headings: Surface only (14), Deep only (12, including the Shaft Landing), and Both levels (4, shown on the surface and in the Deep side by side). It is drawn bigger (2840 x 1900) so every card keeps full detail.
+- `tools/sprite_sheet.gd` can be given a list of pages to draw (for example `all`). The building cards are now drawn by one shared function, so every page matches.
+
+### Reason
+The owner wanted all the buildings on one sheet instead of separate pages.
+
 ## Version 00.01.74
 Date: 11/02/2026
 Time: 5:03 AM

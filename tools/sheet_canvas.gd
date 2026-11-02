@@ -5,6 +5,9 @@ const Sprites = preload("res://scripts/ui/sprites.gd")
 const GameData = preload("res://scripts/sim/game_data.gd")
 
 var page := "surface"
+## Card size on the building pages.
+const CW := 470.0
+const CH := 250.0
 ## The buildings redrawn in the latest round of sprite work, for the "remade" page.
 const REMADE := ["shaft", "shaft_base", "mirror", "drill", "catcher", "mast", "rescue", "fusion", "reclaimer", "commons", "clinic", "garden", "bunk", "lounge"]
 var font: Font
@@ -26,6 +29,8 @@ func _draw() -> void:
 		_buildings("Deep buildings (underground). Left: top-down. Right: angled. Small: under construction / idle.", _level_ids("deep"), false)
 	elif page == "both":
 		_buildings("Buildings that go on both levels: on the surface (middle) and in the Deep (right).", _level_ids("both"), true)
+	elif page == "all":
+		_all()
 	elif page == "remade":
 		_buildings("Remade buildings: every building redrawn in the latest round, on the ground of its level.", REMADE, false)
 	elif page == "units":
@@ -63,62 +68,95 @@ func _ground(id: String, deep: bool) -> String:
 
 func _buildings(title: String, ids: Array, both: bool) -> void:
 	var cols := 4
-	var cw := 470.0
-	var ch := 250.0
 	for i in ids.size():
-		var id: String = ids[i]
-		var o := Vector2(20 + (i % cols) * cw, 70 + (i / cols) * ch)
-		draw_rect(Rect2(o, Vector2(cw - 12, ch - 12)), Color(0.10, 0.11, 0.14))
-		_text(GameData.building(id)["name"], o + Vector2(12, 26), 20, Color(1.0, 0.82, 0.48))
-		var r := Rect2(o + Vector2(14, 44), Vector2(120, 120))
-		# Each building is shown with a tunnel at every door it has.
-		var doors := int(Sprites.DOORS.get(id, 2))
-		var sample := {"links": [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)].slice(0, doors)}
-		if doors == 2 or id == "main":
-			# Two-door buildings are passed through: in one side, out the other.
-			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
-		if id == "reclaimer":
-			# Show a truck parked in the drop-off bay.
-			sample["truck"] = true
-		var label := "" if id == "main" else "%d door%s" % [doors, "" if doors == 1 else "s"]
-		var deep_page := page == "deep" or (page == "remade" and (id == "shaft_base" or GameData.level_note(GameData.building(id)) == "Deep only."))
-		var ground := _ground(id, deep_page)
-		Sprites.terrain_top(self, ground, r)
-		Sprites.draw_top(self, id, r, sample)
-		if both:
-			# The same building on the surface and in the Deep.
-			var c1 := o + Vector2(230, 150)
-			var c2 := o + Vector2(370, 150)
-			Sprites.terrain_iso(self, _ground(id, false), c1, 140.0)
-			Sprites.draw_iso(self, id, c1, 140.0, sample)
-			Sprites.terrain_iso(self, _ground(id, true), c2, 140.0, false)
-			Sprites.draw_iso(self, id, c2, 140.0, sample)
-			_text("Surface", o + Vector2(200, ch - 30), 16, Color(0.95, 0.80, 0.55))
-			_text("Deep", o + Vector2(350, ch - 30), 16, Color(0.55, 0.80, 0.95))
-		else:
-			# The Shaft Landing's lift tube is tall, so it is drawn smaller.
-			var big := 140.0 if id == "shaft_base" else 200.0
-			var c := o + Vector2(290, 150 if big > 150.0 else 185)
-			Sprites.terrain_iso(self, ground, c, big, false)
-			Sprites.draw_iso(self, id, c, big, sample)
-		# Labels go on last, so a tall building can't cover them.
-		if label != "":
-			draw_rect(Rect2(o + Vector2(cw - 100, 8), Vector2(86, 24)), Color(0.10, 0.11, 0.14))
-			_text(label, o + Vector2(cw - 90, 26), 16, Color(0.7, 0.75, 0.8))
-		# Under construction and idle, small.
-		var y := o.y + ch - 64
-		for j in 2:
-			var st := {"built": false} if j == 0 else {"active": false}
-			var rr := Rect2(Vector2(o.x + 14 + j * 60, y), Vector2(44, 44))
-			Sprites.terrain_top(self, ground, rr)
-			Sprites.draw_top(self, id, rr, st)
-			if not both:
-				var cc := Vector2(o.x + 160 + j * 70, y + 30)
-				Sprites.terrain_iso(self, ground, cc, 60.0, false)
-				Sprites.draw_iso(self, id, cc, 60.0, st)
+		var deep := page == "deep" or (page == "remade" and _deep_only(ids[i]))
+		_card(Vector2(20 + (i % cols) * CW, 70 + (i / cols) * CH), ids[i], both, deep)
 	# The page title last, over anything tall.
 	draw_rect(Rect2(Vector2(0, 0), Vector2(size.x, 60)), Color(0.06, 0.07, 0.09))
 	_text(title, Vector2(24, 40), 22, Color(0.95, 0.62, 0.30))
+
+
+## Every building on one page, in three groups: Surface, Deep, and both levels.
+func _all() -> void:
+	var cols := 6
+	var y := 70.0
+	var heads: Array = []
+	for group in [["Surface only", "surface", false, false], ["Deep only (underground)", "deep", false, true], ["Both levels: surface (middle) and Deep (right)", "both", true, false]]:
+		heads.append([group[0], y])
+		y += 40.0
+		var ids := _level_ids(group[1])
+		for i in ids.size():
+			_card(Vector2(20 + (i % cols) * CW, y + (i / cols) * CH), ids[i], group[2], group[3])
+		y += ceilf(float(ids.size()) / cols) * CH + 10.0
+	# Titles last, over anything tall.
+	draw_rect(Rect2(Vector2(0, 0), Vector2(size.x, 60)), Color(0.06, 0.07, 0.09))
+	_text("Lastborn Colony: every building. Left: top-down. Right: angled. Small: under construction / idle.", Vector2(24, 40), 24, Color(0.95, 0.62, 0.30))
+	for h in heads:
+		draw_rect(Rect2(Vector2(0, h[1]), Vector2(size.x, 36)), Color(0.06, 0.07, 0.09))
+		_text(h[0], Vector2(24, h[1] + 28), 22, Color(0.55, 0.80, 0.95) if str(h[0]).begins_with("Deep") else Color(0.95, 0.80, 0.55))
+
+
+func _deep_only(id: String) -> bool:
+	return id == "shaft_base" or GameData.level_note(GameData.building(id)) == "Deep only."
+
+
+## One building's card at o: its name and doors, top-down and angled views,
+## and small under-construction and idle views. `both` shows it on the
+## surface and in the Deep side by side.
+func _card(o: Vector2, id: String, both: bool, deep: bool) -> void:
+	draw_rect(Rect2(o, Vector2(CW - 12, CH - 12)), Color(0.10, 0.11, 0.14))
+	_text(GameData.building(id)["name"], o + Vector2(12, 26), 20, Color(1.0, 0.82, 0.48))
+	var r := Rect2(o + Vector2(14, 44), Vector2(120, 120))
+	# Each building is shown with a tunnel at every door it has.
+	var doors := int(Sprites.DOORS.get(id, 2))
+	var sample := {"links": [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)].slice(0, doors)}
+	if doors == 2 or id == "main":
+		# Two-door buildings are passed through: in one side, out the other.
+		sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
+	if id == "reclaimer":
+		# Show a truck parked in the drop-off bay.
+		sample["truck"] = true
+	var label := "" if id == "main" else "%d door%s" % [doors, "" if doors == 1 else "s"]
+	var ground := _ground(id, deep)
+	Sprites.terrain_top(self, ground, r)
+	Sprites.draw_top(self, id, r, sample)
+	if both:
+		# The same building on the surface and in the Deep.
+		var c1 := o + Vector2(230, 150)
+		var c2 := o + Vector2(370, 150)
+		Sprites.terrain_iso(self, _ground(id, false), c1, 140.0)
+		Sprites.draw_iso(self, id, c1, 140.0, sample)
+		Sprites.terrain_iso(self, _ground(id, true), c2, 140.0, false)
+		Sprites.draw_iso(self, id, c2, 140.0, sample)
+		_text("Surface", o + Vector2(200, CH - 30), 16, Color(0.95, 0.80, 0.55))
+		_text("Deep", o + Vector2(350, CH - 30), 16, Color(0.55, 0.80, 0.95))
+	else:
+		# The Shaft Landing's lift tube is tall, so it is drawn smaller.
+		var big := 140.0 if id == "shaft_base" else 200.0
+		var c := o + Vector2(290, 150 if big > 150.0 else 185)
+		Sprites.terrain_iso(self, ground, c, big, false)
+		Sprites.draw_iso(self, id, c, big, sample)
+	# Labels go on last, so a tall building can't cover them.
+	if label != "":
+		draw_rect(Rect2(o + Vector2(CW - 100, 8), Vector2(86, 24)), Color(0.10, 0.11, 0.14))
+		_text(label, o + Vector2(CW - 90, 26), 16, Color(0.7, 0.75, 0.8))
+	draw_rect(Rect2(o + Vector2(8, 6), Vector2(_text_w(GameData.building(id)["name"]) + 10, 26)), Color(0.10, 0.11, 0.14))
+	_text(GameData.building(id)["name"], o + Vector2(12, 26), 20, Color(1.0, 0.82, 0.48))
+	# Under construction and idle, small.
+	var y := o.y + CH - 64
+	for j in 2:
+		var st := {"built": false} if j == 0 else {"active": false}
+		var rr := Rect2(Vector2(o.x + 14 + j * 60, y), Vector2(44, 44))
+		Sprites.terrain_top(self, ground, rr)
+		Sprites.draw_top(self, id, rr, st)
+		if not both:
+			var cc := Vector2(o.x + 160 + j * 70, y + 30)
+			Sprites.terrain_iso(self, ground, cc, 60.0, false)
+			Sprites.draw_iso(self, id, cc, 60.0, st)
+
+
+func _text_w(t: String) -> float:
+	return font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
 
 
 func _world() -> void:

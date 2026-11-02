@@ -1,7 +1,9 @@
 ## Renders the sprite concept sheets to PNG files. Needs a display:
 ##   xvfb-run -s "-screen 0 1900x1340x24" godot --rendering-driver opengl3 --resolution 1900x1340 --script res://tools/sprite_sheet.gd -- <out_dir>
 ## Pages: surface, deep, both (buildings by level), remade (the latest redrawn
-## buildings together), units, tunnels, world.
+## buildings together), units, tunnels, world. The "all" page (every building
+## on one sheet) is bigger; draw it on its own:
+##   xvfb-run -s "-screen 0 2840x1900x24" godot --rendering-driver opengl3 --resolution 2840x1900 --script res://tools/sprite_sheet.gd -- <out_dir> all
 extends SceneTree
 
 const Canvas = preload("res://tools/sheet_canvas.gd")
@@ -16,7 +18,11 @@ func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		out_dir = args[0]
+	if args.size() > 1:
+		# A comma list of pages to draw, e.g. "all" (run "all" at 2840x1900).
+		pages = Array(args[1].split(","))
 	canvas = Canvas.new()
+	canvas.page = pages[0]
 	canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(canvas)
 
