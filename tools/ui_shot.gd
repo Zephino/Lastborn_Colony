@@ -73,6 +73,15 @@ func _run() -> void:
 		await process_frame
 	root.get_viewport().get_texture().get_image().save_png(out + "/deep.png")
 	main._set_level(0)
+	# The top of the same lift on the surface, with someone waiting.
+	if Actions.structure_at(st, hx, hy, 0).is_empty():
+		st["tiles"][hy][hx] = "regolith"
+		NewGame.add_structure(st, "shaft", hx, hy, true, 0)
+	main.map_view.center_on(Vector2i(hx, hy))
+	main.refresh()
+	for _i in 4:
+		await process_frame
+	root.get_viewport().get_texture().get_image().save_png(out + "/lift_top.png")
 	# Select a building to show its picture in the side panel.
 	var bunk_cell := Vector2i(-1, -1)
 	for id in st["structures"]:

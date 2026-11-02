@@ -1,6 +1,6 @@
 # Lastborn Colony — shared AI coding rules
 
-Applies to Cursor, local Claude Code, and Claude Code cloud. Read `README.md` and every file in `.cursor/rules/` before work.
+Applies to Cursor, local Claude Code, and Claude Code cloud. Read `README.md` (how to play), `DEVELOPERS.md` (how the code works) and every file in `.cursor/rules/` before work.
 
 - The owner approves game-design changes. Build what the owner asked for; do not invent extra features.
 - The project rules (design, IP, determinism, saves) take priority over coding convenience.

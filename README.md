@@ -1,192 +1,241 @@
-# Lastborn Colony
+# Lastborn Colony: how to play
 
-A turn-based colony game for Godot 4.3+. You run a colony on Brume, a moon that always shows the same face to its sun. The west edge of the map is frozen night and the east edge is scorched day. You live on the strip between them.
+A turn-based colony game. You lead the first settlers on a moon that always shows the same face to its sun. One edge of the map is frozen night and the other is scorched day; you live on the strip between them, on the surface and in the caves below.
 
-The colonists owe the Harrow & Vell Charter Company 6,000 marks for their passage. Payments start on turn 30 and come due every 10 turns, each one larger than the last. Pay it all off and the colony is yours. Miss three payments in a row and the Company takes over. Let everyone die and the colony goes silent.
+Your settlers owe the **Harrow & Vell Charter Company** 6,000 marks for their trip. Pay it all off and the colony is yours.
 
-The code is built around one plain state object, rule functions that take that state, and a single `end_turn`. The setting, buildings, economy, numbers, story and art are all original. All art is drawn in code, and there are no image or sound assets.
+**Play it here: https://zephino.github.io/Lastborn_Colony/**
 
-## Play online
+It runs in any modern browser, on a computer, phone or tablet. (Developers: see `DEVELOPERS.md`.)
 
-**https://zephino.github.io/Lastborn_Colony/**
+---
 
-The web version is rebuilt and published automatically every time something is pushed to `main` (`.github/workflows/web.yml`). The game's tests run first; if any fail, the old version stays online.
+## How you win and lose
 
-- It runs in any modern browser on a computer, and on phones and tablets. On a phone the interface scales to the screen, with larger text, and menus scroll when long. The map gets the whole width:
-  - **Build** opens the list of buildings. Choose one, then tap a tile; it places once.
-  - **Info**, **Research** and **Company** open what the side panel shows on a computer.
-  - Drag the map with one finger, pinch or use **−** and **+** to zoom. Dragging never builds.
-- Saved games are kept in your browser on that device.
-- **Install app** (Settings) installs it like an app in Chrome and Edge, or on Android. On iPhone or iPad: tap **Share**, then **Add to Home Screen**.
-- **Updates:** for 30 seconds after the game opens, it checks for a newer version and switches to it. **Update app** (Settings) does the same at any time. Your saves are kept.
-
-### Leaderboard, Google sign-in and cloud save
-
-- **Leaderboard** (title screen) shows how far players got on each planet: colonies that bought out their charter come first (fewest turns wins), then everyone else by how much debt they paid off. Type your name on the title screen, then post a score when a colony ends, or choose **Menu → Retire** to post one that's still running.
-- **Suggest a feature** (title screen) sends an idea or bug report to the owner. It becomes a public issue on this repository, so don't include private details. No account is needed.
-- The title screen says **Signed in with Google** when you are; Settings shows which account.
-- **Sign in with Google** (Settings) is optional. It lets you keep one cloud save and carry on from another device: **Save this game to the cloud** on one device, then **Load my game from the cloud** on the other.
-- These features use the owner's Cloudflare Worker in `leaderboard-api/` (https://lastborn-colony.thebotcoder.workers.dev). Without it, or offline, the game plays normally and these buttons explain what's missing. Setup steps for the owner: `leaderboard-api/README.md`.
-
-### One-time GitHub Pages setting (owner)
-
-1. Open https://github.com/Zephino/Lastborn_Colony/settings/pages
-2. Under **Build and deployment**, set **Source** to **GitHub Actions**. (With "Deploy from a branch", GitHub shows this README instead of the game.)
-3. Open the **Actions** tab, click **Web build** on the left, then **Run workflow** → **Run workflow**. After 2–4 minutes the game is live at the link above.
-
-If a build fails, open it in the **Actions** tab: the red step shows what went wrong (usually a failing test).
-
-## Running it
-
-1. Install [Godot 4.3](https://godotengine.org/download) or newer (the standard build; .NET is not needed).
-2. In the Godot Project Manager, choose **Import**, select `project.godot` in this repository's root folder, then press **Run** (F5).
-
-Tests run headless from the repository root:
-
-```bash
-godot --headless --script res://tests/run_tests.gd
-```
-
-The test script exits with code 0 if every check passes. It checks the random-number generator, the data files, map generation, placement rules, determinism, saving and loading, that a colony which builds nothing dies, and that the scripted bot buys out the charter on seeds 1–3.
-
-## How to play
-
-### Before landing
-
-1. **Briefing:** the story so far.
-2. **Choose a planet.** Brume (Standard) has ice, vents and sunlight all within reach. Cinder (Harder) is bright and hot, but ice is rare. Hollow (Hardest) is icy and full of vents, but the sun is weak. Each planet has its own leaderboard.
-3. **Choose a difficulty.** Easy has a smaller debt, gentler payments, fewer disasters and no plague. Hard has a bigger debt, steeper payments, more disasters and plague, faster wear and more crime. Every planet has a leaderboard for each difficulty.
-4. **Pack the ship.** The hold has 10 cargo bays. Choose colonists, alloy, food, oxygen, water, starting funds, or prefab buildings (placed later for free). Everything is bought on credit, so each bay adds to the debt you must pay off. **Recommended load** is a balanced start that costs 6,000 marks.
-5. **Choose a landing site.** Four sites on the same map, each with a preview and a count of the ice, vents and ore seams nearby.
-
-### In the colony
-
-- **The map is shown at an angle.** Buildings are sealed domes, rounded halls and towers joined by tunnels, with airlocks at their doors.
-- **Build** by choosing a building on the left and clicking a tile. Lay **Heat Mains** (1 alloy each) to reach further out.
-- **The lander:** your lander stands on the Landing Pad when you arrive, and comes down again for a turn whenever settlers arrive with a Company payment or you call down a supply pod.
-- **Doors:** buildings join only where their doors meet. Hubs (Landing Pad, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern, Shaft) have 4 doors; workplaces have 2, on opposite sides; outlying machines (Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Signal Mast, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have 1. Heat Mains join on every side. A new building needs a door facing a door or Heat Main; it turns itself to fit, or press **R** / **Rotate** to turn it. Saves from before door rules still join on any side.
-- **Terrain matters.** Ice Drills go on ice, Vent Taps on vents (orange), and Seam Cutters on ore seams (teal streaks). Ridges, deep ice and scorched ground can't be built on.
-- **The climate band is the core trade-off.** Mirror Fields make more power the further east they are. Buildings need more heat the further west they are. Ice and vents are mostly in the west, so the best sites pull you in both directions. Selecting a tile shows its light and heat factor.
-- **Each turn, every building needs its workers, power and heat.** Generators get resources first, then other buildings take them in priority order (water, then oxygen and food, housing, ore, alloy, export, civic). Anything that can't be fully supplied sits idle, marked with a red dot.
-- **Keep people alive.** Each person uses 0.1 food, 0.1 oxygen and 0.05 water per turn. Shortages kill people, and oxygen shortages kill fastest.
-- **Morale** sets production efficiency (50–130%). Commons and the Clinic raise it. Shortages, overcrowding and missed payments lower it. Below 20, people leave.
-- **Money:** Forges turn ore into alloy, and Spin Launchers sell alloy for 20 marks each. Spin Launchers never sell below your export reserve, which you set in the right panel. You can also pay the debt early from there.
-- **The Deep:** a second level under the surface. Build a **Shaft** (surface, 15 alloy, 3 turns); when it's finished, a landing opens below it. Build outward from the landing. Switch levels with the **Surface/Deep** buttons (or **Q** and **E**; on phones, the Deep/Surface button).
-  - Open caverns cost the normal price. Solid rock must be dug out: +4 alloy and +2 turns. Bedrock can't be built on.
-  - Ore veins make Seam Cutters 50% more productive, deep vents give Vent Taps 50% more heat, and aquifers let Ice Drills work underground.
-  - **Each building belongs on a level.** Surface only: Mirror Field, Beam Catcher, Spin Launcher, Signal Mast, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station. Deep only: Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat, Splitter. Either level: Heat Main, Ice Drill, Vent Tap, Seam Cutter. Build a Shaft early, because homes, food and air are all in the Deep. The rock next to a new Shaft Landing comes already cleared, and a Heat Main dug into rock costs only 1 extra alloy.
-  - Buildings underground need a steady, low amount of heat (factor 0.5), which helps on cold worlds. Icequakes never reach them.
-  - Mirror Fields and Spin Launchers need the sky, so they stay on the surface.
-- **Parts:** a **Fab Shop** machines alloy into parts. Drones, satellites and the most advanced buildings need parts as well as alloy.
-- **Drones** (Drones & orbit button): a **Drone Bay** builds and runs work drones, 4 per working bay (Drone Swarms research adds 2). Drones beyond that sit idle.
-  - **Grader:** adds a turn of progress to one surface building under construction.
-  - **Borer:** does the same for a Shaft or a Deep building, and while you own one, digging into rock costs no extra alloy.
-  - **Prospector:** brings back 2 loose ore a turn.
-  - **Hauler:** two working Seam Cutters make 25% more ore.
-- **Orbit** (Drones & orbit button): a working Spin Launcher can launch satellites, paid in alloy, parts and marks.
-  - **Weather satellite:** grit fronts hurt mirrors half as much, and icequakes reach less far.
-  - **Relay satellite:** morale +3.
-  - **Power satellites** (after Power Beaming research): each beams 10 power to a **Beam Catcher**.
-  - **Supply pods** packed before landing stay aboard the ship; call one down any time for 50 alloy, 40 food and 40 oxygen.
-- **Big power:** the **Fusion Core** (after Contained Fusion research, 40 alloy and 12 parts) makes 30 power and some heat, day or night.
-- **Waste:** everyone makes waste, and some breaks down by itself. Above 40 it lowers morale, and lots of it helps plague spread. **Reclaimers** recycle it into a little ore and water.
-- **Specialists:** an **Academy** trains workers into specialists, up to 30% of adults. They make Forges, Fab Shops, Seam Cutters and labs up to 15% more productive.
-- **More civic buildings:**
-  - **Signal Mast:** small morale boost, and 1 more mark for each alloy sold (up to 3 masts).
-  - **Rescue Station:** seal failures and icequakes damage half as many buildings.
-  - **Hazard Lab:** three times a Survey Lab's research, but it lowers morale and breaks down often.
-  - **Garden Cavern:** Deep only. A park with a pond: a big morale boost and a little food.
-  - **Lounge:** a big morale boost, but it costs 3 marks a turn and raises crime.
-- **Survey probes** (cargo): the landing-site screen also shows the ore veins, aquifers and deep vents below each site.
-- **Research:** Survey Labs produce research toward the topic you pick. Finished topics boost buildings, housing or exports, or reduce breakdowns, plague and crime.
-- **People age:** children grow into adults, and adults grow into elders, who don't work and die sooner. A Clinic helps everyone live longer.
-- **Breakdowns:** machines wear out and break down now and then. A Workshop speeds up repairs.
-- **Crime** grows with population, crowding and low morale. It steals alloy and marks and lowers morale. Warden Posts hold it down.
-- **Plague** can break out in a larger colony. Survey Labs must research a cure before time runs out, or about a tenth of the colony dies.
-- **Factions:** the Company (Harrow & Vell) and the Crews' Union each have a relation from 0 to 100, shown in the colony summary and the report. Good Company relations soften missed-payment penalties and bring extra settlers; poor ones bring none. Good Union relations lift morale; very poor ones lead to a strike. Paying on time pleases the Company, missing a payment angers it, and shortages anger the Union.
-- **Story:** story events (`data/story_events.json`) arrive as the colony grows, each once, and ask you to choose. Some depend on earlier choices or on how the factions feel. Two can end the game: **Independence** (a strong Union and a weak Company: the colony declares itself free) and **Company Town** (a pleased Company and a weak Union: you sign the colony over and the debt is cancelled). Both count on the leaderboard, ranked by debt paid.
-- **Events** happen at random: grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
-- **Colony report** (button by End turn) shows where power, heat and workers go, how each resource changed, which buildings are idle and why, and the next payments. Selecting a building also says why it isn't running.
-- **How to play** (title screen, or Menu in a game): a short illustrated guide.
-- **Settings** (title screen, or Menu in a game): fullscreen, and for the web version Install app and Update app.
-- **Placing a building:** a bar shows what you're placing, with **Cancel**. Dragging the map never places anything.
-- **Keys:** Enter ends the turn. Arrow keys or WASD move the map. Q shows the surface and E the Deep. Esc cancels building or closes a dialog that can be closed. Drag the map to move it and use the mouse wheel to zoom. The game autosaves every 10 turns to `user://saves/autosave.json`. The Save button writes to `manual.json`.
-
-## Layout
-
-| Path | What it is |
+| Ending | How it happens |
 | --- | --- |
-| `data/*.json` | All numbers and text: balance, buildings, research, events, story and story events, planets, difficulty, cargo, online messages, the How to play guide. Tune the game here. |
-| `scripts/sim/` | The rules. Has no scene or node dependencies, so it runs headless. |
-| `scripts/sim/game_data.gd` | Loads the JSON once. Also has the climate functions `light_at` and `cold_at`. |
-| `scripts/sim/rng.gd` | mulberry32 random numbers. The generator state is kept in `state["rng"]`, so saves replay exactly. |
-| `scripts/sim/map_gen.gd` | Map generation from a seed. |
-| `scripts/sim/new_game.gd` | Builds a fresh state `Dictionary`. |
-| `scripts/sim/actions.gd` | Player actions. Each one returns `{ok, reason}`. |
-| `scripts/sim/turn.gd` | `end_turn(state)`. |
-| `scripts/sim/research.gd` | Research topics and their effects. |
-| `scripts/sim/fleet.gd` | Drones, satellites, supply pods, waste and specialists. |
-| `scripts/sim/text_rules.gd` | Cleaning rules for everything a player types. |
-| `scripts/sim/manifest.gd` | The ship's manifest: checking a load and applying it to a new game. |
-| `scripts/ui/setup_flow.gd`, `scripts/ui/minimap.gd` | The screens before landing, and the small map previews. |
-| `scripts/ui/colony_text.gd` | Inspector and Colony report text (pure functions, tested headless). |
-| `scripts/ui/people.gd`, `scripts/ui/stat_icon.gd` | Colonists in space suits, and the resource icons in the top bar. |
-| `scripts/ui/sprite_icon.gd` | A small picture of one building, for the build list, Build menu and Info panel. |
-| `scripts/ui/menus.gd` | Research, Settings, Leaderboard and cloud-save dialogs. |
-| `scripts/ui/fleet_menu.gd` | The Drones & orbit dialog. |
-| `scripts/sim/save_game.gd` | JSON saves to `user://saves/`. |
-| `scripts/ui/main.gd` | All screens, built in code. |
-| `scripts/ui/map_view.gd` | The angled (isometric) map: draws terrain and buildings back to front with the sprites, and turns clicks and taps into tiles. |
-| `scripts/ui/sprites.gd`, `scripts/ui/sprites_more.gd` | Every building, tunnel, drone, satellite and ground tile, drawn in code (top-down and angled). |
-| `scripts/net/` | Online features: leaderboard, Google sign-in, cloud save (`online.gd`), the Worker's address (`online_config.gd`). |
-| `scripts/ui/app_actions.gd` | Fullscreen, Install app and Update app. |
-| `leaderboard-api/` | The Cloudflare Worker behind the online features (not part of the game build). |
-| `web/update.js`, `.github/workflows/web.yml` | The web version's self-updater, and the workflow that builds and publishes it. |
-| `tests/` | Headless test runner, the scripted bot, and `trace.gd` (a turn-by-turn trace of a bot game). |
-| `tools/` | Developer tools, not part of the game: `sprite_sheet.gd` draws the sprite sheets, `ui_shot.gd` takes screenshots of the game screens, `balance.gd` compares bot games with and without the newer content. |
-| `.cursor/rules/`, `AGENTS.md`, `CLAUDE.md` | Rules for AI assistants working on the project. |
-| `CHANGELOG.md`, `VERSION` | What changed in each version, and the current version. |
+| **Free colony** (win) | You pay off the whole debt. Fewer turns is a better score. |
+| **Taken by the Company** (lose) | You miss three Company payments in a row and the Company takes over. |
+| **Went silent** (lose) | Everyone dies. |
+| **Independence** or **Company Town** | Story endings: the colony breaks away, or is signed over to the Company. Both are ranked by how much debt you paid. |
 
-### Turn order
+Payments start on **turn 30** and come every **10 turns**, each a little bigger than the last. The top bar always shows the next one.
 
-`end_turn` runs these steps in order:
+---
 
-1. Construction
-2. Repairs
-3. Connectivity to the Landing Pad
-4. Allocation of workers, power and heat
-5. Production and export
-6. Research (or the plague cure)
-7. Storage caps
-8. Life support
-9. Population: births, growing up, aging, deaths
-10. Morale and defection
-11. Crime
-12. Breakdowns
-13. Plague
-14. Company payment
-15. Timers
-16. Story events, then random events
-17. Endings
+## Before you land
 
-### Rules for changing the code
+1. **Briefing.** Read the story so far.
+2. **Pick a planet.**
+   - **Brume** (Standard): ice, vents and sunlight all within reach. Start here.
+   - **Cinder** (Harder): bright and hot, but ice is rare.
+   - **Hollow** (Hardest): icy and full of vents, but the sun is weak.
+3. **Pick a difficulty.** Easy has a smaller debt, gentler payments, fewer disasters and no plague. Hard has a bigger debt, steeper payments, more disasters, faster wear and more crime.
+4. **Pack the ship.** You have 10 cargo bays: colonists, alloy, food, oxygen, water, starting money, prefab buildings, supply pods or survey probes. Everything is bought on credit, so each bay adds to your debt. **Recommended load** is a good balanced start.
+5. **Pick a landing site.** Each preview counts the ice, vents and ore nearby. Survey probes also show what's in the caves underneath.
 
-- The state is a plain `Dictionary` with no objects in it, so `JSON.stringify` saves it directly.
-- Every random decision must go through `rng.gd`. Never use Godot's global `randf()` in `scripts/sim/`. The title screen's random seed is the only exception.
-- `state["structures"]` is processed in insertion order inside each priority band. Saves keep that order: `to_text` writes keys unsorted.
+---
 
-## Status and next steps
+## Your first 30 turns, step by step
 
-- All 447 headless test checks pass in Godot 4.3, and the Worker's 53 tests pass. Over 10 test maps per planet, the scripted player pays off the debt in about 120 turns on Brume, 114 on Cinder and 168 on Hollow. A colony that builds nothing dies out. `tools/balance.gd` replays the bot with and without the newer content (drones, satellites, Fab Shop, Academy, Signal Masts and so on) to compare. Headless tests are not playtesting: play it to judge how it feels.
-- Ideas: changing trade prices, difficulty settings, and sound.
+You start with a **Landing Pad**, 30 settlers and some alloy. Alloy is what you build with.
 
-## Input safety
+1. **Build a Shaft** next to the Landing Pad. It takes 3 turns and opens the **Deep**, the cave level underneath. Your homes, food and air all go down there.
+2. **Make power and heat on the surface.** Put **Mirror Fields** toward the sunny side for power. Put a **Vent Tap** on an orange vent for heat.
+3. **Get water.** Put an **Ice Drill** on ice.
+4. **Go down.** Press **Deep** (or **E**). Build out from the bottom of the Shaft:
+   - a **Splitter** turns water into oxygen;
+   - a **Kelp Vat** grows food;
+   - **Bunkhouses** house 12 people each.
+5. **Start making money before turn 30.** Put a **Seam Cutter** on an ore seam (teal streaks) to dig ore. A **Forge** turns ore into alloy. A **Spin Launcher** sells alloy for marks. Then pay the Company on time.
+6. **Press End turn** (or **Enter**) and watch the top bar. If something turns red, open the **Colony report** to see why.
 
-- Everything a player types is cleaned before it's stored, shown or sent (`scripts/sim/text_rules.gd`). Colony and player names keep only letters, numbers, spaces, `-` and `_`, with length limits. Free text (suggestions) loses control characters and invisible characters that could hide or reorder text. Text shown in rich-text panels can't open formatting tags.
-- Saves loaded from the cloud are cleaned the same way.
-- The online service checks everything again on its side, whatever the game sends: types, lengths, allowed characters and ranges, body size limits, and rate limits. **It uses no SQL database, so SQL injection can't happen.** Any future SQL must use bound parameters. Suggestion text is escaped before it goes into a GitHub issue. See `leaderboard-api/README.md`, "Input safety".
-- Hostile input is tested on both sides: SQL-looking text, script tags, BBCode, Markdown, control and invisible characters, over-long text and wrong types.
+Use **Heat Mains** (1 alloy each) to reach further out on either level.
 
-## License
+---
+
+## The screen
+
+| Part | What it shows |
+| --- | --- |
+| **Top bar** | People, morale, power, heat, idle workers, food, oxygen, water, ore, alloy, parts, marks, debt and the next payment. |
+| **Left list** | Every building you can build, with its price. Grey ones can't be afforded yet or need research. **Surface** and **Deep** switch levels. |
+| **Map** | Your colony, seen at an angle. Click a tile to inspect it. Drag to move, scroll or pinch to zoom. |
+| **Right panel** | Details on what you selected, plus **Research**, **Drones & orbit**, and the **Company account** (pay early, set your export reserve). |
+| **Bottom** | News from the last turn, **End turn**, **Run 5 turns**, **Colony report**, **Save** and **Menu**. |
+
+On a phone the map gets the whole screen. **Build**, **Info**, **Research** and **Company** buttons open what the side panels show on a computer.
+
+---
+
+## How the colony works
+
+### Every turn
+
+- Each building needs its **workers**, **power** and **heat**. Generators go first; then buildings are supplied in order: water, oxygen and food, housing, ore, alloy, selling, then civic buildings.
+- A building that can't get everything sits **idle** with a red dot. Select it to see why.
+- Each person eats and breathes every turn. Running out of **oxygen** kills fastest, then food and water.
+
+### Light and cold
+
+The map runs from frozen night on one side to blazing day on the other. **Mirror Fields** make more power on the sunny side. Buildings need **more heat** on the cold side. Ice and vents are mostly on the cold side, so you're always balancing the two. Select a tile to see its light and heat factor.
+
+### Ground
+
+- **Ice Drills** go on ice, **Vent Taps** on vents (orange) and **Seam Cutters** on ore seams (teal streaks).
+- Ridges, deep ice and scorched ground can't be built on.
+
+### Doors and tunnels
+
+Buildings join with tunnels only where their **doors** meet.
+
+- **Hubs** (Landing Pad, Shaft, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern) have **4 doors**.
+- **Workplaces** have **2 doors**, on opposite sides.
+- **Outlying machines** (Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Signal Mast, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have **1 door**.
+- **Heat Mains** join on every side.
+
+A new building needs a door facing a door or a Heat Main. It turns itself to fit; press **R** or **Rotate** to turn it yourself. Don't wall in your Heat Mains: leave them a free side so you can keep growing.
+
+### The surface and the Deep
+
+The **Shaft** is a lift tube down to the Deep. When it's finished, a landing opens below it and the area around the landing is already cleared.
+
+| Level | Buildings |
+| --- | --- |
+| **Surface only** | Mirror Field, Beam Catcher, Spin Launcher, Signal Mast, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station |
+| **Deep only** | Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat, Splitter |
+| **Either** | Heat Main, Ice Drill, Vent Tap, Seam Cutter |
+
+The build menu says "Surface only" or "Deep only" on each building.
+
+In the Deep:
+- Open cave floor costs the normal price. Solid rock must be dug out first: +4 alloy and +2 turns (only +1 alloy for a Heat Main). Bedrock can't be dug.
+- **Ore veins** make Seam Cutters 50% better. **Deep vents** give Vent Taps 50% more heat. **Underground water** lets Ice Drills work below.
+- Buildings need only a little heat, and icequakes never reach them.
+- The caves are dark except where your colony's lamps reach.
+
+### Morale
+
+Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Garden Caverns, Signal Masts and relay satellites raise it. Shortages, crowding, waste and missed payments lower it. Below 20, people start leaving.
+
+### Money
+
+- **Seam Cutter** digs ore, then the **Forge** turns ore into alloy, then the **Spin Launcher** sells up to 4 alloy a turn for marks.
+- The **export reserve** (right panel) is how much alloy the Spin Launcher always keeps back for building.
+- You can **pay early** from the Company account panel.
+
+---
+
+## Buildings
+
+| Building | Level | Cost (alloy) | What it does |
+| --- | --- | --- | --- |
+| Heat Main | Either | 1 | Tunnel that extends your network. |
+| Shaft | Surface | 15 | Lift down to the Deep. |
+| Mirror Field | Surface | 6 | Power from sunlight. |
+| Vent Tap | Either | 10 | Lots of steady heat. Must sit on a vent. |
+| Ice Drill | Either | 6 | Water. Must sit on ice or underground water. |
+| Splitter | Deep | 10 | Turns water into oxygen. |
+| Kelp Vat | Deep | 8 | Food. Needs plenty of heat. |
+| Bunkhouse | Deep | 8 | Homes for 12. |
+| Seam Cutter | Either | 8 | Ore. Must sit on an ore seam or vein. |
+| Forge | Surface | 12 | Ore into alloy. |
+| Spin Launcher | Surface | 24 | Sells alloy; launches satellites. |
+| Cache | Surface | 5 | +300 storage of each resource. |
+| Commons | Deep | 10 | Raises morale. |
+| Clinic | Deep | 14 | Halves deaths, raises morale a little. |
+| Survey Lab | Deep | 14 | Research. |
+| Workshop | Surface | 10 | Faster repairs. |
+| Warden Post | Deep | 8 | Holds crime down. |
+| Reclaimer | Surface | 10 | Recycles waste into a little ore and water. |
+| Fab Shop | Surface | 14 | Alloy into parts. |
+| Drone Bay | Surface | 12 | Builds and runs up to 4 drones. |
+| Signal Mast | Surface | 8 | A little morale; sells alloy for 1 more mark. |
+| Rescue Station | Surface | 12 | Disasters damage half as many buildings. |
+| Academy | Deep | 16 | Trains specialists who work better. |
+| Hazard Lab | Deep | 18 | Triple research, but lowers morale and breaks often. |
+| Garden Cavern | Deep | 14 | Big morale boost, a little food. |
+| Lounge | Deep | 10 | Big morale boost; costs 3 marks a turn and raises crime. |
+| Beam Catcher | Surface | 16 + parts | Receives power from power satellites. Needs research. |
+| Fusion Core | Surface | 40 + parts | Huge power day and night, plus some heat. Needs research. |
+
+---
+
+## Drones, satellites and parts
+
+- **Parts** come from a **Fab Shop**. Drones, satellites and the most advanced buildings need parts as well as alloy.
+- **Drones** (Drones & orbit button) need a working **Drone Bay**: each runs up to 4.
+  - **Grader:** speeds up one surface building under construction.
+  - **Borer:** speeds up the Shaft or a Deep building, and makes digging rock free.
+  - **Prospector:** brings back 2 ore a turn.
+  - **Hauler:** makes your Seam Cutters dig more, and carries ore up the lift.
+- **Satellites** are launched from a working **Spin Launcher**.
+  - **Weather:** grit storms hurt mirrors less, and icequakes reach less far.
+  - **Relay:** +3 morale.
+  - **Power** (after research): beams 10 power to a Beam Catcher.
+- **Supply pods** packed before landing wait on the ship. Call one down any time for alloy, food and oxygen.
+
+---
+
+## Dangers
+
+- **Events:** grit storms, vent surges, broken seals, icequakes, stowaways, auditors and offers. Some ask you to choose.
+- **Breakdowns:** machines wear out. Workshops speed up repairs.
+- **Crime** grows with crowding and low morale. It steals and lowers morale. Warden Posts hold it down.
+- **Plague** can break out in a big colony (not on Easy). Survey Labs must research a cure in time.
+- **Waste** builds up. Too much lowers morale and spreads plague. Reclaimers clear it.
+- **Old age:** children grow up, adults grow old. Elders don't work. Clinics help everyone live longer.
+
+---
+
+## People, factions and story
+
+- The **Company** and the **Crews' Union** each like you from 0 to 100.
+  - Paying on time pleases the Company: it softens penalties and sends extra settlers.
+  - Shortages anger the Union. A happy Union lifts morale; a very unhappy one goes on strike.
+- **Story events** arrive as the colony grows and ask you to choose. Some choices matter later.
+- **Research:** pick a topic and your labs work on it. Finished topics improve buildings, housing and sales, or cut breakdowns, plague and crime. Some unlock new buildings.
+
+---
+
+## Controls
+
+| Action | Computer | Phone or tablet |
+| --- | --- | --- |
+| Build | Pick a building on the left, click a tile | **Build**, pick one, tap a tile |
+| Turn a building | **R** or **Rotate** | **Rotate** |
+| Cancel | **Esc** or **Cancel** | **Cancel** |
+| Move the map | Drag, arrow keys or WASD | Drag with one finger |
+| Zoom | Mouse wheel | Pinch, or **−** and **+** |
+| Surface / Deep | **Q** / **E**, or the buttons | **Deep** / **Surface** button |
+| End turn | **Enter** or **End turn** | **End turn** |
+
+Dragging the map never builds anything by accident.
+
+---
+
+## Saving, settings and online
+
+- **Saving:** the game autosaves every 10 turns. **Save** keeps a manual save. On the web, saves stay in that browser on that device.
+- **How to play** (title screen or Menu): a short illustrated guide.
+- **Settings:** fullscreen, **Install app** (Chrome, Edge, Android) and **Update app**. On iPhone or iPad: **Share**, then **Add to Home Screen**.
+- **Updates:** for 30 seconds after opening, the game checks for a newer version and switches to it. Your saves are kept.
+- **Leaderboard** (title screen): one for each planet and difficulty. Type your name on the title screen, then post a score when a colony ends, or **Menu → Retire** to post one that's still running.
+- **Sign in with Google** (Settings, optional): keep one cloud save and carry on from another device.
+- **Suggest a feature** (title screen): send an idea or a bug report. It becomes a public issue, so don't include private details.
+
+---
+
+## Tips
+
+- **Build the Shaft first.** Homes, food and air all live in the Deep.
+- **Don't run out of oxygen.** It kills fastest. Build a second Splitter early.
+- **Get money coming in before turn 30.** Seam Cutter, then Forge, then Spin Launcher.
+- **Keep Heat Mains open.** Leave a free side on your mains so the network can grow.
+- **Watch for red dots.** An idle building usually needs power, heat or workers.
+- **Use Run 5 turns** when things are calm, and the **Colony report** when they're not.
+- **On Hollow,** the sun is weak: lean on Vent Taps and deep vents for heat, and the Fusion Core for power.
+
+---
 
 Copyright (c) 2026 Zephino. All rights reserved. See `LICENSE` and `CREDITS.md`.

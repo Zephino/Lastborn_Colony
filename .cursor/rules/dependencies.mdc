@@ -21,7 +21,7 @@ Propose it in two lines (what it is, why it's needed) as required by `think-befo
 
 - Pin an exact version. Record name, version, source URL, and license in `CREDITS.md` (create it if missing).
 - Put Godot addons in `res://addons/` and enable them in Project Settings, with click-by-click instructions for any editor step.
-- Update `README.md` if a new install step is needed.
+- Update `DEVELOPERS.md` if a new install step is needed.
 - Run the project and confirm zero new errors in the Output panel.
 
 Do not add a dependency solely to avoid a small, clear change using existing tools.

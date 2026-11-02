@@ -232,10 +232,20 @@ static func _main_keeps_room(state: Dictionary, m: Vector2i, taken: Vector2i, z:
 
 ## The best tile for a building, and how to turn it, as (x, y, rot); x = -1 if none.
 static func _best_site(state: Dictionary, type: String, z: int = 0) -> Vector3i:
+	var picky: bool = Actions.door_rules(state) and type != "main" and int(GameData.building(type).get("doors", 4)) < 4
+	var best := _site_pass(state, type, z, picky)
+	# A Forge with nowhere beside a Heat Main may use a spare door on another
+	# building, so ore never piles up for want of a second Forge. (Other types
+	# keep to the mains: doing this for everything boxes the colony in.)
+	if best.x < 0 and picky and type == "forge":
+		best = _site_pass(state, type, z, false)
+	return best
+
+
+static func _site_pass(state: Dictionary, type: String, z: int, picky: bool) -> Vector3i:
 	var hull := _hull(state) if z == 0 else _landing(state)
 	var best := Vector3i(-1, -1, -1)
 	var best_score := INF
-	var picky: bool = Actions.door_rules(state) and type != "main" and int(GameData.building(type).get("doors", 4)) < 4
 	for y in int(state["height"]):
 		for x in int(state["width"]):
 			var rot := -1

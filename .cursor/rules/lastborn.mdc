@@ -6,7 +6,7 @@ alwaysApply: true
 # Lastborn Colony — standing rules
 
 ## Source of truth
-- Read `README.md` before starting a task. It describes the game, the code layout and the turn order.
+- Read `README.md` and `DEVELOPERS.md` before starting a task. `README.md` is the player's guide (how to play); `DEVELOPERS.md` describes the code layout, tests and the turn order.
 - The owner decides the design. If a task seems to conflict with the existing design, stop and ask instead of guessing.
 - Never remove or rewrite working features unless asked.
 

@@ -8,8 +8,8 @@ alwaysApply: true
 Update relevant maintained documentation as part of the same approved change when the work changes:
 
 - Setup, dependencies, addons, export or deployment steps (`README.md`, `CREDITS.md`, `leaderboard-api/README.md`)
-- User-visible controls, settings or rules of play (`README.md`, "How to play")
-- Configuration keys, JSON data fields, or file formats (comments at the top of the relevant script, and `README.md`)
+- User-visible controls, settings or rules of play (`README.md`, the player's guide, and the in-game "How to play")
+- Configuration keys, JSON data fields, or file formats (comments at the top of the relevant script, and `DEVELOPERS.md`)
 
 ## Design decisions
 

@@ -53,21 +53,26 @@ func _buildings(from: int, to: int) -> void:
 			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
 		else:
 			_text("%d door%s" % [doors, "" if doors == 1 else "s"], o + Vector2(cw - 90, 26), 16, Color(0.7, 0.75, 0.8))
-		Sprites.terrain_top(self, "regolith", r)
+		# Each building sits on the ground of the level it's built on.
+		var note := GameData.level_note(GameData.building(id))
+		var ground := "cavern" if note == "Deep only." else "regolith"
+		if note != "":
+			_text(note.trim_suffix("."), o + Vector2(cw - 210, 26), 16, Color(0.55, 0.80, 0.95) if ground == "cavern" else Color(0.95, 0.80, 0.55))
+		Sprites.terrain_top(self, ground, r)
 		Sprites.draw_top(self, id, r, sample)
 		# Angled, on one diamond.
 		var c := o + Vector2(290, 150)
-		Sprites.terrain_iso(self, "regolith", c, 200.0)
+		Sprites.terrain_iso(self, ground, c, 200.0)
 		Sprites.draw_iso(self, id, c, 200.0, sample)
 		# Under construction and idle, small.
 		var y := o.y + ch - 64
 		for j in 2:
 			var st := {"built": false} if j == 0 else {"active": false}
 			var rr := Rect2(Vector2(o.x + 14 + j * 60, y), Vector2(44, 44))
-			Sprites.terrain_top(self, "regolith", rr)
+			Sprites.terrain_top(self, ground, rr)
 			Sprites.draw_top(self, id, rr, st)
 			var cc := Vector2(o.x + 160 + j * 70, y + 30)
-			Sprites.terrain_iso(self, "regolith", cc, 60.0)
+			Sprites.terrain_iso(self, ground, cc, 60.0)
 			Sprites.draw_iso(self, id, cc, 60.0, st)
 
 

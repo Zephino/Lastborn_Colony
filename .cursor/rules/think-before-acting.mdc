@@ -8,7 +8,7 @@ alwaysApply: true
 Before changing any file:
 
 1. **Restate the task in two lines:** what you'll change and why.
-2. **Check it against the sources:** confirm it fits `README.md` and the project rules. If it conflicts with the design, stop and say so.
+2. **Check it against the sources:** confirm it fits `README.md`, `DEVELOPERS.md` and the project rules. If it conflicts with the design, stop and say so.
 3. **List assumptions.** If an assumption affects gameplay, names, lore, data formats, or anything persistent, ask the owner instead of assuming.
 4. **State your confidence** (high / medium / low). If low, investigate first (read code, run a read-only check) or ask.
 5. **Keep the change small.** Touch only the files the task needs. Prefer extending existing systems over creating parallel ones.

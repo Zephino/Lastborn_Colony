@@ -208,7 +208,9 @@ func _draw() -> void:
 	var h := int(state["height"])
 	var tw := tile_size
 	var view := Rect2(Vector2(-tw * 2.0, -tw * 2.0), size + Vector2(tw * 4.0, tw * 4.0))
-	# Ground, back to front, with the climate tint on the surface.
+	var lamps := _deep_light() if level == 1 else {}
+	# Ground, back to front, with the climate tint on the surface and lamplight
+	# in the Deep.
 	for sum in w + h - 1:
 		for x in range(maxi(0, sum - h + 1), mini(w, sum + 1)):
 			var y := sum - x
@@ -221,6 +223,19 @@ func _draw() -> void:
 				var l := GameData.light_at(x, state["planet"])
 				var tint := Color(0.2, 0.35, 0.8, 0.22 * clampf(1.0 - l, 0.0, 1.0)) if l < 1.0 else Color(1.0, 0.6, 0.2, 0.18 * clampf(l - 1.0, 0.0, 1.0))
 				draw_colored_polygon(_diamond(c, 1.0), tint)
+			else:
+				var lit: float = float(lamps.get(Vector2i(x, y), 0.0))
+				var shade := Color(0.0, 0.0, 0.02, 0.62 * (1.0 - lit))
+				var ground := Actions.terrain_at(state, x, y, level)
+				if (ground == "rock" or ground == "vein") and Actions.structure_at(state, x, y, level).is_empty():
+					# Raised rock: shade its sides and top too.
+					var up := Vector2(0, tw * 0.14)
+					var dm := _diamond(c, 1.0)
+					draw_colored_polygon(PackedVector2Array([dm[0] - up, dm[1] - up, dm[1], dm[2], dm[3], dm[3] - up]), shade)
+				else:
+					draw_colored_polygon(_diamond(c, 1.0), shade)
+				if lit > 0.0:
+					draw_colored_polygon(_diamond(c, 1.0), Color(1.0, 0.78, 0.45, 0.10 * lit))
 	# Where the next building would go, and the selected tile, under the buildings.
 	if hover.x >= 0:
 		var hc := cell_center(hover)
@@ -322,6 +337,9 @@ func _draw_structure(s: Dictionary, c: Vector2) -> void:
 	}
 	if Actions.door_rules(state):
 		look["doors"] = Actions.door_dirs(str(s["type"]), int(s.get("rot", 0)))
+	if s["type"] == "shaft" or s["type"] == "shaft_base":
+		# The lift goes up and down between turns.
+		look["car"] = "up" if int(state["turn"]) % 2 == 0 else "down"
 	if s["type"] == "hull":
 		look["ship"] = int(state.get("lander", 0)) > 0
 		look["ship_door"] = int(state.get("lander_door", 0))
@@ -372,6 +390,12 @@ func _drone_spots() -> Dictionary:
 		if s["type"] == "cutter" and s["active"] and int(s.get("z", 0)) == level:
 			_add_spot(out, Vector2i(int(s["x"]), int(s["y"])), "hauler")
 			haulers -= 1
+	# A Hauler takes ore up the lift when any are working.
+	if int(work.get("hauler", 0)) > 0:
+		for id in state["structures"]:
+			var s: Dictionary = state["structures"][id]
+			if s["built"] and ((level == 0 and s["type"] == "shaft") or (level == 1 and s["type"] == "shaft_base")):
+				_add_spot(out, Vector2i(int(s["x"]), int(s["y"])), "hauler")
 	var prospectors := int(work.get("prospector", 0))
 	if prospectors > 0 and level == 0:
 		var edge: Array = []
@@ -421,6 +445,32 @@ func _draw_orbit() -> void:
 ## They stand or walk on open ground next to the colony and move every turn.
 ## Most are workers (orange stripe); some are scientists (teal) if there is a lab,
 ## and wardens (violet) if there is a Warden Post.
+## How brightly each Deep tile is lit (0 dark to 1 bright): the caves are dark
+## except where the colony's lamps reach. Working buildings light about two
+## tiles round them; idle ones and tunnels only a little.
+func _deep_light() -> Dictionary:
+	var out := {}
+	for id in state["structures"]:
+		var s: Dictionary = state["structures"][id]
+		if int(s.get("z", 0)) != 1:
+			continue
+		var conduit: bool = GameData.building(s["type"]).get("conduit", false)
+		var bright := 1.0 if (s["active"] and s["built"]) or s["type"] == "shaft_base" else (0.55 if conduit and s["built"] else 0.3)
+		var reach := 2.6 if bright >= 1.0 else 1.6
+		var at := Vector2i(int(s["x"]), int(s["y"]))
+		var r := int(ceil(reach))
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var cell := at + Vector2i(dx, dy)
+				if not Actions.inside(state, cell.x, cell.y):
+					continue
+				var d := Vector2(dx, dy).length()
+				var v := bright * clampf(1.0 - d / (reach + 0.5), 0.0, 1.0)
+				if v > float(out.get(cell, 0.0)):
+					out[cell] = v
+	return out
+
+
 func _colonist_spots() -> Dictionary:
 	var out := {}
 	var pop := Turn.population(state)
@@ -454,6 +504,20 @@ func _colonist_spots() -> Dictionary:
 		if not out.has(cell):
 			out[cell] = []
 		(out[cell] as Array).append({"at": Vector2(ou, ov) * 0.7, "job": job, "facing": 1.0 if (k + turn) % 2 == 0 else -1.0, "stride": (k + turn) % 3 != 0})
+	# People riding the lift: one waiting at the tube's door and, when the car
+	# has just arrived on this level, one stepping out.
+	var car_here: bool = (int(state["turn"]) % 2 == 0) == (level == 0)
+	for id in state["structures"]:
+		var st: Dictionary = state["structures"][id]
+		var lift: bool = (level == 0 and st["type"] == "shaft") or (level == 1 and st["type"] == "shaft_base")
+		if not lift or not st["built"]:
+			continue
+		var at := Vector2i(int(st["x"]), int(st["y"]))
+		if not out.has(at):
+			out[at] = []
+		(out[at] as Array).append({"at": Vector2(0.30, 0.10), "job": "worker", "facing": -1.0, "stride": false})
+		if car_here:
+			(out[at] as Array).append({"at": Vector2(0.12, 0.32), "job": "scientist" if has_lab else "worker", "facing": 1.0, "stride": true})
 	# Back to front inside a tile too.
 	for cell in out:
 		(out[cell] as Array).sort_custom(func(a, b): return a["at"].x + a["at"].y < b["at"].x + b["at"].y)

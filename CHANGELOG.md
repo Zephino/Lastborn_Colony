@@ -2,6 +2,28 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.65
+Date: 11/02/2026
+Time: 4:09 AM
+
+### Changes
+- **The Shaft on the surface is now the top of the lift.** The same ribbed lift tube rises out of the pit, with a lid, a small lifting frame and a cable wheel. Its top-down picture matches. The old glass dome and ladder are gone.
+- **The lift moves.** The lift car is at the top on even turns and down in the Deep on odd turns, on both the Shaft and the Shaft Landing.
+- **Lift traffic.** On each level, a colonist waits at the lift door, and another steps out when the car has just arrived there. When Haulers are working, one waits at the lift too.
+- **Lamplight in the Deep.** The caves are dark except near the colony. Working buildings light about two tiles around them with a warm glow; idle buildings and tunnels light less. Raised rock is shaded too.
+- **Sprite sheet:** Deep-only buildings are drawn on cave floor, and each card says "Surface only" or "Deep only".
+- **The README is now a player's guide.** It covers how to win and lose, a step-by-step first 30 turns, the screen, how the colony works, a building table, drones and satellites, dangers, controls, saving and online, and tips. The developer parts moved to the new `DEVELOPERS.md`. `CLAUDE.md`, `AGENTS.md` and the rule files now point to both.
+- `tools/balance.gd` takes a planet, difficulty and game count. `tools/ui_shot.gd` also saves `lift_top.png`, the surface end of the lift.
+- **Balance check after the split** (bot, 6 maps each, before → after):
+  - Brume wins 6/6 at every difficulty, both before and after. Buyouts take longer: Easy about 111 → 211 turns, Normal about 162 → 207, Hard about 176 → 217.
+  - Cinder: Easy 3 → 4 wins, Normal 5 → 6, Hard 4 → 6.
+  - Hollow: Easy 5 → 6 wins, Normal 5 → 6, Hard 3 → 5.
+  - The game is now safer but slower, and Easy, Normal and Hard finish in a similar number of turns.
+  - A turn-by-turn trace shows why. After the split, the test bot often builds only one Forge, because under door rules it finds no spot for a second Forge beside a Heat Main. Ore piles up at the storage limit while the Spin Launchers wait for alloy. The bot may now put a Forge on a spare door of another building. Letting every building do that boxed the colony in and lost games, so it is limited to Forges. A full fix needs smarter colony layout in the bot. The game rules were not changed.
+
+### Reason
+The owner asked for: the sheet on cave floor, Deep lighting, the surface Shaft to match the lift, people and rovers using the lift, a balance test, and the README remade as instructions on how to play.
+
 ## Version 00.01.64
 Date: 11/02/2026
 Time: 4:05 AM
