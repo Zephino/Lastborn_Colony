@@ -120,7 +120,7 @@ static func tile(state: Dictionary, c: Vector2i, z: int = 0) -> String:
 		lines.append("Carrying heat.")
 	else:
 		lines.append("Running.")
-	lines.append(def["desc"])
+	lines.append(GameData.desc(def))
 	var needs := PackedStringArray()
 	if GameData.num(def, "workers") > 0.0:
 		needs.append("%d workers" % int(GameData.num(def, "workers")))

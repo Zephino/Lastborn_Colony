@@ -95,6 +95,13 @@ static func _construction(state: Dictionary) -> void:
 		var y := int(s["y"])
 		if Actions.structure_at(state, x, y, 1).is_empty():
 			state["deep"][y][x] = "cavern"
+			# The crew clears a small chamber round the landing, so the first
+			# buildings down there don't have to be dug out of solid rock.
+			var chamber := int(GameData.balance()["deep"].get("landing_chamber", 0))
+			for dy in range(-chamber, chamber + 1):
+				for dx in range(-chamber, chamber + 1):
+					if Actions.inside(state, x + dx, y + dy) and state["deep"][y + dy][x + dx] == "rock":
+						state["deep"][y + dy][x + dx] = "cavern"
 			NewGame.add_structure(state, "shaft_base", x, y, true, 1)
 			log_msg(state, "The shaft breaks through into the Deep. Build outward from the landing.")
 

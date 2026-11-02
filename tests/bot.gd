@@ -18,11 +18,11 @@ static var only := ""
 const ADVANCED_TOPICS := ["drone_swarms", "beaming", "fusion"]
 
 const DIRS := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
-const MUST_AFFORD := ["mirror", "splitter", "drill", "vat", "rail"]
+const MUST_AFFORD := ["shaft", "mirror", "splitter", "drill", "vat", "rail"]
 const CASH_BUFFER := 1200.0
 const BUILD_RESERVE := 40.0
 const SAVING_RESERVE := 0.0
-const ESSENTIAL := ["mirror", "vent", "splitter", "drill", "vat", "bunk", "cutter", "forge", "rail", "lab", "warden"]
+const ESSENTIAL := ["shaft", "mirror", "vent", "splitter", "drill", "vat", "bunk", "cutter", "forge", "rail", "lab", "warden"]
 ## Research order the bot prefers; anything else available comes after.
 const TOPIC_ORDER := ["seals", "seam_mapping", "smelting", "mag_rail", "insulation", "coatings", "kelp", "field_medicine", "commons_charter"]
 
@@ -90,6 +90,9 @@ static func _choose(state: Dictionary) -> Array:
 	var pop := Turn.population(state)
 	var rep: Dictionary = state["report"]
 	var want: Array = []
+	# Homes, food, air and civic buildings are underground: dig a Shaft first.
+	if _count(state, "shaft") < 1:
+		want.append("shaft")
 	if float(rep.get("power_free", 0.0)) < 3.0 or (int(rep.get("idle", 0)) > 0 and float(rep.get("power_free", 0.0)) < 6.0):
 		want.append("mirror")
 	if float(rep.get("heat_free", 0.0)) < 2.0 or (int(rep.get("idle", 0)) > 0 and float(rep.get("heat_free", 0.0)) < 3.0):
@@ -135,6 +138,13 @@ static func _choose(state: Dictionary) -> Array:
 			break
 	if advanced:
 		_advanced_wants(state, want, turn, pop)
+	# Once ore is coming in, the first Forge comes first: save alloy for it
+	# rather than spending it on anything else.
+	if _count(state, "forge") < 1 and _count(state, "cutter") >= 1 and float(state["stock"]["food"]) > 40.0 and float(state["stock"]["oxygen"]) > 40.0:
+		want.erase("forge")
+		want.push_front("forge")
+		if alloy < GameData.num(GameData.building("forge"), "cost"):
+			return picks
 	var saving := _saving(state)
 	for w in want:
 		if saving and not (w in ESSENTIAL):
@@ -149,14 +159,43 @@ static func _choose(state: Dictionary) -> Array:
 ## Builds the type at the best adjacent site, or lays a heat main toward the
 ## nearest tile it needs (ice, vent or seam) if none is in reach.
 static func _build(state: Dictionary, type: String) -> bool:
-	var site := _best_site(state, type)
-	if site.x >= 0:
-		return Actions.place(state, type, site.x, site.y, 0, site.z)["ok"]
+	var levels := _levels_for(state, type)
+	for z in levels:
+		var site := _best_site(state, type, z)
+		if site.x >= 0:
+			return Actions.place(state, type, site.x, site.y, z, site.z)["ok"]
 	var terrain: Array = GameData.building(type)["terrain"]
-	var step := _step_toward(state, terrain)
-	if step.x >= 0:
-		return Actions.place(state, "main", step.x, step.y)["ok"]
+	for z in levels:
+		var step := _step_toward(state, terrain, z)
+		if step.x >= 0:
+			return Actions.place(state, "main", step.x, step.y, z)["ok"]
 	return false
+
+
+## The levels this building can go on: the surface if its ground is there, and
+## the Deep if its ground is there and a Shaft has opened it.
+static func _levels_for(state: Dictionary, type: String) -> Array:
+	var terrain: Array = GameData.building(type)["terrain"]
+	var out: Array = []
+	for t in terrain:
+		if t in Actions.SURFACE_TERRAIN and not (0 in out):
+			out.append(0)
+	var deep_ok := false
+	for t in terrain:
+		if t in Actions.DEEP_TERRAIN:
+			deep_ok = true
+	if deep_ok and _landing(state).x >= 0:
+		out.append(1)
+	return out
+
+
+## The Shaft Landing in the Deep, or (-1, -1) if no shaft has opened yet.
+static func _landing(state: Dictionary) -> Vector2i:
+	for id in state["structures"]:
+		var s: Dictionary = state["structures"][id]
+		if s["type"] == "shaft_base":
+			return Vector2i(int(s["x"]), int(s["y"]))
+	return Vector2i(-1, -1)
 
 
 static func _hull(state: Dictionary) -> Vector2i:
@@ -170,18 +209,30 @@ static func _hull(state: Dictionary) -> Vector2i:
 ## The turn (0-3) that joins this building to the colony through a Heat Main,
 ## or -1. With door rules the bot keeps the hubs' doors free for more mains, and
 ## hangs one- and two-door buildings off the main network.
-static func _main_rot(state: Dictionary, type: String, x: int, y: int) -> int:
+static func _main_rot(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> int:
 	for r in 4:
 		for d in Actions.door_dirs(type, r):
 			var n: Vector2i = Vector2i(x, y) + d
-			if Actions.inside(state, n.x, n.y) and Actions.structure_at(state, n.x, n.y).get("type", "") == "main":
+			if Actions.inside(state, n.x, n.y) and Actions.structure_at(state, n.x, n.y, z).get("type", "") == "main" and _main_keeps_room(state, n, Vector2i(x, y), z):
 				return r
 	return -1
 
 
+## Whether the Heat Main at m still has an open side to grow from if the tile
+## `taken` is built on, so the network never boxes itself in.
+static func _main_keeps_room(state: Dictionary, m: Vector2i, taken: Vector2i, z: int) -> bool:
+	for d in DIRS:
+		var n: Vector2i = m + d
+		if n == taken or not Actions.inside(state, n.x, n.y):
+			continue
+		if _open(state, n.x, n.y, z):
+			return true
+	return false
+
+
 ## The best tile for a building, and how to turn it, as (x, y, rot); x = -1 if none.
-static func _best_site(state: Dictionary, type: String) -> Vector3i:
-	var hull := _hull(state)
+static func _best_site(state: Dictionary, type: String, z: int = 0) -> Vector3i:
+	var hull := _hull(state) if z == 0 else _landing(state)
 	var best := Vector3i(-1, -1, -1)
 	var best_score := INF
 	var picky: bool = Actions.door_rules(state) and type != "main" and int(GameData.building(type).get("doors", 4)) < 4
@@ -189,32 +240,36 @@ static func _best_site(state: Dictionary, type: String) -> Vector3i:
 		for x in int(state["width"]):
 			var rot := -1
 			if picky:
-				rot = _main_rot(state, type, x, y)
+				rot = _main_rot(state, type, x, y, z)
 				if rot < 0:
 					continue
-			if not Actions.check_place(state, type, x, y, 0, rot)["ok"]:
+			if not Actions.check_place(state, type, x, y, z, rot)["ok"]:
 				continue
 			var score := float(absi(x - hull.x) + absi(y - hull.y))
 			if type == "mirror":
 				score -= 0.6 * float(x - hull.x)
-			var t := Actions.terrain_at(state, x, y)
+			var t := Actions.terrain_at(state, x, y, z)
 			if t == "ice" and type != "drill":
 				score += 3.0
+			# Solid rock costs more to build in; prefer open cavern.
+			if t == "rock":
+				score += 4.0
 			if score < best_score:
 				best_score = score
 				best = Vector3i(x, y, rot)
 	return best
 
 
-## Breadth-first search from the colony's edge over open regolith/ice to the
-## nearest free tile of a wanted terrain. Returns the first tile to lay a main on.
-static func _step_toward(state: Dictionary, terrain: Array) -> Vector2i:
+## Breadth-first search from the colony's edge over open ground to the nearest
+## free tile of a wanted terrain, on level z. Returns the first tile to lay a
+## main on.
+static func _step_toward(state: Dictionary, terrain: Array, z: int = 0) -> Vector2i:
 	var parent := {}
 	var queue: Array = []
 	for y in int(state["height"]):
 		for x in int(state["width"]):
 			# Start from tiles where a Heat Main would join the colony (through a door).
-			if _open(state, x, y) and Actions.touches_colony(state, x, y) and Actions.auto_rot(state, "main", x, y) >= 0:
+			if _open(state, x, y, z) and Actions.touches_colony(state, x, y, z) and Actions.auto_rot(state, "main", x, y, z) >= 0:
 				parent[Vector2i(x, y)] = Vector2i(x, y)
 				queue.append(Vector2i(x, y))
 	var head := 0
@@ -223,23 +278,25 @@ static func _step_toward(state: Dictionary, terrain: Array) -> Vector2i:
 		head += 1
 		for d in DIRS:
 			var n: Vector2i = c + d
-			if not Actions.inside(state, n.x, n.y) or not Actions.structure_at(state, n.x, n.y).is_empty():
+			if not Actions.inside(state, n.x, n.y) or not Actions.structure_at(state, n.x, n.y, z).is_empty():
 				continue
-			if Actions.terrain_at(state, n.x, n.y) in terrain:
+			if Actions.terrain_at(state, n.x, n.y, z) in terrain:
 				var p := c
 				while parent[p] != p:
 					p = parent[p]
 				return p
-			if _open(state, n.x, n.y) and not parent.has(n):
+			if _open(state, n.x, n.y, z) and not parent.has(n):
 				parent[n] = c
 				queue.append(n)
 	return Vector2i(-1, -1)
 
 
-static func _open(state: Dictionary, x: int, y: int) -> bool:
-	if not Actions.structure_at(state, x, y).is_empty():
+static func _open(state: Dictionary, x: int, y: int, z: int = 0) -> bool:
+	if not Actions.structure_at(state, x, y, z).is_empty():
 		return false
-	var t := Actions.terrain_at(state, x, y)
+	var t := Actions.terrain_at(state, x, y, z)
+	if z == 1:
+		return t == "cavern" or t == "rock"
 	return t == "regolith" or t == "ice"
 
 

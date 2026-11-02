@@ -107,7 +107,9 @@ static func build_cost(state: Dictionary, type: String, x: int, y: int, z: int =
 	var cost := GameData.num(GameData.building(type), "cost")
 	# While the colony owns a Borer, digging into rock costs nothing extra.
 	if excavation(state, x, y, z) and Fleet.owned(state, "borer") == 0:
-		cost += float(GameData.balance()["deep"]["excavate_cost"])
+		# A Heat Main is a narrow tunnel: digging one through rock costs less.
+		var deep: Dictionary = GameData.balance()["deep"]
+		cost += float(deep.get("excavate_cost_main", deep["excavate_cost"])) if type == "main" else float(deep["excavate_cost"])
 	return cost
 
 

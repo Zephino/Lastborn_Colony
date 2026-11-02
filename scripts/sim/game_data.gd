@@ -185,3 +185,26 @@ static func cold_at(x: int, planet_id: String = DEFAULT_PLANET) -> float:
 	var b := balance()
 	var p := planet(planet_id)
 	return clampf(float(p["cold_offset"]) - light_at(x, planet_id), float(b["cold_min"]), float(b["cold_max"]))
+
+
+## "Surface only." or "Deep only." for buildings that can be built on one level
+## only, or "" for buildings that can go on either.
+static func level_note(def: Dictionary) -> String:
+	var deep := 0
+	var surface := 0
+	for t in def.get("terrain", []):
+		if t in ["cavern", "rock", "vein", "aquifer", "deepvent"]:
+			deep += 1
+		else:
+			surface += 1
+	if deep > 0 and surface == 0:
+		return "Deep only."
+	if surface > 0 and deep == 0 and def.get("id", "") != "shaft":
+		return "Surface only."
+	return ""
+
+
+## A building's description followed by its level note.
+static func desc(def: Dictionary) -> String:
+	var note := level_note(def)
+	return str(def["desc"]) if note == "" else "%s %s" % [def["desc"], note]

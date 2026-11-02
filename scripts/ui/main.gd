@@ -348,7 +348,7 @@ func show_game() -> void:
 			b.toggle_mode = true
 			b.text = "%s  (%d)" % [def["name"], int(GameData.num(def, "cost"))]
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			b.tooltip_text = def["desc"]
+			b.tooltip_text = GameData.desc(def)
 			b.clip_text = true
 			b.pressed.connect(func() -> void: _set_build("" if map_view.build_type == id else id))
 			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -525,7 +525,7 @@ func show_build_menu() -> void:
 			if def["category"] != cat[0] or not def.get("buildable", true):
 				continue
 			var price := Actions.price_text(state, id, true)
-			options.append(["%s (%s)\n%s" % [def["name"], price, def["desc"]], _pick_build.bind(id), Actions.affordable(state, id) and state["ending"] == "", id])
+			options.append(["%s (%s)\n%s" % [def["name"], price, GameData.desc(def)], _pick_build.bind(id), Actions.affordable(state, id) and state["ending"] == "", id])
 	options.append(["Back", close_modal, true])
 	show_modal("Build", "You have %d alloy and %d parts. Choose a building, then tap a tile next to the colony. Dragging the map never builds." % [int(state["stock"]["alloy"]), int(state["stock"]["parts"])], options, true)
 
@@ -777,7 +777,7 @@ func _refresh_hint() -> void:
 		return
 	if map_view.build_type != "":
 		var def := GameData.building(map_view.build_type)
-		var text := "Placing %s. %s" % [def["name"], def["desc"]]
+		var text := "Placing %s. %s" % [def["name"], GameData.desc(def)]
 		var h: Vector2i = map_view.hover
 		if h.x >= 0:
 			var r := Actions.check_place(state, map_view.build_type, h.x, h.y, map_view.level, map_view.build_rot)

@@ -2,6 +2,21 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.62
+Date: 11/02/2026
+Time: 2:28 AM
+
+### Changes
+- **Buildings now belong on a level.** Surface only: Mirror Field, Beam Catcher, Spin Launcher, Signal Mast, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop and Rescue Station. Deep only: Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat and Splitter. Heat Mains, Ice Drills, Vent Taps, Seam Cutters and the Shaft work as before.
+- The build menu, the placing hint, the tooltips and the Info panel say "Surface only" or "Deep only".
+- To keep the game winnable: the rock around a new Shaft Landing is already cleared (`deep.landing_chamber`), and a Heat Main dug into rock costs only 1 extra alloy (`deep.excavate_cost_main`).
+- The test bot builds a Shaft first, builds on both levels, saves for its first Forge, and keeps a free side on each Heat Main so the network can keep growing under the door rules.
+- The How to play page "Going underground" and the README list which buildings go where.
+- A new test checks each building's level note. The test colonies now open a Shaft.
+
+### Reason
+The owner asked for the buildings to be split into surface and underground, as in the table they approved.
+
 ## Version 00.01.61
 Date: 11/02/2026
 Time: 1:45 AM

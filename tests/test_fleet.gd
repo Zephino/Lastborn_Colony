@@ -33,9 +33,29 @@ static func run(check: Callable) -> void:
 	_lander(check)
 
 
-## A fresh colony with plenty of everything, and no random events.
+## Opens a Shaft next to the Landing Pad, with its landing and a cleared
+## chamber in the Deep, as a finished shaft would. Returns the landing's cell.
+static func open_shaft(s: Dictionary) -> Vector2i:
+	var hull: Dictionary = s["structures"]["1"]
+	for d in DIRS:
+		var x: int = int(hull["x"]) + d.x
+		var y: int = int(hull["y"]) + d.y
+		if Actions.terrain_at(s, x, y) != "regolith" or Actions.terrain_at(s, x, y, 1) == "bedrock" or not Actions.structure_at(s, x, y).is_empty():
+			continue
+		NewGame.add_structure(s, "shaft", x, y, true)
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				if Actions.inside(s, x + dx, y + dy):
+					s["deep"][y + dy][x + dx] = "cavern"
+		NewGame.add_structure(s, "shaft_base", x, y, true, 1)
+		return Vector2i(x, y)
+	return Vector2i(-1, -1)
+
+
+## A fresh colony with plenty of everything, an open shaft, and no random events.
 static func _colony(seed_value: int = 5) -> Dictionary:
 	var s := NewGame.create(seed_value, "Margin")
+	open_shaft(s)
 	# Below the 300 storage cap, so nothing is lost to it.
 	for k in ["alloy", "parts", "food", "oxygen", "water"]:
 		s["stock"][k] = 250.0
@@ -48,13 +68,14 @@ static func _colony(seed_value: int = 5) -> Dictionary:
 ## colony where its terrain allows (no cost), and returns its id.
 static func _put(s: Dictionary, type: String) -> String:
 	var def := GameData.building(type)
-	for y in int(s["height"]):
-		for x in int(s["width"]):
-			if not Actions.structure_at(s, x, y).is_empty() or not Actions.touches_colony(s, x, y):
-				continue
-			var rot := Actions.auto_rot(s, type, x, y)
-			if rot >= 0 and Actions.terrain_at(s, x, y) in def["terrain"]:
-				return NewGame.add_structure(s, type, x, y, true, 0, rot)
+	for z in [0, 1]:
+		for y in int(s["height"]):
+			for x in int(s["width"]):
+				if not Actions.structure_at(s, x, y, z).is_empty() or not Actions.touches_colony(s, x, y, z):
+					continue
+				var rot := Actions.auto_rot(s, type, x, y, z)
+				if rot >= 0 and Actions.terrain_at(s, x, y, z) in def["terrain"]:
+					return NewGame.add_structure(s, type, x, y, true, z, rot)
 	return ""
 
 
@@ -123,7 +144,7 @@ static func _drones(check: Callable) -> void:
 	check.call(float(s["stock"]["parts"]) == parts - 3.0, "a Grader costs 3 parts")
 	# A Grader adds a turn of progress to a surface building.
 	var spot := _free_regolith(s)
-	Actions.place(s, "commons", spot.x, spot.y)
+	Actions.place(s, "workshop", spot.x, spot.y)
 	var commons := Actions.structure_at(s, spot.x, spot.y)
 	_turn(s)
 	check.call(int(commons["progress"]) == 2, "a Grader speeds up construction (progress %d after one turn)" % int(commons["progress"]))
@@ -151,7 +172,7 @@ static func _drones(check: Callable) -> void:
 static func _free_regolith(s: Dictionary) -> Vector2i:
 	for y in int(s["height"]):
 		for x in int(s["width"]):
-			if Actions.structure_at(s, x, y).is_empty() and Actions.auto_rot(s, "commons", x, y) >= 0 and Actions.terrain_at(s, x, y) == "regolith":
+			if Actions.structure_at(s, x, y).is_empty() and Actions.auto_rot(s, "workshop", x, y) >= 0 and Actions.terrain_at(s, x, y) == "regolith":
 				return Vector2i(x, y)
 	return Vector2i(-1, -1)
 
@@ -296,7 +317,8 @@ static func _doors(check: Callable) -> void:
 	check.call(Actions.door_dirs("mirror", 0) == [Vector2i(0, 1)] and Actions.door_dirs("mirror", 1) == [Vector2i(-1, 0)], "a one-door building's door turns with it")
 	check.call(Actions.door_dirs("vat", 1) == [Vector2i(0, 1), Vector2i(0, -1)], "a two-door building's doors stay opposite when turned")
 	check.call(Actions.door_dirs("bunk", 3).size() == 4, "hubs have four doors")
-	var s := _colony()
+	var s := NewGame.create(5, "Margin")
+	s["stock"]["alloy"] = 250.0
 	check.call(Actions.door_rules(s), "new games use door rules")
 	var hull: Dictionary = s["structures"]["1"]
 	var hx := int(hull["x"])
@@ -310,7 +332,7 @@ static func _doors(check: Callable) -> void:
 	var behind := Actions.check_place(s, "main", hx + 2, hy)
 	check.call(not behind["ok"], "nothing joins through a wall without a door")
 	# Built next to each other but facing away, two buildings don't join.
-	var t := _colony()
+	var t := NewGame.create(5, "Margin")
 	var th: Dictionary = t["structures"]["1"]
 	var mx := int(th["x"]) + 1
 	var my := int(th["y"])

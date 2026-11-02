@@ -39,6 +39,7 @@ func _init() -> void:
 	test_difficulty()
 	test_story()
 	test_deep()
+	test_levels()
 	test_colony_text()
 	test_planets_and_sites()
 	test_research()
@@ -53,6 +54,20 @@ func _init() -> void:
 	test_bot_colonies()
 	print("\n%d checks, %d failed" % [checks, failures])
 	quit(1 if failures > 0 else 0)
+
+
+func test_levels() -> void:
+	print("Surface and Deep buildings")
+	var surface := ["mirror", "catcher", "rail", "mast", "forge", "fab", "dronebay", "fusion", "reclaimer", "cache", "workshop", "rescue"]
+	var deep := ["bunk", "commons", "clinic", "warden", "lounge", "garden", "academy", "lab", "hazlab", "vat", "splitter"]
+	var either := ["drill", "vent", "cutter", "main", "shaft"]
+	for t in surface:
+		check(GameData.level_note(GameData.building(t)) == "Surface only.", "%s says Surface only" % t)
+	for t in deep:
+		check(GameData.level_note(GameData.building(t)) == "Deep only.", "%s says Deep only" % t)
+	for t in either:
+		check(GameData.level_note(GameData.building(t)) == "", "%s has no level note" % t)
+	check(GameData.desc(GameData.building("bunk")).ends_with(" Deep only."), "the note follows the description")
 
 
 func check(ok: bool, label: String) -> void:
@@ -196,7 +211,7 @@ func test_colony_text() -> void:
 	var text := ColonyText.report(s)
 	for part in ["POWER", "STOCK", "PEOPLE", "IDLE OR STARVED", "RESEARCH", "DEBT"]:
 		check(text.contains(part), "the report has a %s section" % part)
-	check(ColonyText.tile(s, Vector2i(int(st["x"]), int(st["y"]))).contains("Idle last turn"), "the tile text shows the problem")
+	check(ColonyText.tile(s, Vector2i(int(st["x"]), int(st["y"])), int(st["z"])).contains("Idle last turn"), "the tile text shows the problem")
 	check(ColonyText.summary(s).contains("idle"), "the summary points to idle buildings")
 
 
@@ -462,12 +477,15 @@ func _colony_with(types: Array) -> Dictionary:
 	s["stock"]["alloy"] = 500.0
 	var hx := int(s["structures"]["1"]["x"])
 	var hy := int(s["structures"]["1"]["y"])
+	# People's buildings go underground: open a shaft first.
+	var landing := TestFleet.open_shaft(s)
 	var spots := [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1)]
-	var i := 0
 	for t in types:
-		while i < spots.size() and not Actions.place(s, t, hx + spots[i].x, hy + spots[i].y)["ok"]:
-			i += 1
-		i += 1
+		var deep: bool = not ("regolith" in GameData.building(t)["terrain"] or "ice" in GameData.building(t)["terrain"])
+		var base := landing if deep else Vector2i(hx, hy)
+		for sp in spots:
+			if Actions.place(s, t, base.x + sp.x, base.y + sp.y, 1 if deep else 0)["ok"]:
+				break
 	for id in s["structures"]:
 		s["structures"][id]["built"] = true
 	return s

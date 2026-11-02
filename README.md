@@ -74,6 +74,7 @@ The test script exits with code 0 if every check passes. It checks the random-nu
 - **The Deep:** a second level under the surface. Build a **Shaft** (surface, 15 alloy, 3 turns); when it's finished, a landing opens below it. Build outward from the landing. Switch levels with the **Surface/Deep** buttons (or **Q** and **E**; on phones, the Deep/Surface button).
   - Open caverns cost the normal price. Solid rock must be dug out: +4 alloy and +2 turns. Bedrock can't be built on.
   - Ore veins make Seam Cutters 50% more productive, deep vents give Vent Taps 50% more heat, and aquifers let Ice Drills work underground.
+  - **Each building belongs on a level.** Surface only: Mirror Field, Beam Catcher, Spin Launcher, Signal Mast, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station. Deep only: Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat, Splitter. Either level: Heat Main, Ice Drill, Vent Tap, Seam Cutter. Build a Shaft early, because homes, food and air are all in the Deep. The rock next to a new Shaft Landing comes already cleared, and a Heat Main dug into rock costs only 1 extra alloy.
   - Buildings underground need a steady, low amount of heat (factor 0.5), which helps on cold worlds. Icequakes never reach them.
   - Mirror Fields and Spin Launchers need the sky, so they stay on the surface.
 - **Parts:** a **Fab Shop** machines alloy into parts. Drones, satellites and the most advanced buildings need parts as well as alloy.

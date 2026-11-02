@@ -134,7 +134,9 @@
     "veins": 8,
     "aquifers": 6,
     "deepvents": 5,
-    "bedrock_walks": 5
+    "bedrock_walks": 5,
+    "excavate_cost_main": 1,
+    "landing_chamber": 1
   },
   "drones": {
     "_comment": "Work drones, built at a Drone Bay. Drones work in this order while there are free Drone Bay slots.",
