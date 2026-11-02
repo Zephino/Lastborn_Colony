@@ -2,6 +2,28 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.73
+Date: 11/02/2026
+Time: 4:58 AM
+
+### Changes
+- **The Bunkhouse is now an apartment block.** It has three storeys of warm lit windows with coloured curtains, little balconies, a gold roof trim, and planters and a water tank on the roof.
+- **The Lounge is now a nightclub.** It has:
+  - a dark purple building with pink and cyan neon edges and little squares of disco colour in the windows;
+  - a row of marquee bulbs;
+  - a neon sign on the roof with a glass and a music note;
+  - two spotlight beams crossing in the sky.
+- **The Fusion Core is reworked.** It has:
+  - a round reactor with a glass dome, showing a glowing blue plasma ring held by eight magnet coils;
+  - two shaded cooling towers with red and white bands and steam;
+  - a small transformer yard.
+- **The Reclaimer is now a recycling plant.** Junk on a heap goes up a conveyor into a hopper on the roof of a green hall. Sorted bins (metal, glass, plastic) and bales of crushed scrap wait out front, and a water tank stands at the back. It lines up with whichever way its two doors face.
+- The top-down pictures match.
+- **New sprite sheet page "Remade"**: all 14 buildings redrawn in this round on one page.
+
+### Reason
+The owner asked to remake the Lounge, Bunkhouse, Fusion Core and Reclaimer, and to put all the remade sprites on one sheet.
+
 ## Version 00.01.72
 Date: 11/02/2026
 Time: 4:53 AM

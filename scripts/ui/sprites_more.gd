@@ -25,16 +25,6 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 	var md := _f(S.METAL_DARK, state)
 	var m := _f(S.METAL, state)
 	match type:
-		"fusion":
-			# Two big cooling towers at the sides, with clouds of steam.
-			for p in [Vector2(-0.34, 0.34), Vector2(0.34, -0.34)]:
-				var t: Vector2 = c + p * s
-				ci.draw_circle(t, s * 0.16, md)
-				ci.draw_circle(t, s * 0.14, _f(Color(0.78, 0.78, 0.76), state))
-				ci.draw_circle(t, s * 0.09, Color(0.05, 0.05, 0.06, m.a))
-				if S._lit(state):
-					for k in 3:
-						ci.draw_circle(t + Vector2(s * (0.02 + k * 0.03), -s * (0.02 + k * 0.03)), s * (0.08 + k * 0.02), Color(STEAM.r, STEAM.g, STEAM.b, 0.45 - k * 0.12))
 		"catcher":
 			# The target ring the beam is aimed at, and the capacitor coils.
 			for k in 4:
@@ -44,25 +34,6 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 				ci.draw_circle(q, s * 0.055, md)
 				ci.draw_circle(q, s * 0.04, m.lightened(0.1))
 				S._glow(ci, q, s * 0.018, _f(S.GOLD, state), state)
-		"reclaimer":
-			# A heap of mixed junk at the back-right, carried into the dome on a conveyor.
-			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
-			var heap := c + Vector2(s * 0.36, -s * 0.36)
-			for k in 11:
-				var off := Vector2.from_angle(k * 2.3) * s * (0.03 + (k % 4) * 0.025)
-				S._rot_rect(ci, heap + off, Vector2.from_angle(k * 1.7), s * 0.07, s * 0.045, _f(junk[k % 5], state))
-			S._rot_rect(ci, c.lerp(heap, 0.55), Vector2(1, -1), s * 0.26, s * 0.08, md)
-			for k in 4:
-				S._rot_rect(ci, c.lerp(heap, 0.42 + k * 0.08), Vector2(1, 1), s * 0.08, s * 0.01, m)
-			# A tank of recovered water at the back-left.
-			ci.draw_circle(c + Vector2(-s * 0.38, -s * 0.38), s * 0.085, md)
-			ci.draw_circle(c + Vector2(-s * 0.38, -s * 0.38), s * 0.065, _f(S.WATER, state).darkened(0.2))
-			# Crushed-scrap bales at the front-left, strapped.
-			for k in 3:
-				var bale := Rect2(c + Vector2(-s * (0.48 - (k % 2) * 0.12), s * (0.27 + (k / 2) * 0.11)), Vector2(s * 0.11, s * 0.10))
-				ci.draw_rect(bale, _f(junk[(k + 1) % 5], state).darkened(0.1))
-				ci.draw_line(Vector2(bale.position.x, bale.get_center().y), Vector2(bale.end.x, bale.get_center().y), md, 1.0)
-				ci.draw_rect(bale, md, false, 1.0)
 		"fab":
 			# A factory hall at the back with a sawtooth roof and a chimney, and parts crates at the front-left.
 			var hall := Rect2(c + Vector2(-s * 0.49, -s * 0.49), Vector2(s * 0.40, s * 0.24))
@@ -120,42 +91,17 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 			for i in 20:
 				var a0 := i * TAU / 20.0
 				ci.draw_arc(c, rad * 1.35, a0, a0 + TAU / 40.0, 4, _f(S.HAZARD, state) if i % 2 == 0 else Color(0.05, 0.05, 0.05, m.a), maxf(2.0, s * 0.03))
-		"lounge":
-			# A neon sign on a post at the front-left, and string lights round the dome.
-			var sign := Rect2(c + Vector2(-s * 0.48, s * 0.30), Vector2(s * 0.22, s * 0.1))
-			ci.draw_rect(sign, md)
-			ci.draw_rect(sign, _f(S.PINK, state), false, 1.5)
-			S._glow(ci, sign.get_center() - Vector2(s * 0.05, 0), s * 0.025, _f(S.PINK, state), state)
-			S._glow(ci, sign.get_center() + Vector2(s * 0.05, 0), s * 0.025, _f(S.CYAN, state), state)
 
 static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: float, state: Dictionary) -> void:
 	var md := _f(S.METAL_DARK, state)
 	var m := _f(S.METAL, state)
 	match type:
-		"fusion":
-			# A concrete containment dome over the glass, with a band and a hatch.
-			var concrete := _f(Color(0.74, 0.74, 0.72), state)
-			ci.draw_circle(c, rad * 0.82, concrete)
-			for k in 3:
-				ci.draw_arc(c, rad * (0.35 + k * 0.22), 0, TAU, 32, concrete.darkened(0.15), 1.5)
-			ci.draw_arc(c, rad * 0.82, 0, TAU, 36, _f(FUSION, state), 2.0)
-			ci.draw_circle(c, rad * 0.16, concrete.darkened(0.25))
-			S._glow(ci, c + Vector2(rad * 0.62, rad * 0.62), s * 0.025, _f(FUSION, state), state)
-			ci.draw_arc(c - Vector2(rad * 0.3, rad * 0.3), rad * 0.4, deg_to_rad(200), deg_to_rad(260), 8, Color(1, 1, 1, 0.5 * concrete.a), 2.0)
 		"catcher":
 			# The funnel lens seen from above, glowing where the beam lands.
 			ci.draw_circle(c, rad * 1.3, md)
 			ci.draw_circle(c, rad * 1.1, _f(S.GOLD, state))
 			ci.draw_circle(c, rad * 0.55, Color(1.0, 0.97, 0.85, _f(S.GOLD, state).a) if S._lit(state) else md)
 			S._glow(ci, c, s * 0.05, _f(S.GOLD, state), state)
-		"reclaimer":
-			# The shredder: two toothed rollers.
-			for k in 2:
-				var roll := Rect2(c + Vector2(-rad * 0.5, -rad * 0.38 + k * rad * 0.24), Vector2(rad * 0.62, rad * 0.18))
-				ci.draw_rect(roll, m.lightened(0.1))
-				for t in 6:
-					var x := roll.position.x + rad * 0.05 + t * rad * 0.1
-					ci.draw_line(Vector2(x, roll.position.y), Vector2(x, roll.end.y), md, 1.0)
 		"fab":
 			# Inside: a conveyor belt carrying parts between two yellow robot arms.
 			ci.draw_rect(Rect2(c + Vector2(-rad * 0.7, -rad * 0.1), Vector2(rad * 1.4, rad * 0.2)), md)
@@ -209,16 +155,6 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			var sp := c + Vector2(s * 0.38, s * 0.38)
 			ci.draw_colored_polygon(PackedVector2Array([sp + Vector2(0, -s * 0.06), sp + Vector2(s * 0.055, s * 0.04), sp + Vector2(-s * 0.055, s * 0.04)]), _f(S.HAZARD, state))
 			ci.draw_line(sp + Vector2(0, -s * 0.025), sp + Vector2(0, s * 0.012), Color(0.05, 0.05, 0.05, m.a), 1.5)
-		"lounge":
-			# A glowing dance floor, a round bar, a neon rim and string lights.
-			var cols := [S.PINK, S.CYAN, S.GOLD, S.VIOLET]
-			for i in 3:
-				for j in 3:
-					ci.draw_rect(Rect2(c + Vector2(-rad * 0.36 + i * rad * 0.24, -rad * 0.36 + j * rad * 0.24), Vector2(rad * 0.22, rad * 0.22)), _f(cols[(i + j) % 4], state) * Color(1, 1, 1, 0.8))
-			ci.draw_arc(c, rad * 0.62, deg_to_rad(20), deg_to_rad(160), 12, _f(Color(0.55, 0.38, 0.26), state), maxf(3.0, s * 0.05))
-			ci.draw_arc(c, rad * 0.96, 0, TAU, 40, _f(S.PINK, state), maxf(2.5, s * 0.03))
-			for k in 12:
-				S._glow(ci, c + Vector2.from_angle(k * TAU / 12.0 + 0.13) * rad * 0.80, s * 0.012, _f(cols[k % 4], state), state)
 
 ## A small rescue rover seen from above.
 static func _top_rover(ci: CanvasItem, p: Vector2, s: float, col: Color, state: Dictionary) -> void:
@@ -236,27 +172,6 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 	var md := _f(S.METAL_DARK, state)
 	var m := _f(S.METAL, state)
 	match type:
-		"fusion":
-			# Two big cooling towers at the sides, waisted like hourglasses, with clouds of steam.
-			for p in [Vector2(-0.34, 0.34), Vector2(0.34, -0.34)]:
-				_cooling_tower(ci, c, tw, p, 0.44, state)
-		"reclaimer":
-			# A tank of recovered water at the back.
-			S._cyl(ci, c, tw, -0.36, -0.36, 0.12, 0.26, _f(S.WATER, state).darkened(0.25), _f(S.WATER, state).darkened(0.05))
-			# A heap of mixed junk at the right, and a conveyor carrying it up into the dome.
-			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
-			for k in 14:
-				var layer := 0 if k < 8 else (1 if k < 12 else 2)
-				var ang := k * 2.3
-				var rr := 0.10 - layer * 0.035
-				S._iso_sphere(ci, S._iso(c, tw, 0.36 + cos(ang) * rr, -0.36 + sin(ang) * rr, 0.02 + layer * 0.045), tw * 0.03, _f(junk[k % 5], state))
-			var belt := PackedVector2Array([S._iso(c, tw, 0.30, -0.24, 0.06), S._iso(c, tw, 0.24, -0.30, 0.06), S._iso(c, tw, 0.10, -0.16, 0.20), S._iso(c, tw, 0.16, -0.10, 0.20)])
-			ci.draw_colored_polygon(belt, md)
-			for k in 4:
-				var t := 0.2 + k * 0.2
-				ci.draw_line(belt[0].lerp(belt[3], t), belt[1].lerp(belt[2], t), m, 1.0)
-			for k in 2:
-				S._iso_sphere(ci, belt[0].lerp(belt[2], 0.3 + k * 0.35) - Vector2(0, tw * 0.015), tw * 0.018, _f(junk[k + 2], state))
 
 		"fab":
 			# The factory hall behind, with a sawtooth roof of skylights, and a smoking chimney.
@@ -304,41 +219,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 	var m := _f(S.METAL, state)
 	var apex := S._iso(c, tw, 0, 0, 0.05 + h)
 	match type:
-		"fusion":
-			# A concrete containment dome over the glass one, like a power station's reactor building.
-			var concrete := _f(Color(0.74, 0.74, 0.72), state)
-			var base := S._iso(c, tw, 0, 0, 0.05)
-			var rx := r * tw * 0.72
-			var ry := rx * 0.5
-			var shell := S._ellipse(base, rx, ry, 0, 180, 16)
-			shell.append_array(S._ellipse(base, rx, h * tw * 0.95, 180, 360, 20))
-			ci.draw_colored_polygon(shell, concrete)
-			ci.draw_colored_polygon(S._ellipse(base - Vector2(rx * 0.35, h * tw * 0.55), rx * 0.42, h * tw * 0.4, 180, 300, 10), concrete.lightened(0.12))
-			ci.draw_polyline(S._ellipse(base, rx * 0.99, ry * 0.99, 0, 180, 16), _f(FUSION, state), 2.0)
-			ci.draw_polyline(S._ellipse(base - Vector2(0, h * tw * 0.5), rx * 0.86, ry * 0.86, 0, 180, 16), concrete.darkened(0.15), 1.5)
-			# A hatch at the front with a blue glow, and a tall vent stack.
-			var door := S._iso(c, tw, r * 0.7, r * 0.7, 0.05)
-			ci.draw_colored_polygon(S._ellipse(door - Vector2(0, tw * 0.03), tw * 0.035, tw * 0.035, 180, 360, 8) + PackedVector2Array([door + Vector2(tw * 0.035, 0), door + Vector2(-tw * 0.035, 0)]), concrete.darkened(0.4))
-			S._glow(ci, door - Vector2(0, tw * 0.02), tw * 0.015, _f(FUSION, state), state)
-		"reclaimer":
-			# Inside: the shredder's two toothed rollers, with a green glow below.
-			var mid := S._iso(c, tw, 0, 0, 0.10)
-			S._glow(ci, mid + Vector2(0, tw * 0.02), tw * 0.03, _f(S.GREEN, state), state)
-			for k in 2:
-				var roller := S._iso(c, tw, 0, -0.06 + k * 0.09) - c + c
-				S._iso_tube(ci, roller, tw, 0, -0.14, 0.14, 0.035, 0.12, m.lightened(0.05))
-				for t in 5:
-					var u := -0.12 + t * 0.06
-					ci.draw_line(S._iso(c, tw, u, -0.06 + k * 0.09, 0.12) - Vector2(0, tw * 0.03), S._iso(c, tw, u, -0.06 + k * 0.09, 0.12) - Vector2(0, tw * 0.045), md, 1.5)
-			# Crushed-scrap bales stacked at the left, strapped.
-			var junk := [Color(0.62, 0.55, 0.45), Color(0.50, 0.52, 0.58), Color(0.70, 0.36, 0.30), Color(0.40, 0.58, 0.45), Color(0.75, 0.70, 0.40)]
-			for k in 3:
-				var u := -0.48 + (k % 2) * 0.11
-				var v := 0.28 + (k / 2) * 0.04
-				var z := (k / 2) * 0.09
-				S._box(ci, c, tw, u, v, u + 0.10, v + 0.10, 0.09, _f(junk[(k + 1) % 5], state).darkened(0.1), Color(0, 0, 0, 0), z)
-				ci.draw_line(S._iso(c, tw, u + 0.10, v, z + 0.045), S._iso(c, tw, u + 0.10, v + 0.10, z + 0.045), md, 1.5)
-				ci.draw_line(S._iso(c, tw, u, v + 0.10, z + 0.045), S._iso(c, tw, u + 0.10, v + 0.10, z + 0.045), md, 1.5)
 		"fab":
 			# Inside: a conveyor with parts, and two yellow robot arms over it.
 			var belt := PackedVector2Array([S._iso(c, tw, -0.22, -0.04, 0.07), S._iso(c, tw, 0.22, -0.04, 0.07), S._iso(c, tw, 0.22, 0.04, 0.07), S._iso(c, tw, -0.22, 0.04, 0.07)])
@@ -395,31 +275,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 			ci.draw_colored_polygon(PackedVector2Array([sign + Vector2(0, -tw * 0.05), sign + Vector2(tw * 0.045, tw * 0.03), sign + Vector2(-tw * 0.045, tw * 0.03)]), _f(S.HAZARD, state))
 			ci.draw_line(sign + Vector2(0, -tw * 0.02), sign + Vector2(0, tw * 0.008), Color(0.05, 0.05, 0.05, m.a), 2.0)
 			ci.draw_circle(sign + Vector2(0, tw * 0.02), 1.2, Color(0.05, 0.05, 0.05, m.a))
-		"lounge":
-			var cols := [S.PINK, S.CYAN, S.GOLD, S.VIOLET]
-			for i in 3:
-				for j in 3:
-					var u := -0.15 + i * 0.1
-					var v := -0.15 + j * 0.1
-					ci.draw_colored_polygon(PackedVector2Array([S._iso(c, tw, u, v, 0.06), S._iso(c, tw, u + 0.09, v, 0.06), S._iso(c, tw, u + 0.09, v + 0.09, 0.06), S._iso(c, tw, u, v + 0.09, 0.06)]), _f(cols[(i + j) % 4], state) * Color(1, 1, 1, 0.85))
-			# A neon rim round the foot of the dome, and string lights draped across it.
-			var base := S._iso(c, tw, 0, 0, 0.05)
-			var rx := r * tw * 0.72
-			ci.draw_polyline(S._ellipse(base, rx * 1.0, rx * 0.5, 0, 180, 20), _f(S.PINK, state), maxf(2.5, tw * 0.018))
-			for row in 2:
-				var t: float = [0.35, 0.7][row]
-				var ring := base - Vector2(0, h * tw * t)
-				var k_r := sqrt(1.0 - t * t)
-				for k in 9:
-					var ang := deg_to_rad(10.0 + k * 20.0)
-					S._glow(ci, ring + Vector2(cos(ang) * rx * k_r, sin(ang) * rx * 0.5 * k_r), tw * 0.008, _f(cols[(k + row) % 4], state), state)
-			S._glow(ci, apex + Vector2(0, tw * 0.03), tw * 0.02, _f(S.PINK, state), state)
-			# A neon sign on a post at the left.
-			ci.draw_line(S._iso(c, tw, -0.38, 0.32), S._iso(c, tw, -0.38, 0.32, 0.18), md, tw * 0.012)
-			S._box(ci, c, tw, -0.48, 0.30, -0.28, 0.34, 0.10, md, Color(0, 0, 0, 0), 0.18)
-			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, -0.48, 0.34, 0.19), S._iso(c, tw, -0.28, 0.34, 0.19), S._iso(c, tw, -0.28, 0.34, 0.27), S._iso(c, tw, -0.48, 0.34, 0.27), S._iso(c, tw, -0.48, 0.34, 0.19)]), _f(S.PINK, state), 1.5)
-			S._glow(ci, S._iso(c, tw, -0.42, 0.34, 0.23), tw * 0.018, _f(S.PINK, state), state)
-			S._glow(ci, S._iso(c, tw, -0.34, 0.34, 0.23), tw * 0.018, _f(S.CYAN, state), state)
 
 ## The Academy at an angle: a brick schoolhouse dome with two rows of lit
 ## classroom windows, a bell tower with a clock, a porch with columns, a

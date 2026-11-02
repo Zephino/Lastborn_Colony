@@ -5,6 +5,8 @@ const Sprites = preload("res://scripts/ui/sprites.gd")
 const GameData = preload("res://scripts/sim/game_data.gd")
 
 var page := "surface"
+## The buildings redrawn in the latest round of sprite work, for the "remade" page.
+const REMADE := ["shaft", "shaft_base", "mirror", "drill", "catcher", "mast", "rescue", "fusion", "reclaimer", "commons", "clinic", "garden", "bunk", "lounge"]
 var font: Font
 
 
@@ -24,6 +26,8 @@ func _draw() -> void:
 		_buildings("Deep buildings (underground). Left: top-down. Right: angled. Small: under construction / idle.", _level_ids("deep"), false)
 	elif page == "both":
 		_buildings("Buildings that go on both levels: on the surface (middle) and in the Deep (right).", _level_ids("both"), true)
+	elif page == "remade":
+		_buildings("Remade buildings: every building redrawn in the latest round, on the ground of its level.", REMADE, false)
 	elif page == "units":
 		_units()
 	elif page == "tunnels":
@@ -74,7 +78,7 @@ func _buildings(title: String, ids: Array, both: bool) -> void:
 			# Two-door buildings are passed through: in one side, out the other.
 			sample = {"links": [Vector2i(1, 0), Vector2i(-1, 0)]}
 		var label := "" if id == "main" else "%d door%s" % [doors, "" if doors == 1 else "s"]
-		var deep_page := page == "deep"
+		var deep_page := page == "deep" or (page == "remade" and (id == "shaft_base" or GameData.level_note(GameData.building(id)) == "Deep only."))
 		var ground := _ground(id, deep_page)
 		Sprites.terrain_top(self, ground, r)
 		Sprites.draw_top(self, id, r, sample)
