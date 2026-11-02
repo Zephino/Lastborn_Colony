@@ -2,6 +2,22 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.76
+Date: 11/02/2026
+Time: 5:09 AM
+
+### Changes
+- **New "complete" sprite sheet: everything on one image** (3800 x 3900). Every building is on top, grouped Surface only, Deep only and Both levels. Below that, the drones, satellites, colonists, resource icons and the lander sit beside every tunnel shape. The terrain and a sample colony are at the bottom.
+- **The Heat Main is now called the Tunnel.** It's a sealed walk-through tube that joins buildings and carries heat and power. The new name appears in:
+  - the build menu, placing hints and error messages;
+  - the README and How to play;
+  - its description;
+  - the research topic "Insulated Tunnels" (was Insulated Mains).
+- The internal id stays `main`, so saves keep working.
+
+### Reason
+The owner asked for a complete sprite sheet with everything on one sheet. They also agreed the Heat Main looks like a tube and should be renamed; they liked "Tunnel" or "Connector", and Tunnel was chosen as the shorter one the game already uses.
+
 ## Version 00.01.75
 Date: 11/02/2026
 Time: 5:05 AM

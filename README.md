@@ -50,7 +50,7 @@ You start with a **Landing Pad**, 30 settlers and some alloy. Alloy is what you 
 5. **Start making money before turn 30.** Put a **Seam Cutter** on an ore seam (teal streaks) to dig ore. A **Forge** turns ore into alloy. A **Spin Launcher** sells alloy for marks. Then pay the Company on time.
 6. **Press End turn** (or **Enter**) and watch the top bar. If something turns red, open the **Colony report** to see why.
 
-Use **Heat Mains** (1 alloy each) to reach further out on either level.
+Use **Tunnels** (1 alloy each) to reach further out on either level.
 
 ---
 
@@ -92,9 +92,9 @@ Buildings join with tunnels only where their **doors** meet.
 - **Hubs** (Landing Pad, Shaft, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern) have **4 doors**.
 - **Workplaces** have **2 doors**, on opposite sides.
 - **Outlying machines** (Solar Array, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Radio Station, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have **1 door**.
-- **Heat Mains** join on every side.
+- **Tunnels** join on every side.
 
-A new building needs a door facing a door or a Heat Main. It turns itself to fit; press **R** or **Rotate** to turn it yourself. Don't wall in your Heat Mains: leave them a free side so you can keep growing.
+A new building needs a door facing a door or a Tunnel. It turns itself to fit; press **R** or **Rotate** to turn it yourself. Don't wall in your Tunnels: leave them a free side so you can keep growing.
 
 ### The surface and the Deep
 
@@ -104,12 +104,12 @@ The **Shaft** is a lift tube down to the Deep. When it's finished, a landing ope
 | --- | --- |
 | **Surface only** | Solar Array, Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station |
 | **Deep only** | Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat, Splitter |
-| **Either** | Heat Main, Ice Drill, Vent Tap, Seam Cutter |
+| **Either** | Tunnel, Ice Drill, Vent Tap, Seam Cutter |
 
 The build menu says "Surface only" or "Deep only" on each building.
 
 In the Deep:
-- Open cave floor costs the normal price. Solid rock must be dug out first: +4 alloy and +2 turns (only +1 alloy for a Heat Main). Bedrock can't be dug.
+- Open cave floor costs the normal price. Solid rock must be dug out first: +4 alloy and +2 turns (only +1 alloy for a Tunnel). Bedrock can't be dug.
 - **Ore veins** make Seam Cutters 50% better. **Deep vents** give Vent Taps 50% more heat. **Underground water** lets Ice Drills work below.
 - Buildings need only a little heat, and icequakes never reach them.
 - The caves are dark except where your colony's lamps reach.
@@ -130,7 +130,7 @@ Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Ga
 
 | Building | Level | Cost (alloy) | What it does |
 | --- | --- | --- | --- |
-| Heat Main | Either | 1 | Tunnel that extends your network. |
+| Tunnel | Either | 1 | Joins buildings and extends your network. |
 | Shaft | Surface | 15 | Lift down to the Deep. |
 | Solar Array | Surface | 6 | Power from sunlight. |
 | Vent Tap | Either | 10 | Lots of steady heat. Must sit on a vent. |
@@ -231,7 +231,7 @@ Dragging the map never builds anything by accident.
 - **Build the Shaft first.** Homes, food and air all live in the Deep.
 - **Don't run out of oxygen.** It kills fastest. Build a second Splitter early.
 - **Get money coming in before turn 30.** Seam Cutter, then Forge, then Spin Launcher.
-- **Keep Heat Mains open.** Leave a free side on your mains so the network can grow.
+- **Keep Tunnels open.** Leave a free side on your tunnels so the network can grow.
 - **Watch for red dots.** An idle building usually needs power, heat or workers.
 - **Use Run 5 turns** when things are calm, and the **Colony report** when they're not.
 - **On Hollow,** the sun is weak: lean on Vent Taps and deep vents for heat, and the Fusion Core for power.

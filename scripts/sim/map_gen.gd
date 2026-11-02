@@ -94,7 +94,7 @@ static func generate(map_seed: int, planet_id: String = "brume", site: int = 0) 
 
 
 ## Makes sure a tile of the given terrain can be reached from the pad within
-## a short run of heat mains; otherwise places one at hull + fallback and
+## a short run of tunnels; otherwise places one at hull + fallback and
 ## clears a straight path to it.
 static func _ensure_near(tiles: Array, hull: Vector2i, terrain: String, fallback: Vector2i) -> void:
 	var dist := _reach(tiles, hull)
@@ -121,7 +121,7 @@ static func _ensure_near(tiles: Array, hull: Vector2i, terrain: String, fallback
 	tiles[p.y][p.x] = terrain
 
 
-## Steps from the pad to every regolith/ice tile (tiles a heat main can cross).
+## Steps from the pad to every regolith/ice tile (tiles a tunnel can cross).
 static func _reach(tiles: Array, start: Vector2i) -> Dictionary:
 	var dist := {start: 0}
 	var queue: Array = [start]

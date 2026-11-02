@@ -72,13 +72,13 @@ static func problem(state: Dictionary, s: Dictionary) -> String:
 	if def.get("conduit", false):
 		return "" if Turn.connectivity(state).has(s["id"]) else "Not connected to the Landing Pad."
 	if not Turn.connectivity(state).has(s["id"]):
-		return "Not connected to the Landing Pad. Join it to the colony with buildings or heat mains."
+		return "Not connected to the Landing Pad. Join it to the colony with buildings or tunnels."
 	var reasons: Dictionary = state["report"].get("idle_reasons", {})
 	if reasons.has(s["id"]):
 		var why: String = reasons[s["id"]]
 		var fix := {"workers": "Free up workers (fewer buildings) or grow the colony.",
 			"power": "Build more Solar Arrays or stop other buildings.",
-			"heat": "Build a Vent Tap or a Forge (it gives off heat), or research Insulated Mains.",
+			"heat": "Build a Vent Tap or a Forge (it gives off heat), or research Insulated Tunnels.",
 			"marks": "Sell more alloy through a Spin Launcher."}
 		return "Idle last turn: %s. %s" % [IDLE_TEXT.get(why, why), fix.get(why, "")]
 	if state["report"].get("holding", {}).has(s["id"]):

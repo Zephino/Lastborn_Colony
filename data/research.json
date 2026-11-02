@@ -1,5 +1,5 @@
 [
-  {"id": "insulation", "name": "Insulated Mains", "cost": 12, "requires": [], "effects": {"heat_need": 0.8}, "desc": "Buildings need 20% less heat."},
+  {"id": "insulation", "name": "Insulated Tunnels", "cost": 12, "requires": [], "effects": {"heat_need": 0.8}, "desc": "Buildings need 20% less heat."},
   {"id": "coatings", "name": "Panel Coatings", "cost": 12, "requires": [], "effects": {"out:mirror": 1.25}, "desc": "Solar Arrays make 25% more power."},
   {"id": "kelp", "name": "Hardy Kelp Strains", "cost": 14, "requires": [], "effects": {"out:vat": 1.25}, "desc": "Kelp Vats grow 25% more food."},
   {"id": "seals", "name": "Seal Maintenance", "cost": 14, "requires": [], "effects": {"wear": 0.5}, "desc": "Machines break down half as often."},

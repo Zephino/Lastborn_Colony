@@ -156,7 +156,7 @@ static func _choose(state: Dictionary) -> Array:
 	return picks
 
 
-## Builds the type at the best adjacent site, or lays a heat main toward the
+## Builds the type at the best adjacent site, or lays a tunnel toward the
 ## nearest tile it needs (ice, vent or seam) if none is in reach.
 static func _build(state: Dictionary, type: String) -> bool:
 	var levels := _levels_for(state, type)
@@ -206,7 +206,7 @@ static func _hull(state: Dictionary) -> Vector2i:
 	return Vector2i.ZERO
 
 
-## The turn (0-3) that joins this building to the colony through a Heat Main,
+## The turn (0-3) that joins this building to the colony through a Tunnel,
 ## or -1. With door rules the bot keeps the hubs' doors free for more mains, and
 ## hangs one- and two-door buildings off the main network.
 static func _main_rot(state: Dictionary, type: String, x: int, y: int, z: int = 0) -> int:
@@ -218,7 +218,7 @@ static func _main_rot(state: Dictionary, type: String, x: int, y: int, z: int = 
 	return -1
 
 
-## Whether the Heat Main at m still has an open side to grow from if the tile
+## Whether the Tunnel at m still has an open side to grow from if the tile
 ## `taken` is built on, so the network never boxes itself in.
 static func _main_keeps_room(state: Dictionary, m: Vector2i, taken: Vector2i, z: int) -> bool:
 	for d in DIRS:
@@ -234,7 +234,7 @@ static func _main_keeps_room(state: Dictionary, m: Vector2i, taken: Vector2i, z:
 static func _best_site(state: Dictionary, type: String, z: int = 0) -> Vector3i:
 	var picky: bool = Actions.door_rules(state) and type != "main" and int(GameData.building(type).get("doors", 4)) < 4
 	var best := _site_pass(state, type, z, picky)
-	# A Forge with nowhere beside a Heat Main may use a spare door on another
+	# A Forge with nowhere beside a Tunnel may use a spare door on another
 	# building, so ore never piles up for want of a second Forge. (Other types
 	# keep to the mains: doing this for everything boxes the colony in.)
 	if best.x < 0 and picky and type == "forge":
@@ -278,7 +278,7 @@ static func _step_toward(state: Dictionary, terrain: Array, z: int = 0) -> Vecto
 	var queue: Array = []
 	for y in int(state["height"]):
 		for x in int(state["width"]):
-			# Start from tiles where a Heat Main would join the colony (through a door).
+			# Start from tiles where a Tunnel would join the colony (through a door).
 			if _open(state, x, y, z) and Actions.touches_colony(state, x, y, z) and Actions.auto_rot(state, "main", x, y, z) >= 0:
 				parent[Vector2i(x, y)] = Vector2i(x, y)
 				queue.append(Vector2i(x, y))

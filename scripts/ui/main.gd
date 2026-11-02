@@ -545,7 +545,7 @@ func _set_build(id: String) -> void:
 	if placing_bar != null:
 		placing_bar.visible = id != ""
 		if id != "":
-			placing_label.text = "Placing %s: tap a green tile. Its doors (orange) must face a door or Heat Main; Rotate turns it." % GameData.building(id)["name"] if narrow_game else "Placing %s: click a green tile. Its doors (orange) must face a door or Heat Main; R or Rotate turns it. Esc to stop." % GameData.building(id)["name"]
+			placing_label.text = "Placing %s: tap a green tile. Its doors (orange) must face a door or Tunnel; Rotate turns it." % GameData.building(id)["name"] if narrow_game else "Placing %s: click a green tile. Its doors (orange) must face a door or Tunnel; R or Rotate turns it. Esc to stop." % GameData.building(id)["name"]
 	map_view.queue_redraw()
 	_refresh_hint()
 

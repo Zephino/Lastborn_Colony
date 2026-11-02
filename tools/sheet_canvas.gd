@@ -31,6 +31,8 @@ func _draw() -> void:
 		_buildings("Buildings that go on both levels: on the surface (middle) and in the Deep (right).", _level_ids("both"), true)
 	elif page == "all":
 		_all()
+	elif page == "complete":
+		_complete()
 	elif page == "remade":
 		_buildings("Remade buildings: every building redrawn in the latest round, on the ground of its level.", REMADE, false)
 	elif page == "units":
@@ -94,6 +96,19 @@ func _all() -> void:
 	for h in heads:
 		draw_rect(Rect2(Vector2(0, h[1]), Vector2(size.x, 36)), Color(0.06, 0.07, 0.09))
 		_text(h[0], Vector2(24, h[1] + 28), 22, Color(0.55, 0.80, 0.95) if str(h[0]).begins_with("Deep") else Color(0.95, 0.80, 0.55))
+
+
+## Everything on one sheet: every building on top, then units and tunnels
+## side by side, then terrain. Draw it on its own at 3800x3900 (see
+## tools/sprite_sheet.gd).
+func _complete() -> void:
+	_all()
+	var parts := [[Vector2(0, 1720), "_units"], [Vector2(1900, 1720), "_tunnels"], [Vector2(0, 3070), "_world"]]
+	for part in parts:
+		draw_set_transform(part[0])
+		draw_rect(Rect2(Vector2(10, 0), Vector2(1880, 4)), Color(0.20, 0.22, 0.26))
+		call(part[1])
+	draw_set_transform(Vector2.ZERO)
 
 
 func _deep_only(id: String) -> bool:

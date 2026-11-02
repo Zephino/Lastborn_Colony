@@ -4,6 +4,9 @@
 ## buildings together), units, tunnels, world. The "all" page (every building
 ## on one sheet) is bigger; draw it on its own:
 ##   xvfb-run -s "-screen 0 2840x1900x24" godot --rendering-driver opengl3 --resolution 2840x1900 --script res://tools/sprite_sheet.gd -- <out_dir> all
+## The "complete" page (everything: buildings, units, tunnels, terrain) is
+## bigger still:
+##   xvfb-run -s "-screen 0 3800x3900x24" godot --rendering-driver opengl3 --resolution 3800x3900 --script res://tools/sprite_sheet.gd -- <out_dir> complete
 extends SceneTree
 
 const Canvas = preload("res://tools/sheet_canvas.gd")

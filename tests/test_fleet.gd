@@ -340,7 +340,7 @@ static func _doors(check: Callable) -> void:
 	var away := NewGame.add_structure(t, "mirror", mx + 1, my, true, 0, 0)
 	check.call(Turn.connectivity(t).has(main_id) and not Turn.connectivity(t).has(away), "a building whose door faces away from the colony isn't connected")
 	t["structures"][away]["rot"] = 1
-	check.call(Turn.connectivity(t).has(away), "turned to face the Heat Main, it is")
+	check.call(Turn.connectivity(t).has(away), "turned to face the Tunnel, it is")
 	# Saves from before door rules still join on any side.
 	var old: Dictionary = JSON.parse_string(SaveGame.to_text(t))
 	old.erase("door_rules")

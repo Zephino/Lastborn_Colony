@@ -2,7 +2,7 @@
 ##
 ## We're in space: every building is a pressurised DOME. Domes next to each
 ## other are joined by a short TUNNEL, with an AIRLOCK where the tunnel meets
-## each dome. Heat Main tiles are longer tunnels. Each dome shows its job
+## each dome. Tunnel tiles are longer tunnels. Each dome shows its job
 ## through the glass and with fittings outside (mirror wings, chimneys, tanks).
 ##
 ## Two styles of every sprite:
@@ -14,7 +14,7 @@
 ##   active false: dimmed (idle).
 ##   links  the neighbouring tiles with a building, as Vector2i (1,0), (-1,0),
 ##          (0,1), (0,-1). A tunnel and airlock are drawn toward each one.
-##          A Heat Main without links is drawn as a cross.
+##          A Tunnel without links is drawn as a cross.
 ## Everything here is original.
 extends RefCounted
 
@@ -671,7 +671,7 @@ static func tunnel_shape(links: Array) -> String:
 	return "cross"
 
 
-## A Heat Main (tunnel) tile, top-down. Straight runs are one continuous tube,
+## A Tunnel tile, top-down. Straight runs are one continuous tube,
 ## corners get an elbow, T-junctions and crossroads a round hub, and a dead end
 ## a capped end with an orange light.
 static func _top_tunnel(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
@@ -3306,7 +3306,7 @@ static func _iso_sphere(ci: CanvasItem, p: Vector2, rad: float, col: Color) -> v
 	ci.draw_circle(p - Vector2(rad * 0.25, rad * 0.25), rad * 0.6, col)
 
 
-## A Heat Main (tunnel) tile at an angle, in the same shapes as the top-down one.
+## A Tunnel tile at an angle, in the same shapes as the top-down one.
 static func _iso_tunnel(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
 	var m := _fade(METAL, state)
 	var a := _fade(ORANGE, state)

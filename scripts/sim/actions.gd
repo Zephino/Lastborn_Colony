@@ -107,7 +107,7 @@ static func build_cost(state: Dictionary, type: String, x: int, y: int, z: int =
 	var cost := GameData.num(GameData.building(type), "cost")
 	# While the colony owns a Borer, digging into rock costs nothing extra.
 	if excavation(state, x, y, z) and Fleet.owned(state, "borer") == 0:
-		# A Heat Main is a narrow tunnel: digging one through rock costs less.
+		# A Tunnel is a narrow tunnel: digging one through rock costs less.
 		var deep: Dictionary = GameData.balance()["deep"]
 		cost += float(deep.get("excavate_cost_main", deep["excavate_cost"])) if type == "main" else float(deep["excavate_cost"])
 	return cost
@@ -173,11 +173,11 @@ static func check_place(state: Dictionary, type: String, x: int, y: int, z: int 
 	if type == "shaft" and terrain_at(state, x, y, 1) == "bedrock":
 		return result(false, "Solid bedrock below: a shaft can't be dug here.")
 	if not touches_colony(state, x, y, z):
-		return result(false, "Must be next to the colony. Extend with heat mains." if z == 0 else "Must be next to the colony in the Deep. Start from a Shaft Landing.")
+		return result(false, "Must be next to the colony. Extend with tunnels." if z == 0 else "Must be next to the colony in the Deep. Start from a Shaft Landing.")
 	if door_rules(state):
 		var r := auto_rot(state, type, x, y, z) if rot < 0 else rot
 		if r < 0 or not connects(state, type, x, y, z, r):
-			return result(false, "No door lines up with the colony here. Turn the building (R) so a door faces a door or Heat Main next to it." if rot >= 0 else "None of its doors can face a door or Heat Main here. Lay a Heat Main up to it, or build next to a building with a spare door.")
+			return result(false, "No door lines up with the colony here. Turn the building (R) so a door faces a door or Tunnel next to it." if rot >= 0 else "None of its doors can face a door or Tunnel here. Lay a Tunnel up to it, or build next to a building with a spare door.")
 	if has_kit(state, type):
 		return result(true)
 	var cost := build_cost(state, type, x, y, z)
