@@ -2,6 +2,16 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.58
+Date: 11/02/2026
+Time: 12:55 AM
+
+### Changes
+- **Lander:** the ramp is gone. A sealed boarding tube now runs from the lander's hatch down into the pad's airlock building on that side, so nobody has to walk outside. It's a shaded round tube with ribs, an orange stripe and an amber collar at the hatch. The legs are back at the corners, clear of the tube.
+
+### Reason
+The owner wanted the lander's way in to go to one of the pad's doors, perhaps as a tube.
+
 ## Version 00.01.57
 Date: 11/02/2026
 Time: 12:40 AM

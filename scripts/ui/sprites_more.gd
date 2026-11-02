@@ -711,7 +711,7 @@ static func _iso_rover(ci: CanvasItem, c: Vector2, tw: float, at: Vector2, col: 
 ## The colony's lander standing on the Landing Pad: four splayed legs with
 ## footpads, a gold-foil engine section with its nozzle, a white body with an
 ## orange band and a ring of lit portholes, a rounded nose with a red light,
-## and a hatch with its ramp down to the pad.
+## and a sealed boarding tube from its hatch down into one of the pad's airlocks.
 static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary) -> void:
 	var white := _f(Color(0.92, 0.93, 0.95), state)
 	var shade := _f(Color(0.70, 0.72, 0.76), state)
@@ -722,8 +722,8 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 	# Scorch on the pad under the engine.
 	ci.draw_colored_polygon(S._ellipse(S._iso(c, tw, 0, 0, pad_z), tw * 0.16, tw * 0.08), Color(0.05, 0.05, 0.05, 0.35 * white.a))
 	# Legs: the two at the back first.
-	# Legs to the four sides, so the hatch and ramp (facing the front corner) sit between two of them.
-	var legs := [Vector2(-1, 0), Vector2(0, -1), Vector2(1, 0), Vector2(0, 1)]
+	# Legs to the corners, clear of the boarding tube on the +v side.
+	var legs := [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]
 	for k in 4:
 		var q: Vector2 = legs[k].normalized()
 		if q.x + q.y > 0.0:
@@ -760,17 +760,59 @@ static func draw_lander(ci: CanvasItem, c: Vector2, tw: float, state: Dictionary
 	ci.draw_colored_polygon(nose, white)
 	ci.draw_arc(top - Vector2(rx * 0.3, tw * 0.05), rx * 0.35, deg_to_rad(200), deg_to_rad(260), 6, Color(1, 1, 1, 0.8 * white.a), 1.5)
 	S._glow(ci, top - Vector2(0, tw * 0.10), tw * 0.012, _f(Color(1.0, 0.3, 0.3), state), state)
-	# The hatch facing forward, and its ramp down to the pad.
-	var hatch := base_b + Vector2(rx * 0.25, rx * 0.47)
-	ci.draw_colored_polygon(PackedVector2Array([hatch + Vector2(-tw * 0.022, 0), hatch + Vector2(tw * 0.022, 0), hatch + Vector2(tw * 0.022, -tw * 0.07), hatch + Vector2(-tw * 0.022, -tw * 0.07)]), md)
-	ci.draw_colored_polygon(PackedVector2Array([hatch + Vector2(-tw * 0.018, -tw * 0.005), hatch + Vector2(tw * 0.018, -tw * 0.005), hatch + Vector2(tw * 0.018, -tw * 0.062), hatch + Vector2(-tw * 0.018, -tw * 0.062)]), _f(Color(1.0, 0.85, 0.5), state))
-	ci.draw_colored_polygon(PackedVector2Array([hatch + Vector2(-tw * 0.022, 0), hatch + Vector2(tw * 0.022, 0), S._iso(c, tw, 0.30, 0.30, pad_z) + Vector2(tw * 0.05, 0), S._iso(c, tw, 0.30, 0.30, pad_z) + Vector2(-tw * 0.05, 0)]), shade.darkened(0.1))
 	# The two front legs.
 	for k in 4:
 		var q: Vector2 = legs[k].normalized()
 		if q.x + q.y <= 0.0:
 			continue
 		_lander_leg(ci, c, tw, q, pad_z, shade, md)
+	# A sealed boarding tube from the hatch (on the +v side) down into the pad's
+	# airlock building on that side, so nobody has to walk outside.
+	_boarding_tube(ci, c, tw, Vector3(0.0, 0.09, body_z + 0.06), Vector3(0.0, 0.37, 0.12), 0.035, state)
+
+
+
+## A round tube between two points (u, v, height), shaded, with ribs and an
+## orange stripe, and a collar where it meets the ship.
+static func _boarding_tube(ci: CanvasItem, c: Vector2, tw: float, a: Vector3, b: Vector3, rr: float, state: Dictionary) -> void:
+	var m := _f(S.METAL, state)
+	var orange := _f(S.ORANGE, state)
+	var dir := Vector2(b.x - a.x, b.y - a.y).normalized()
+	var across := S._iso(c, tw, -dir.y, dir.x) - S._iso(c, tw, 0, 0)
+	if across.y < 0.0:
+		across = -across
+	var up := Vector2(0, -tw)
+	var pa := S._iso(c, tw, a.x, a.y, a.z)
+	var pb := S._iso(c, tw, b.x, b.y, b.z)
+	var all := PackedVector2Array()
+	for p in [pa, pb]:
+		for k in 16:
+			var th := k * TAU / 16.0
+			all.append(p + (across * cos(th) + up * sin(th)) * rr)
+	ci.draw_colored_polygon(Geometry2D.convex_hull(all), m.darkened(0.4))
+	for k in 6:
+		var t0 := deg_to_rad(150.0 - k * 36.0)
+		var t1 := deg_to_rad(150.0 - (k + 1) * 36.0)
+		var light := clampf(cos((t0 + t1) * 0.5) * 0.35 + sin((t0 + t1) * 0.5) * 0.75, -0.6, 1.0)
+		var shade := m.lightened(light * 0.35) if light > 0.0 else m.darkened(-light * 0.5)
+		var o0 := (across * cos(t0) + up * sin(t0)) * rr
+		var o1 := (across * cos(t1) + up * sin(t1)) * rr
+		ci.draw_colored_polygon(PackedVector2Array([pa + o0, pb + o0, pb + o1, pa + o1]), shade)
+	var so := (across * cos(deg_to_rad(40.0)) + up * sin(deg_to_rad(40.0))) * rr
+	ci.draw_line(pa + so, pb + so, orange, maxf(1.5, tw * rr * 0.2))
+	for k in range(1, 5):
+		var p := pa.lerp(pb, k / 5.0)
+		var arc := PackedVector2Array()
+		for j in 10:
+			var th := deg_to_rad(-70.0 + j * 240.0 / 9.0)
+			arc.append(p + (across * cos(th) + up * sin(th)) * rr)
+		ci.draw_polyline(arc, m.darkened(0.35), 1.0)
+	# The collar at the ship's hatch.
+	var collar := PackedVector2Array()
+	for k in 17:
+		var th := k * TAU / 16.0
+		collar.append(pa + (across * cos(th) + up * sin(th)) * rr * 1.3)
+	ci.draw_polyline(collar, _f(S.AMBER, state), maxf(1.5, tw * 0.008))
 
 
 static func _lander_leg(ci: CanvasItem, c: Vector2, tw: float, q: Vector2, pad_z: float, col: Color, dark: Color) -> void:
