@@ -407,6 +407,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	if type == "mast":
 		_top_radio(ci, c, s, links, state)
 		return
+	if type == "mirror":
+		_top_mirror(ci, c, s, links, state)
+		return
 	if type == "rail":
 		_top_spin(ci, c, s, links, state)
 		return
@@ -424,12 +427,6 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 		return
 	# Fittings outside the dome, drawn first so the dome sits on top.
 	match type:
-		"mirror":
-			for side in [-1.0, 1.0]:
-				for k in 2:
-					var p: Vector2 = c + Vector2(side * s * (0.20 + k * 0.15), 0)
-					ci.draw_rect(Rect2(p - Vector2(s * 0.065, s * 0.36), Vector2(s * 0.13, s * 0.72)), md)
-					ci.draw_rect(Rect2(p - Vector2(s * 0.05, s * 0.34), Vector2(s * 0.10, s * 0.68)), _fade(Color(0.50, 0.82, 1.0), state))
 		"splitter":
 			for side in [-1.0, 1.0]:
 				ci.draw_circle(c + Vector2(side * s * 0.34, -s * 0.30), s * 0.12, m)
@@ -494,8 +491,6 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 			ci.draw_line(c, c + Vector2(rad * 0.45, -rad * 0.45), m, 3.0)
 			_glow(ci, c + Vector2(rad * 0.45, -rad * 0.45), s * 0.04, a, state)
 			_glow(ci, c, s * 0.06, a, state)
-		"mirror":
-			_glow(ci, c, s * 0.05, a, state)
 		"vent":
 			# The vent itself under the glass: a glowing magma pool with cracks.
 			var hot := _fade(Color(1.0, 0.42, 0.10), state)
@@ -913,6 +908,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	if type == "mast":
 		_iso_radio(ci, c, tw, links, state)
 		return
+	if type == "mirror":
+		_iso_mirror(ci, c, tw, links, state)
+		return
 	if type == "rail":
 		_iso_spin(ci, c, tw, links, state)
 		return
@@ -934,12 +932,6 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			_iso_link(ci, c, tw, d, _ext(type, d, r), state)
 	# Fittings behind or beside the dome.
 	match type:
-		"mirror":
-			for u in [-0.36, 0.36]:
-				ci.draw_line(_iso(c, tw, u, 0), _iso(c, tw, u, 0, 0.12), md, tw * 0.02)
-				var panel := PackedVector2Array([_iso(c, tw, u - 0.10, -0.40, 0.08), _iso(c, tw, u + 0.10, -0.40, 0.08), _iso(c, tw, u + 0.10, 0.40, 0.24), _iso(c, tw, u - 0.10, 0.40, 0.24)])
-				ci.draw_colored_polygon(panel, _fade(Color(0.45, 0.78, 1.0), state))
-				ci.draw_polyline(PackedVector2Array([panel[0], panel[1], panel[2], panel[3], panel[0]]), md, 1.5)
 		"splitter":
 			for v in [-0.34, 0.0]:
 				_cyl(ci, c, tw, 0.34, v - 0.04, 0.10, 0.22, m, m)
@@ -986,8 +978,6 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 			ci.draw_line(apex, apex - Vector2(0, tw * 0.22), m, tw * 0.02)
 			_glow(ci, apex - Vector2(0, tw * 0.22), tw * 0.03, a, state)
 			_glow(ci, _iso(c, tw, 0, 0, 0.18), tw * 0.06, a, state)
-		"mirror":
-			_glow(ci, apex, tw * 0.025, a, state)
 		"vent":
 			# The magma pool glowing inside the dome.
 			var hot := _fade(Color(1.0, 0.42, 0.10), state)
@@ -1304,6 +1294,107 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true, d)
+
+
+## The Mirror Field: two long curved mirror troughs bend sunlight onto a pipe
+## running along each one. The hot pipes feed a small power house in the
+## middle, where the tunnel joins.
+static func _iso_mirror(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var lit := _lit(state)
+	var hw := 0.11
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, hw, state)
+	# The back trough first, then the power house, then the front trough.
+	_trough(ci, c, tw, -0.30, state)
+	# Hot pipes from both troughs into the power house.
+	var hot := _fade(Color(1.0, 0.55, 0.20), state)
+	for vc in [-0.30, 0.30]:
+		ci.draw_line(_iso(c, tw, 0.0, vc, 0.14), _iso(c, tw, 0.0, signf(vc) * hw, 0.10), md, maxf(2.5, tw * 0.02))
+		ci.draw_line(_iso(c, tw, 0.0, vc, 0.14), _iso(c, tw, 0.0, signf(vc) * hw, 0.10), hot if lit else m, maxf(1.0, tw * 0.008))
+	var wall := _fade(Color(0.62, 0.64, 0.70), state)
+	_box(ci, c, tw, -hw, -hw, hw, hw, 0.30, wall, wall.lightened(0.15))
+	ci.draw_polyline(PackedVector2Array([_iso(c, tw, -hw, hw, 0.30), _iso(c, tw, hw, hw, 0.30), _iso(c, tw, hw, -hw, 0.30)]), _fade(CYAN, state), maxf(1.5, tw * 0.012))
+	# A cooling vent on the roof, and a light that shows it's working.
+	_cyl(ci, c, tw, -0.03, -0.03, 0.05, 0.06, m, md, 0.30)
+	_glow(ci, _iso(c, tw, hw, -0.05, 0.24), tw * 0.016, _fade(CYAN, state), state)
+	_trough(ci, c, tw, 0.30, state)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, hw, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]):
+			_iso_port(ci, _iso(c, tw, d.x * hw, d.y * hw, 0.06), tw, state, true, d)
+
+
+## One curved mirror trough along the tile at v = vc, with its glowing pipe.
+static func _trough(ci: CanvasItem, c: Vector2, tw: float, vc: float, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var lit := _lit(state)
+	var u0 := -0.44
+	var u1 := 0.44
+	var w := 0.10
+	# Legs holding it up at both ends and the middle.
+	for u in [u0 + 0.03, 0.0, u1 - 0.03]:
+		ci.draw_line(_iso(c, tw, u, vc, 0.0), _iso(c, tw, u, vc, 0.08), md, maxf(1.5, tw * 0.012))
+	# The curved mirror: strips across, darker at the bottom of the curve.
+	var steps := 6
+	for i in steps:
+		var t0 := -1.0 + 2.0 * float(i) / steps
+		var t1 := -1.0 + 2.0 * float(i + 1) / steps
+		var z0 := 0.06 + 0.08 * t0 * t0
+		var z1 := 0.06 + 0.08 * t1 * t1
+		var quad := PackedVector2Array([_iso(c, tw, u0, vc + w * t0, z0), _iso(c, tw, u1, vc + w * t0, z0), _iso(c, tw, u1, vc + w * t1, z1), _iso(c, tw, u0, vc + w * t1, z1)])
+		var shine := 1.0 - absf((t0 + t1) * 0.5)
+		var col := _fade(Color(0.62, 0.74, 0.86), state).lerp(_fade(Color(0.92, 0.97, 1.0), state), shine * 0.7)
+		ci.draw_colored_polygon(quad, col)
+	# The rim, and a bright glint along the mirror.
+	ci.draw_line(_iso(c, tw, u0, vc - w, 0.14), _iso(c, tw, u1, vc - w, 0.14), md, maxf(1.5, tw * 0.01))
+	ci.draw_line(_iso(c, tw, u0, vc + w, 0.14), _iso(c, tw, u1, vc + w, 0.14), md.lightened(0.2), maxf(1.5, tw * 0.012))
+	ci.draw_line(_iso(c, tw, u0 + 0.06, vc + w * 0.45, 0.09), _iso(c, tw, u0 + 0.30, vc + w * 0.45, 0.09), Color(1, 1, 1, 0.75 * md.a), 1.5)
+	# End plates.
+	for u in [u0, u1]:
+		var plate := PackedVector2Array()
+		for i in steps + 1:
+			var t := -1.0 + 2.0 * float(i) / steps
+			plate.append(_iso(c, tw, u, vc + w * t, 0.06 + 0.08 * t * t))
+		ci.draw_polyline(plate, md, maxf(1.5, tw * 0.012))
+	# The pipe the sunlight is focused on, held up on little arms.
+	var pz := 0.13
+	for u in [u0 + 0.04, u1 - 0.04]:
+		ci.draw_line(_iso(c, tw, u, vc, 0.07), _iso(c, tw, u, vc, pz), md, 1.0)
+	ci.draw_line(_iso(c, tw, u0, vc, pz), _iso(c, tw, u1, vc, pz), md, maxf(2.5, tw * 0.022))
+	var glow := _fade(Color(1.0, 0.70, 0.30), state) if lit else _fade(METAL, state)
+	ci.draw_line(_iso(c, tw, u0, vc, pz), _iso(c, tw, u1, vc, pz), glow, maxf(1.2, tw * 0.010))
+	if lit:
+		ci.draw_line(_iso(c, tw, u0, vc, pz), _iso(c, tw, u1, vc, pz), Color(1.0, 0.85, 0.5, 0.25), maxf(4.0, tw * 0.04))
+
+
+## The Mirror Field from above: two troughs with their glowing pipes and the
+## power house between them.
+static func _top_mirror(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var lit := _lit(state)
+	for vc in [-0.30, 0.30]:
+		var r := Rect2(c + Vector2(-s * 0.44, (vc - 0.12) * s), Vector2(s * 0.88, s * 0.24))
+		ci.draw_rect(r, md)
+		for i in 6:
+			var t := (float(i) + 0.5) / 6.0
+			var shine := 1.0 - absf(t * 2.0 - 1.0)
+			var band := Rect2(Vector2(r.position.x + s * 0.02, r.position.y + s * 0.02 + (r.size.y - s * 0.04) * float(i) / 6.0), Vector2(r.size.x - s * 0.04, (r.size.y - s * 0.04) / 6.0 + 0.5))
+			ci.draw_rect(band, _fade(Color(0.62, 0.74, 0.86), state).lerp(_fade(Color(0.92, 0.97, 1.0), state), shine * 0.7))
+		var mid := r.position.y + r.size.y * 0.5
+		ci.draw_line(Vector2(r.position.x, mid), Vector2(r.end.x, mid), md, maxf(2.5, s * 0.03))
+		ci.draw_line(Vector2(r.position.x, mid), Vector2(r.end.x, mid), _fade(Color(1.0, 0.70, 0.30), state) if lit else _fade(METAL, state), maxf(1.2, s * 0.014))
+		ci.draw_line(c + Vector2(0, vc * s * 0.6), c, md, maxf(2.0, s * 0.025))
+	var hw := s * 0.11
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.72, 0.74, 0.80), state))
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(CYAN, state), false, 1.5)
+	ci.draw_circle(c, s * 0.04, md)
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * hw, s, state, not (d in links), d)
 
 
 ## The Radio Station: a small studio with an "on air" light and a dish on its

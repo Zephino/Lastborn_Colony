@@ -2,6 +2,17 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.69
+Date: 11/02/2026
+Time: 4:32 AM
+
+### Changes
+- **The Mirror Field is reworked.** It is now two long curved mirror troughs on legs. Each bends sunlight onto a pipe running along it, which glows orange while the field is working. Hot pipes carry the heat into a small power house between the troughs, where the tunnel joins. The power house has a cyan trim, a roof vent and a working light.
+- The top-down picture shows the two troughs with their pipes and the power house. The old dome with flat blue panels is gone.
+
+### Reason
+The owner felt the Mirror Field should be reworked.
+
 ## Version 00.01.68
 Date: 11/02/2026
 Time: 4:27 AM
