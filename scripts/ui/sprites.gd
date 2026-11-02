@@ -404,6 +404,9 @@ static func draw_top(ci: CanvasItem, type: String, r: Rect2, state: Dictionary =
 	if type == "shaft":
 		_top_hole(ci, c, s, rad, links, state)
 		return
+	if type == "mast":
+		_top_radio(ci, c, s, links, state)
+		return
 	if type == "rail":
 		_top_spin(ci, c, s, links, state)
 		return
@@ -907,6 +910,9 @@ static func draw_iso(ci: CanvasItem, type: String, c: Vector2, tw: float, state:
 	if type == "catcher":
 		_iso_catcher(ci, c, tw, links, state)
 		return
+	if type == "mast":
+		_iso_radio(ci, c, tw, links, state)
+		return
 	if type == "rail":
 		_iso_spin(ci, c, tw, links, state)
 		return
@@ -1298,6 +1304,111 @@ static func _iso_hole(ci: CanvasItem, c: Vector2, tw: float, r: float, links: Ar
 	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
 		if not (d in links):
 			_iso_port(ci, _iso(c, tw, d.x * r * 0.98, d.y * r * 0.98, 0.04), tw, state, true, d)
+
+
+## The Radio Station: a small studio with an "on air" light and a dish on its
+## roof, and a broadcast tower behind it sending out radio waves.
+static func _iso_radio(ci: CanvasItem, c: Vector2, tw: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var cyan := _fade(CYAN, state)
+	var red := _fade(Color(1.0, 0.25, 0.22), state)
+	var lit := _lit(state)
+	var hw := 0.22
+	for d in links:
+		if d.x < 0 or d.y < 0:
+			_iso_link(ci, c, tw, d, hw, state)
+	# The broadcast tower at the back corner: a lattice, wide at the foot.
+	var tq := Vector2(0.30, -0.36)
+	var foot := _iso(c, tw, tq.x, tq.y, 0.0)
+	var top := _iso(c, tw, tq.x, tq.y, 0.70)
+	var w0 := tw * 0.06
+	for side in [-1.0, 1.0]:
+		ci.draw_line(foot + Vector2(side * w0, 0), top + Vector2(side * tw * 0.008, 0), md.lightened(0.25), maxf(2.0, tw * 0.012))
+	for k in 7:
+		var t0 := float(k) / 7.0
+		var t1 := float(k + 1) / 7.0
+		var a0 := w0 * (1.0 - t0) + tw * 0.008 * t0
+		var a1 := w0 * (1.0 - t1) + tw * 0.008 * t1
+		var sd := 1.0 if k % 2 == 0 else -1.0
+		ci.draw_line(foot.lerp(top, t0) + Vector2(-a0 * sd, 0), foot.lerp(top, t1) + Vector2(a1 * sd, 0), m, 1.0)
+		ci.draw_line(foot.lerp(top, t1) + Vector2(-a1, 0), foot.lerp(top, t1) + Vector2(a1, 0), m.darkened(0.2), 1.0)
+	# Red and white bands near the top, and the blinking light.
+	for k in 2:
+		var p0 := foot.lerp(top, 0.80 + k * 0.08)
+		ci.draw_line(p0 + Vector2(-tw * 0.014, 0), p0 + Vector2(tw * 0.014, 0), red if k == 0 else _fade(WHITE, state), 3.0)
+	_glow(ci, top, tw * 0.02, red, state)
+	# Radio waves going out both ways.
+	if lit:
+		for k in 3:
+			var rr := tw * (0.08 + k * 0.06)
+			var col := Color(cyan.r, cyan.g, cyan.b, cyan.a * (0.85 - k * 0.22))
+			ci.draw_arc(top, rr, deg_to_rad(-45), deg_to_rad(15), 8, col, 1.5)
+			ci.draw_arc(top, rr, deg_to_rad(165), deg_to_rad(225), 8, col, 1.5)
+	# The studio: a low building with a rounded roof edge.
+	var wall := _fade(Color(0.62, 0.64, 0.70), state)
+	_box(ci, c, tw, -hw, -hw, hw, hw, 0.20, wall, wall.lightened(0.18))
+	# Roof trim.
+	var r0 := _iso(c, tw, -hw, hw, 0.20)
+	var r1 := _iso(c, tw, hw, hw, 0.20)
+	var r2 := _iso(c, tw, hw, -hw, 0.20)
+	ci.draw_polyline(PackedVector2Array([r0, r1, r2]), cyan, maxf(1.5, tw * 0.012))
+	# Windows along the front wall, lit inside.
+	for k in 3:
+		var u := -hw + 0.05 + k * 0.13
+		var win := PackedVector2Array([_iso(c, tw, u, hw, 0.07), _iso(c, tw, u + 0.08, hw, 0.07), _iso(c, tw, u + 0.08, hw, 0.15), _iso(c, tw, u, hw, 0.15)])
+		ci.draw_colored_polygon(win, _fade(Color(1.0, 0.88, 0.6), state) if lit else md)
+		ci.draw_polyline(PackedVector2Array([win[0], win[1], win[2], win[3], win[0]]), md, 1.0)
+	# The red "on air" light over the side wall.
+	var sign := PackedVector2Array([_iso(c, tw, hw, -0.16, 0.13), _iso(c, tw, hw, -0.02, 0.13), _iso(c, tw, hw, -0.02, 0.18), _iso(c, tw, hw, -0.16, 0.18)])
+	ci.draw_colored_polygon(sign, red.darkened(0.1) if lit else md)
+	ci.draw_polyline(PackedVector2Array([sign[0], sign[1], sign[2], sign[3], sign[0]]), md, 1.0)
+	if lit:
+		_glow(ci, (sign[0] + sign[2]) * 0.5, tw * 0.014, Color(1.0, 0.85, 0.8), state)
+	# The dish on the roof, tilted up at the sky.
+	var base := _iso(c, tw, -0.06, -0.06, 0.20)
+	var dish := base - Vector2(0, tw * 0.06)
+	ci.draw_line(base, dish, md, maxf(2.0, tw * 0.014))
+	var dr := tw * 0.10
+	ci.draw_colored_polygon(_ellipse(dish, dr, dr * 0.62), _fade(WHITE, state).darkened(0.08))
+	ci.draw_colored_polygon(_ellipse(dish + Vector2(dr * 0.12, -dr * 0.06), dr * 0.68, dr * 0.40), _fade(WHITE, state).darkened(0.28))
+	var feed := dish + Vector2(dr * 0.35, -dr * 0.75)
+	ci.draw_line(dish + Vector2(-dr * 0.4, dr * 0.2), feed, md, 1.0)
+	ci.draw_line(dish + Vector2(dr * 0.8, 0), feed, md, 1.0)
+	ci.draw_circle(feed, maxf(1.5, tw * 0.01), md)
+	for d in links:
+		if d.x > 0 or d.y > 0:
+			_iso_link(ci, c, tw, d, hw, state)
+	for d in [Vector2i(1, 0), Vector2i(0, 1)]:
+		if not (d in links) and d in state.get("doors", [d]):
+			_iso_port(ci, _iso(c, tw, d.x * hw, d.y * hw, 0.06), tw, state, true, d)
+
+
+## The Radio Station from above: the studio's roof and dish, and the tower in
+## the back corner with its light and radio waves.
+static func _top_radio(ci: CanvasItem, c: Vector2, s: float, links: Array, state: Dictionary) -> void:
+	var md := _fade(METAL_DARK, state)
+	var m := _fade(METAL, state)
+	var cyan := _fade(CYAN, state)
+	var red := _fade(Color(1.0, 0.25, 0.22), state)
+	var hw := s * 0.22
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), _fade(Color(0.70, 0.72, 0.78), state))
+	ci.draw_rect(Rect2(c - Vector2(hw, hw), Vector2(hw * 2.0, hw * 2.0)), cyan, false, 1.5)
+	var dish := c + Vector2(-s * 0.06, -s * 0.06)
+	ci.draw_circle(dish, s * 0.10, _fade(WHITE, state).darkened(0.08))
+	ci.draw_circle(dish, s * 0.055, _fade(WHITE, state).darkened(0.28))
+	ci.draw_circle(dish, s * 0.015, md)
+	ci.draw_rect(Rect2(c + Vector2(s * 0.15, -s * 0.16), Vector2(s * 0.05, s * 0.12)), red)
+	var tower := c + Vector2(s * 0.30, -s * 0.36)
+	ci.draw_rect(Rect2(tower - Vector2(s * 0.05, s * 0.05), Vector2(s * 0.10, s * 0.10)), md)
+	ci.draw_line(tower - Vector2(s * 0.05, s * 0.05), tower + Vector2(s * 0.05, s * 0.05), m, 1.0)
+	ci.draw_line(tower + Vector2(s * 0.05, -s * 0.05), tower - Vector2(s * 0.05, -s * 0.05), m, 1.0)
+	_glow(ci, tower, s * 0.02, red, state)
+	if _lit(state):
+		for k in 3:
+			ci.draw_arc(tower, s * (0.10 + k * 0.06), deg_to_rad(200), deg_to_rad(340), 8, Color(cyan.r, cyan.g, cyan.b, cyan.a * (0.85 - k * 0.22)), 1.5)
+	for d in DIRS:
+		_top_port(ci, c + Vector2(d) * hw, s, state, not (d in links), d)
 
 
 ## The Beam Catcher: power beamed down from orbit lands on a golden target

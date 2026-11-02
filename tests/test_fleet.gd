@@ -1,7 +1,7 @@
 ## Headless checks for the buildings, drones, satellites and systems added
 ## together: Fab Shop parts, research-locked buildings, Drone Bay drones,
 ## satellites, supply pods, waste and Reclaimers, Academy specialists, the
-## Lounge's running cost, Signal Masts, Rescue Stations and Beam Catchers.
+## Lounge's running cost, Radio Stations, Rescue Stations and Beam Catchers.
 ## Called from tests/run_tests.gd:
 ##   const TestFleet = preload("res://tests/test_fleet.gd")
 ##   TestFleet.run(check)
@@ -244,7 +244,7 @@ static func _civic(check: Callable) -> void:
 	_turn(s)
 	check.call(s["structures"][lounge]["active"], "a Lounge runs while it can be paid for")
 	check.call(float(s["stock"]["credits"]) <= credits - 3.0, "a Lounge costs 3 marks a turn")
-	check.call(s["structures"][mast]["active"] and float(s["report"]["trade_bonus"]) == 1.0, "a Signal Mast adds 1 mark to the alloy price")
+	check.call(s["structures"][mast]["active"] and float(s["report"]["trade_bonus"]) == 1.0, "a Radio Station adds 1 mark to the alloy price")
 	s["stock"]["credits"] = 0.0
 	_turn(s)
 	check.call(not s["structures"][lounge]["active"] and s["report"]["idle_reasons"].get(lounge, "") == "marks", "with no marks, the Lounge closes")

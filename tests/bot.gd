@@ -11,7 +11,7 @@ const Turn = preload("res://scripts/sim/turn.gd")
 const Fleet = preload("res://scripts/sim/fleet.gd")
 
 ## When true, the bot also uses the newer content (parts, drones, satellites,
-## Fusion Core, Academy, Signal Mast, Rescue Station, Lounge), for balance checks.
+## Fusion Core, Academy, Radio Station, Rescue Station, Lounge), for balance checks.
 static var advanced := false
 ## In advanced mode, which extras to use (all by default); the balance tool tries them one at a time.
 static var only := ""

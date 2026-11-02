@@ -91,7 +91,7 @@ Buildings join with tunnels only where their **doors** meet.
 
 - **Hubs** (Landing Pad, Shaft, Bunkhouse, Commons, Clinic, Academy, Lounge, Garden Cavern) have **4 doors**.
 - **Workplaces** have **2 doors**, on opposite sides.
-- **Outlying machines** (Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Signal Mast, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have **1 door**.
+- **Outlying machines** (Mirror Field, Vent Tap, Ice Drill, Seam Cutter, Spin Launcher, Radio Station, Beam Catcher, Drone Bay, Fusion Core, Hazard Lab) have **1 door**.
 - **Heat Mains** join on every side.
 
 A new building needs a door facing a door or a Heat Main. It turns itself to fit; press **R** or **Rotate** to turn it yourself. Don't wall in your Heat Mains: leave them a free side so you can keep growing.
@@ -102,7 +102,7 @@ The **Shaft** is a lift tube down to the Deep. When it's finished, a landing ope
 
 | Level | Buildings |
 | --- | --- |
-| **Surface only** | Mirror Field, Beam Catcher, Spin Launcher, Signal Mast, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station |
+| **Surface only** | Mirror Field, Beam Catcher, Spin Launcher, Radio Station, Forge, Fab Shop, Drone Bay, Fusion Core, Reclaimer, Cache, Workshop, Rescue Station |
 | **Deep only** | Bunkhouse, Commons, Clinic, Warden Post, Lounge, Garden Cavern, Academy, Survey Lab, Hazard Lab, Kelp Vat, Splitter |
 | **Either** | Heat Main, Ice Drill, Vent Tap, Seam Cutter |
 
@@ -116,7 +116,7 @@ In the Deep:
 
 ### Morale
 
-Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Garden Caverns, Signal Masts and relay satellites raise it. Shortages, crowding, waste and missed payments lower it. Below 20, people start leaving.
+Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Garden Caverns, Radio Stations and relay satellites raise it. Shortages, crowding, waste and missed payments lower it. Below 20, people start leaving.
 
 ### Money
 
@@ -150,7 +150,7 @@ Morale sets how hard everyone works (50% to 130%). Commons, Clinics, Lounges, Ga
 | Reclaimer | Surface | 10 | Recycles waste into a little ore and water. |
 | Fab Shop | Surface | 14 | Alloy into parts. |
 | Drone Bay | Surface | 12 | Builds and runs up to 4 drones. |
-| Signal Mast | Surface | 8 | A little morale; sells alloy for 1 more mark. |
+| Radio Station | Surface | 8 | News and music from home: a little morale, and sells alloy for 1 more mark. |
 | Rescue Station | Surface | 12 | Disasters damage half as many buildings. |
 | Academy | Deep | 16 | Trains specialists who work better. |
 | Hazard Lab | Deep | 18 | Triple research, but lowers morale and breaks often. |

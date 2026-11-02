@@ -2,6 +2,19 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.67
+Date: 11/02/2026
+Time: 4:25 AM
+
+### Changes
+- **The Signal Mast is now the Radio Station.** It is a small studio with lit windows, a red "on air" light and a dish on the roof. Beside it stands a broadcast tower with red and white bands, a blinking light and radio waves going out.
+- The top-down picture matches.
+- What it does hasn't changed: a little morale, and 1 more mark per alloy sold (up to 3 stations count). Its description now mentions news, music and messages from home.
+- The internal id stays `mast`, so saves keep working. The README, How to play and tests use the new name.
+
+### Reason
+The owner asked to redo the Signal Mast and rename it to Radio Station.
+
 ## Version 00.01.66
 Date: 11/02/2026
 Time: 4:21 AM

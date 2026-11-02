@@ -1,5 +1,5 @@
 ## Sprites for the buildings added in 00.01.26 (Fusion Core, Beam Catcher,
-## Reclaimer, Fab Shop, Drone Bay, Signal Mast, Rescue Station, Academy,
+## Reclaimer, Fab Shop, Drone Bay, Radio Station, Rescue Station, Academy,
 ## Hazard Lab, Garden Cavern, Lounge), and for drones and satellites.
 ## sprites.gd draws the dome, tunnels and ports and calls in here for the
 ## fittings: *_pre before the dome (things behind it), *_post after (things on
@@ -98,12 +98,6 @@ static func top_pre(ci: CanvasItem, type: String, c: Vector2, s: float, rad: flo
 			var paint := _f(Color(0.92, 0.92, 0.88), state)
 			ci.draw_polyline(PackedVector2Array([lot.position + Vector2(s * 0.04, lot.size.y - s * 0.03), lot.position + Vector2(s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, s * 0.04), lot.position + Vector2(lot.size.x - s * 0.04, lot.size.y - s * 0.03)]), paint, 1.5)
 			S._top_drone(ci, lot.get_center() + Vector2(0, -s * 0.01), s * 0.11, state)
-		"mast":
-			# Guy wires from the mast to three anchors.
-			for ang in [200.0, 320.0, 80.0]:
-				var anchor := c + Vector2.from_angle(deg_to_rad(ang)) * s * 0.46
-				ci.draw_line(c, anchor, _f(Color(0.75, 0.78, 0.84, 0.7), state), 1.0)
-				ci.draw_rect(Rect2(anchor - Vector2(s * 0.025, s * 0.025), Vector2(s * 0.05, s * 0.05)), md)
 		"rescue":
 			# A stack of brace beams at the back, and the rescue rover parked by the bay door.
 			for k in 3:
@@ -185,16 +179,6 @@ static func top_post(ci: CanvasItem, type: String, c: Vector2, s: float, rad: fl
 			# Two drones docked inside.
 			S._top_drone(ci, c + Vector2(0, -rad * 0.35), rad * 0.32, state)
 			S._top_drone(ci, c + Vector2(0, rad * 0.35), rad * 0.32, state)
-		"mast":
-			# The lattice mast from above, with its dishes and a red light.
-			ci.draw_rect(Rect2(c - Vector2(s * 0.05, s * 0.05), Vector2(s * 0.1, s * 0.1)), md)
-			ci.draw_line(c - Vector2(s * 0.05, s * 0.05), c + Vector2(s * 0.05, s * 0.05), m, 1.0)
-			ci.draw_line(c + Vector2(s * 0.05, -s * 0.05), c - Vector2(s * 0.05, -s * 0.05), m, 1.0)
-			for p in [Vector2(0.12, -0.06), Vector2(-0.1, 0.1)]:
-				ci.draw_circle(c + p * s, s * 0.055, _f(S.WHITE, state).darkened(0.1))
-			S._glow(ci, c, s * 0.02, _f(Color(1.0, 0.3, 0.3), state), state)
-			for k in 3:
-				ci.draw_arc(c, s * (0.18 + k * 0.08), deg_to_rad(-60), deg_to_rad(-20), 6, _f(S.CYAN, state) * Color(1, 1, 1, 0.8 - k * 0.2), 1.5)
 		"rescue":
 			# A red roll-up bay door on the front, a red stripe along the roof,
 			# and red and blue beacons on the ridge.
@@ -326,10 +310,6 @@ static func iso_pre(ci: CanvasItem, type: String, c: Vector2, tw: float, r: floa
 			var paint := _f(Color(0.92, 0.92, 0.88), state)
 			ci.draw_polyline(PackedVector2Array([S._iso(c, tw, 0.24, -0.23, 0.006), S._iso(c, tw, 0.24, -0.45, 0.006), S._iso(c, tw, 0.45, -0.45, 0.006), S._iso(c, tw, 0.45, -0.23, 0.006)]), paint, 1.5)
 			S._iso_drone(ci, S._iso(c, tw, 0.345, -0.345) - c + c, tw, 0.0, 0.11, state)
-		"mast":
-			for ang in [200.0, 320.0]:
-				var q := Vector2.from_angle(deg_to_rad(ang)) * 0.46
-				ci.draw_line(S._iso(c, tw, 0, 0, 0.75), S._iso(c, tw, q.x, q.y), _f(Color(0.75, 0.78, 0.84, 0.7), state), 1.0)
 		"rescue":
 			for k in 3:
 				S._box(ci, c, tw, -0.48, -0.47 + k * 0.05, -0.22, -0.44 + k * 0.05, 0.03, _f(S.HAZARD, state).darkened(0.15), Color(0, 0, 0, 0), k * 0.03)
@@ -423,36 +403,6 @@ static func iso_post(ci: CanvasItem, type: String, c: Vector2, tw: float, r: flo
 				ci.draw_line(S._iso(c, tw, u0 + 0.04, v1, z), S._iso(c, tw, u1 - 0.04, v1, z), wall.darkened(0.2), 1.0)
 			ci.draw_line(S._iso(c, tw, u0 + 0.04, v1, 0.0), S._iso(c, tw, u1 - 0.04, v1, 0.0), _f(S.HAZARD, state), 2.0)
 			S._glow(ci, S._iso(c, tw, (u0 + u1) * 0.5, v1, 0.185), tw * 0.012, _f(S.AMBER, state), state)
-		"mast":
-			# A lattice mast, wide at the foot, with two dishes, a red light on top
-			# and signal waves.
-			var top := S._iso(c, tw, 0, 0, 0.85)
-			var foot := S._iso(c, tw, 0, 0, h)
-			var w0 := tw * 0.055
-			for side in [-1.0, 1.0]:
-				ci.draw_line(foot + Vector2(side * w0, 0), top + Vector2(side * tw * 0.008, 0), md.lightened(0.25), 2.0)
-			for k in 8:
-				var t0 := float(k) / 8.0
-				var t1 := float(k + 1) / 8.0
-				var a0 := w0 * (1.0 - t0) + tw * 0.008 * t0
-				var a1 := w0 * (1.0 - t1) + tw * 0.008 * t1
-				var sd := 1.0 if k % 2 == 0 else -1.0
-				ci.draw_line(foot.lerp(top, t0) + Vector2(-a0 * sd, 0), foot.lerp(top, t1) + Vector2(a1 * sd, 0), m, 1.0)
-				ci.draw_line(foot.lerp(top, t1) + Vector2(-a1, 0), foot.lerp(top, t1) + Vector2(a1, 0), m.darkened(0.2), 1.0)
-			for p in [[0.45, 1.0], [0.68, -1.0]]:
-				var at: Vector2 = foot.lerp(top, p[0])
-				var side: float = p[1]
-				var dish: Vector2 = at + Vector2(side * tw * 0.07, 0)
-				ci.draw_line(at, dish, md, 2.0)
-				ci.draw_colored_polygon(S._ellipse(dish, tw * 0.028, tw * 0.05), _f(S.WHITE, state).darkened(0.05))
-				ci.draw_colored_polygon(S._ellipse(dish + Vector2(side * tw * 0.006, 0), tw * 0.018, tw * 0.036), _f(S.WHITE, state).darkened(0.25))
-				ci.draw_line(dish, dish + Vector2(side * tw * 0.04, 0), md, 1.0)
-				ci.draw_circle(dish + Vector2(side * tw * 0.04, 0), 1.5, md)
-			S._glow(ci, top, tw * 0.016, _f(Color(1.0, 0.3, 0.3), state), state)
-			for k in 3:
-				ci.draw_arc(top, tw * (0.07 + k * 0.05), deg_to_rad(-70), deg_to_rad(-20), 6, _f(S.CYAN, state) * Color(1, 1, 1, 0.8 - k * 0.2), 1.5)
-			var q := Vector2.from_angle(deg_to_rad(80.0)) * 0.46
-			ci.draw_line(S._iso(c, tw, 0, 0, 0.75), S._iso(c, tw, q.x, q.y), _f(Color(0.75, 0.78, 0.84, 0.7), state), 1.0)
 		"rescue":
 			# A red roll-up bay door in the hall's curved side, a red stripe,
 			# red and blue beacons on the roof, and the rescue rover out front.
