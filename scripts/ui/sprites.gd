@@ -3800,6 +3800,21 @@ static func _steam(ci: CanvasItem, p: Vector2, tw: float, size: float, n: int = 
 		ci.draw_circle(rise, tw * (0.025 + f * 0.04) * size, Color(0.95, 0.96, 1.0, alpha * (1.0 - f)))
 
 
+## Colour-blind mode (Settings): things told apart only by colour also get a
+## shape, such as a snowflake on ice and hatching on ground you can't build on.
+static var colorblind := false
+## Colour-blind safe colours for good / bad (sky blue and vermilion).
+const CB_GOOD := Color(0.34, 0.71, 0.91)
+const CB_BAD := Color(0.84, 0.37, 0.0)
+
+
+## A snowflake: three crossing strokes, for ice in colour-blind mode.
+static func _snowflake(ci: CanvasItem, p: Vector2, r: float, col: Color) -> void:
+	for k in 3:
+		var d := Vector2.from_angle(k * PI / 3.0) * r
+		ci.draw_line(p - Vector2(d.x, d.y * 0.5), p + Vector2(d.x, d.y * 0.5), col, maxf(1.5, r * 0.18))
+
+
 ## The planet whose ground is being drawn: its colours replace TERRAIN's, and
 ## it may add a ground detail (grass, embers, frost and so on). Set by the map
 ## and the probe picture before they draw; "" means the default look.
@@ -3878,6 +3893,8 @@ static func _terrain_marks(ci: CanvasItem, t: String, at: Vector2, s: float) -> 
 
 static func terrain_top(ci: CanvasItem, t: String, r: Rect2) -> void:
 	ci.draw_rect(r, tcol(t))
+	if colorblind and (t == "ice" or t == "deepice"):
+		_snowflake(ci, r.get_center() + r.size * 0.22, r.size.x * 0.12, Color(0.10, 0.20, 0.35, 0.75))
 	if t == "ridge" or t == "bedrock":
 		ci.draw_colored_polygon(PackedVector2Array([r.position + Vector2(r.size.x * 0.12, r.size.y * 0.85), r.get_center() + Vector2(0, -r.size.y * 0.32), r.position + Vector2(r.size.x * 0.88, r.size.y * 0.85)]), Color(0.30, 0.30, 0.33))
 	_terrain_marks(ci, t, r.get_center(), r.size.x)
@@ -3932,3 +3949,20 @@ static func terrain_iso(ci: CanvasItem, t: String, c: Vector2, tw: float, raised
 		ci.draw_line(_iso(c, tw, -0.35, 0.1), _iso(c, tw, 0.3, -0.15), Color(0.30, 0.85, 0.80), maxf(2.0, tw * 0.025))
 		return
 	_terrain_marks(ci, t, c, tw * 0.6)
+	if colorblind:
+		_cb_marks_iso(ci, t, c, tw)
+
+
+## Colour-blind marks on a ground tile at an angle.
+static func _cb_marks_iso(ci: CanvasItem, t: String, c: Vector2, tw: float) -> void:
+	match t:
+		"ice", "deepice":
+			_snowflake(ci, c + Vector2(tw * 0.12, tw * 0.02), tw * 0.07, Color(0.10, 0.20, 0.35, 0.75))
+		"scorch", "deepice_edge":
+			for k in 4:
+				var a := _iso(c, tw, -0.45 + k * 0.25, -0.45)
+				var b := _iso(c, tw, -0.45, -0.45 + k * 0.25)
+				ci.draw_line(a, b, Color(0, 0, 0, 0.45), 1.5)
+	if t == "deepice":
+		for k in 4:
+			ci.draw_line(_iso(c, tw, 0.45 - k * 0.25, 0.45), _iso(c, tw, 0.45, 0.45 - k * 0.25), Color(0.10, 0.20, 0.35, 0.5), 1.5)

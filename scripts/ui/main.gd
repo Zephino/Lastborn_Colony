@@ -12,6 +12,7 @@ const MapView = preload("res://scripts/ui/map_view.gd")
 const AppActions = preload("res://scripts/ui/app_actions.gd")
 const Research = preload("res://scripts/sim/research.gd")
 const Tips = preload("res://scripts/sim/tips.gd")
+const Sprites = preload("res://scripts/ui/sprites.gd")
 const StatsGraph = preload("res://scripts/ui/stats_graph.gd")
 const Records = preload("res://scripts/ui/records.gd")
 const Online = preload("res://scripts/net/online.gd")
@@ -83,6 +84,7 @@ func _ready() -> void:
 	if cfg.load(SETTINGS_PATH) == OK:
 		animations = bool(cfg.get_value("display", "animations", true))
 		tips_on = bool(cfg.get_value("display", "tips", true))
+		Sprites.colorblind = bool(cfg.get_value("display", "colorblind", false))
 	_apply_ui_scale()
 	get_window().size_changed.connect(_apply_ui_scale)
 	var t := Theme.new()
@@ -1103,3 +1105,15 @@ func show_stats() -> void:
 	if graph.history.size() < 2:
 		body = "Play a few turns to see the graphs.\n\n" + body
 	show_modal("Graphs and records", body, [["Back", close_modal, true]], true, "", graph, 820.0)
+
+
+
+## Turns colour-blind mode on or off, and remembers the choice.
+func set_colorblind(on: bool) -> void:
+	Sprites.colorblind = on
+	if map_view != null:
+		map_view.queue_redraw()
+	var cfg := ConfigFile.new()
+	cfg.load(SETTINGS_PATH)
+	cfg.set_value("display", "colorblind", on)
+	cfg.save(SETTINGS_PATH)

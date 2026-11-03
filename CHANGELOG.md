@@ -2,6 +2,23 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.84
+Date: 11/03/2026
+Time: 12:23 AM
+
+### Changes
+- **Colour-blind mode** (Settings, "Colour-blind mode: On/Off"; off by default and remembered). Things that were told apart only by colour also get a shape, and colour-blind-safe colours (sky blue and vermilion) replace green and red:
+  - **Ice** gets a small snowflake, on the map and in top-down pictures.
+  - **Scorched and deep-ice ground** (unbuildable) gets hatching.
+  - **Placing a building:** the tile turns blue with a white tick where you can build, or orange with a white cross where you can't. The mark sits on top of the building preview so it is never hidden.
+  - **Idle buildings** show an orange circle with an "!" instead of a small red dot.
+  - **Small site maps:** ice, ore seams, vents and unbuildable edges get marks. Unscouted sites stay plain outlines.
+- Everything else already had a shape or words: vents, ore seams, ridges, rock, broken buildings, the labelled bars and graphs, and the report text.
+- README describes the setting. 681 checks pass.
+
+### Reason
+The owner asked for a colour-blind friendly mode.
+
 ## Version 00.01.83
 Date: 11/02/2026
 Time: 1:36 PM

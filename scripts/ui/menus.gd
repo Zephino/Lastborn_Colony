@@ -4,6 +4,7 @@
 ## state, the online client and the dialog layer.
 extends RefCounted
 
+const Sprites = preload("res://scripts/ui/sprites.gd")
 const GameData = preload("res://scripts/sim/game_data.gd")
 const Actions = preload("res://scripts/sim/actions.gd")
 const Research = preload("res://scripts/sim/research.gd")
@@ -75,6 +76,8 @@ func show_settings() -> void:
 		options.append(["Fullscreen: %s" % ("On" if AppActions.is_fullscreen() else "Off"), _on_fullscreen, true])
 	options.append(["Animations: %s" % ("On" if main.animations else "Off"), _on_animations, true])
 	options.append(["Tips for new players: %s" % ("On" if main.tips_on else "Off"), _on_tips, true])
+	options.append(["Colour-blind mode: %s" % ("On" if Sprites.colorblind else "Off"), _on_colorblind, true])
+	notes.append("Colour-blind mode adds shapes to things told apart by colour: snowflakes on ice, hatching where you can't build, a tick or cross when placing, and an \"!\" on idle buildings.")
 	notes.append("Animations make the map move: lights blink, steam rises, rovers drive and the lander comes down. Turn them off on a slow device.")
 	if AppActions.is_web():
 		var install := AppActions.install_state()
@@ -113,6 +116,11 @@ func show_settings() -> void:
 
 func _close_settings() -> void:
 	main.close_modal()
+
+
+func _on_colorblind() -> void:
+	main.set_colorblind(not Sprites.colorblind)
+	show_settings.call_deferred()
 
 
 func _on_tips() -> void:

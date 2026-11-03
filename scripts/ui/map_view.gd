@@ -274,7 +274,12 @@ func _draw() -> void:
 		var hc := cell_center(hover)
 		if build_type != "":
 			var ok: bool = Actions.check_place(state, build_type, hover.x, hover.y, level, build_rot)["ok"]
-			draw_colored_polygon(_diamond(hc, 1.0), Color(0.3, 1.0, 0.5, 0.40) if ok else Color(1.0, 0.3, 0.3, 0.40))
+			if Sprites.colorblind:
+				# Colour-blind safe colours, and a tick or a cross as well.
+				var col: Color = Sprites.CB_GOOD if ok else Sprites.CB_BAD
+				draw_colored_polygon(_diamond(hc, 1.0), Color(col.r, col.g, col.b, 0.45))
+			else:
+				draw_colored_polygon(_diamond(hc, 1.0), Color(0.3, 1.0, 0.5, 0.40) if ok else Color(1.0, 0.3, 0.3, 0.40))
 		draw_polyline(_diamond_loop(hc, 1.0), Color(1, 1, 1, 0.75), 1.5)
 	if selected.x >= 0:
 		draw_polyline(_diamond_loop(cell_center(selected), 1.0), Color(1.0, 0.85, 0.3), 2.5)
@@ -320,6 +325,19 @@ func _draw() -> void:
 			var edge := cell_center(hover) + _proj(Vector2(d) * 0.5)
 			draw_circle(edge, maxf(4.0, tile_size * 0.05), Color(1.0, 0.55, 0.20))
 			draw_circle(edge, maxf(2.0, tile_size * 0.025), Color(1.0, 0.9, 0.6))
+	# Colour-blind mode: a tick or a cross over the tile being placed on, on top
+	# of everything so a tall building can't hide it.
+	if Sprites.colorblind and build_type != "" and hover.x >= 0:
+		var ok: bool = Actions.check_place(state, build_type, hover.x, hover.y, level, build_rot)["ok"]
+		var at := cell_center(hover) + Vector2(tile_size * 0.30, -tile_size * 0.30)
+		var k := maxf(6.0, tile_size * 0.07)
+		draw_circle(at, k * 1.6, Color(0, 0, 0, 0.6))
+		draw_circle(at, k * 1.4, Sprites.CB_GOOD if ok else Sprites.CB_BAD)
+		if ok:
+			draw_polyline(PackedVector2Array([at + Vector2(-k * 0.8, 0), at + Vector2(-k * 0.25, k * 0.6), at + Vector2(k * 0.8, -k * 0.6)]), Color.WHITE, maxf(2.5, k * 0.35))
+		else:
+			draw_line(at - Vector2(k * 0.6, k * 0.6), at + Vector2(k * 0.6, k * 0.6), Color.WHITE, maxf(2.5, k * 0.35))
+			draw_line(at + Vector2(-k * 0.6, k * 0.6), at + Vector2(k * 0.6, -k * 0.6), Color.WHITE, maxf(2.5, k * 0.35))
 	# The selected tile's outline again, faintly, so it shows through tall buildings.
 	if selected.x >= 0:
 		draw_polyline(_diamond_loop(cell_center(selected), 1.0), Color(1.0, 0.85, 0.3, 0.45), 1.5)
@@ -405,8 +423,16 @@ func _draw_structure(s: Dictionary, c: Vector2) -> void:
 		draw_line(mark - Vector2(k, k), mark + Vector2(k, k), Color(1.0, 0.85, 0.2), 2.5)
 		draw_line(mark + Vector2(-k, k), mark + Vector2(k, -k), Color(1.0, 0.85, 0.2), 2.5)
 	elif not s["active"] and not conduit:
-		draw_circle(mark, maxf(4.0, tw * 0.05), Color(0, 0, 0, 0.6))
-		draw_circle(mark, maxf(3.0, tw * 0.035), Color(1.0, 0.3, 0.3))
+		if Sprites.colorblind:
+			# An orange circle with an exclamation mark.
+			var r := maxf(6.0, tw * 0.07)
+			draw_circle(mark, r * 1.2, Color(0, 0, 0, 0.6))
+			draw_circle(mark, r, Sprites.CB_BAD)
+			draw_line(mark - Vector2(0, r * 0.6), mark + Vector2(0, r * 0.15), Color.WHITE, maxf(2.0, r * 0.25))
+			draw_circle(mark + Vector2(0, r * 0.5), maxf(1.2, r * 0.13), Color.WHITE)
+		else:
+			draw_circle(mark, maxf(4.0, tw * 0.05), Color(0, 0, 0, 0.6))
+			draw_circle(mark, maxf(3.0, tw * 0.035), Color(1.0, 0.3, 0.3))
 
 
 ## Where each working drone is shown this turn: {cell: [drone types]}.

@@ -254,6 +254,11 @@ Dragging the map never builds anything by accident.
 - **Settings:** fullscreen, **Install app** (Chrome, Edge, Android) and **Update app**. On iPhone or iPad: **Share**, then **Add to Home Screen**.
 - **Animations** (Settings, on by default): lights blink, steam and smoke rise, the lift moves, rovers drive about, a truck brings junk to the Reclaimer, and the lander comes down when it arrives. Turn them off on a slow device.
 - **Tips for new players** (Settings, on by default): a short tip appears at the bottom of the map when it can help, such as "build a Shaft first" or "oxygen will run out soon". Each shows once per game. Press **Got it**, or **No more tips** to turn them off.
+- **Colour-blind mode** (Settings, off by default): things told apart only by colour also get a shape:
+  - a snowflake on ice, and hatching on ground you can't build on;
+  - a blue tick or an orange cross when placing a building (instead of green or red);
+  - an orange "!" on buildings that aren't running (instead of a red dot);
+  - marks for ice, ore seams and vents on the small site maps.
 - **Graphs and records** (in the Colony report, and when a colony ends): graphs of people, marks, debt left and morale, turn by turn, and your best results on every world and difficulty, kept on this device.
 - **Updates:** for 30 seconds after opening, the game checks for a newer version and switches to it. Your saves are kept.
 - **Leaderboard** (title screen): one for each planet and difficulty. Type your name on the title screen, then post a score when a colony ends, or **Menu → Retire** to post one that's still running.

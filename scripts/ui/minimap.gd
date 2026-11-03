@@ -3,6 +3,7 @@
 extends Control
 
 const GameData = preload("res://scripts/sim/game_data.gd")
+const Sprites = preload("res://scripts/ui/sprites.gd")
 
 const COLORS := {
 	"regolith": Color(0.40, 0.35, 0.30),
@@ -48,6 +49,18 @@ func _draw() -> void:
 			if fog:
 				col = COLORS["ridge"] if t in ["ridge", "deepice", "scorch"] else Color(0.30, 0.30, 0.32)
 			draw_rect(Rect2(origin + Vector2(x, y) * cell, Vector2(cell, cell)), col)
+			# Colour-blind mode: marks as well as colours (not on unscouted sites).
+			if Sprites.colorblind and not fog and cell >= 6.0:
+				var cc := origin + (Vector2(x, y) + Vector2(0.5, 0.5)) * cell
+				match t:
+					"ice":
+						draw_circle(cc, cell * 0.14, Color(0.10, 0.20, 0.35, 0.7))
+					"seam":
+						draw_line(cc - Vector2(cell * 0.3, -cell * 0.3), cc + Vector2(cell * 0.3, -cell * 0.3), Color(1, 1, 1, 0.8), 1.0)
+					"vent":
+						draw_arc(cc, cell * 0.28, 0, TAU, 8, Color(1, 1, 1, 0.85), 1.0)
+					"scorch", "deepice":
+						draw_line(origin + Vector2(x, y) * cell, origin + Vector2(x + 1, y + 1) * cell, Color(0, 0, 0, 0.4), 1.0)
 	if hull.x >= 0:
 		var c := origin + (Vector2(hull) + Vector2(0.5, 0.5)) * cell
 		draw_circle(c, cell * 1.6, Color(1, 1, 1))
