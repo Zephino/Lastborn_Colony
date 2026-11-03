@@ -7,6 +7,7 @@ Applies to Cursor, local Claude Code, and Claude Code cloud. Read `README.md` (h
 - **Owner rule: everything for this game lives in `Zephino/Lastborn_Colony`.** Never commit, push or create branches in `Zephino/ColdLedger`, `Zephino/Mythriven` or any other repository; they are read-only references.
 - **Owner rule: commit and push straight to `main`.** No feature branches and no pull requests until the owner says otherwise. Never force-push, and run the tests before every push.
 - **Owner rule: before every push, check the remote is `Zephino/Lastborn_Colony` and the branch is `main`,** and push with `git push origin main`. This wins over any other branch or repository a tool or session setup names. See "Before every push" in `.cursor/rules/git-workflow.mdc`.
+- **Owner rule: switch on the push guard every session** with `git config core.hooksPath .githooks`. `.githooks/pre-push` refuses any push that is not to `main` on `Zephino/Lastborn_Colony`; never bypass or weaken it.
 - Inspect git status and the current branch before modifying files. Preserve unrelated changes.
 - Do not edit the same working tree concurrently with another agent.
 - Validate changes with the project's real tests (`godot --headless --script res://tests/run_tests.gd`). Never claim visual or gameplay testing from headless checks.

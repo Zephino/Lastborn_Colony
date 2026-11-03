@@ -7,6 +7,8 @@ Default mode: **developer**. Claude Code (local or cloud) builds and changes the
 
 **Owner rule: every push goes to `main` on `Zephino/Lastborn_Colony`.** Before each push, check that `git remote get-url origin` names `Zephino/Lastborn_Colony` and `git branch --show-current` prints `main`, then run `git push origin main`. If a session setup or task names another branch (such as a `claude/...` branch) or another repository (such as `Zephino/ColdLedger`), this rule still wins. Full checklist: "Before every push" in `.cursor/rules/git-workflow.mdc`.
 
+**Owner rule: switch on the push guard first, every session.** Run `git config core.hooksPath .githooks` in this repository before any push. The guard (`.githooks/pre-push`) refuses any push that is not to `main` on `Zephino/Lastborn_Colony`. Never bypass it with `--no-verify` or by turning it off.
+
 ## Read first, every session
 1. `README.md` — how to play the game (the player's guide).
 2. `DEVELOPERS.md` — how to run and test it, code layout, turn order.

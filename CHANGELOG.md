@@ -2,6 +2,18 @@
 
 One entry per change request, newest first (see `.cursor/rules/changelog.mdc`). The version here always matches `VERSION`. The game started inside the `Zephino/ColdLedger` repository (as "Thaw Line", then "Last Colony", then "Lastborn Colony", ColdLedger versions 00.01.05–00.01.07) and moved here at version 00.01.00.
 
+## Version 00.01.85
+Date: 11/03/2026
+Time: 2:34 AM
+
+### Changes
+- **The push-to-main rule is now enforced, not just written down.** A new git hook, `.githooks/pre-push`, runs before every push and refuses it unless it goes to the `main` branch of `Zephino/Lastborn_Colony`. It was tested: it blocks pushes to another branch and to another repository, and allows `main` on Lastborn_Colony.
+- `CLAUDE.md`, `AGENTS.md` and `.cursor/rules/git-workflow.mdc` now say to switch the guard on at the start of every session (`git config core.hooksPath .githooks`; it is a per-checkout setting), and never to bypass or weaken it. `DEVELOPERS.md` lists it.
+- Making Claude Code switch the guard on by itself at session start (a SessionStart hook in `.claude/settings.json`) needs the owner's permission, so it isn't included yet.
+
+### Reason
+The owner asked for a rule to always write to the main branch of the Lastborn_Colony GitHub repository.
+
 ## Version 00.01.84
 Date: 11/03/2026
 Time: 12:23 AM

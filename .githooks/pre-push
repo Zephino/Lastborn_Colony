@@ -1,0 +1,21 @@
+#!/bin/sh
+# Owner rule: every push goes to the main branch of Zephino/Lastborn_Colony.
+# Git runs this before each push and stops the push if it goes anywhere else.
+# Switch it on once per checkout with: git config core.hooksPath .githooks
+
+remote_url="$2"
+case "$(printf '%s' "$remote_url" | tr 'A-Z' 'a-z')" in
+  *zephino/lastborn_colony*) ;;
+  *)
+    echo "Push refused: this game is only pushed to Zephino/Lastborn_Colony (not $remote_url)." >&2
+    exit 1
+    ;;
+esac
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" != "refs/heads/main" ]; then
+    echo "Push refused: only the main branch is pushed (not $remote_ref). See 'Before every push' in .cursor/rules/git-workflow.mdc." >&2
+    exit 1
+  fi
+done
+exit 0
